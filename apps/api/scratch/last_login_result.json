@@ -1,0 +1,15 @@
+{
+  "redirect": false,
+  "token": "aSUIJaR5mjEAU3EaOjshoyQ83RizJ3yT",
+  "user": {
+    "name": "Test User",
+    "email": "test3@orufy.com",
+    "emailVerified": false,
+    "image": null,
+    "createdAt": "2026-04-24T07:42:58.931Z",
+    "updatedAt": "2026-04-24T07:42:58.931Z",
+    "tenantId": "5312821b-6baa-4296-beed-27a80b510157",
+    "role": "owner",
+    "id": "2iqTMlL9X398xGlK3x2i6uaBGcwljXMV"
+  }
+}

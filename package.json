@@ -1,0 +1,22 @@
+{
+  "name": "orufy-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "db"
+  ],
+  "scripts": {
+    "dev": "bun run --filter './apps/*' dev",
+    "dev:web": "bun run --filter './apps/web' dev",
+    "dev:api": "bun run --filter './apps/api' dev",
+    "build": "bun run --filter './apps/*' build"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10"
+  }
+}

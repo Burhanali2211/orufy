@@ -1,0 +1,61 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.pnpm-debug.log
+
+# Vite / build
+dist/
+.vite/
+
+# Server build
+server/dist/
+
+# Logs
+logs/
+*.log
+logs/**/*.log
+
+# Environment
+.env
+.env.*
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Uploads
+uploads/
+public/uploads/
+
+# Misc
+*.local
+*.cache
+*.tmp
+
+# Optional tooling
+.sass-cache/
+.cache/
+
+# Ignore compiled types
+*.tsbuildinfo
+
+# lock files for other package managers
+pnpm-lock.yaml
+
+# Ignore generated assets
+dist-ssr/
+

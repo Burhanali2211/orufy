@@ -1,0 +1,22 @@
+-- =============================================================================
+-- run_all.sql  —  Compatibility alias
+-- =============================================================================
+-- This file is kept for reference only.
+-- Use the platform-specific runners instead:
+--
+--   Supabase (SQL Editor or psql with Supabase connection string):
+--     \i run_supabase.sql
+--
+--   Plain PostgreSQL server:
+--     \i run_postgres.sql
+--
+-- File order reference:
+--   000_extensions.sql    — PostgreSQL extensions (uuid-ossp, pgcrypto, pg_trgm, unaccent)
+--   001_auth_compat.sql   — Auth schema compat layer (plain PostgreSQL only)
+--   002_tables.sql        — All 22 tables with constraints
+--   003_indexes.sql       — Performance indexes
+--   004_functions.sql     — Helper functions (is_admin, handle_new_user, etc.)
+--   005_triggers.sql      — Triggers (updated_at, on_auth_user_created, rating)
+--   006_rls_policies.sql  — Row Level Security for all 22 tables
+--   007_seed_data.sql     — Default categories, settings, business hours
+-- =============================================================================

@@ -1,0 +1,135 @@
+================================================================================
+                    NETLIFY CONFIGURATION FORM - EXACT VALUES
+================================================================================
+
+COPY & PASTE THESE VALUES INTO THE NETLIFY FORM
+
+================================================================================
+BUILD SETTINGS
+================================================================================
+
+Field 1: Branch to deploy
+Value:   main
+
+Field 2: Base directory
+Value:   (LEAVE EMPTY - DO NOT ENTER ANYTHING)
+
+Field 3: Build command
+Value:   npm run build
+
+Field 4: Publish directory
+Value:   dist
+
+Field 5: Functions directory
+Value:   netlify/functions
+
+================================================================================
+ENVIRONMENT VARIABLES (Add in Site Settings → Environment Variables)
+================================================================================
+
+REQUIRED - Add all 5 of these:
+
+Variable 1:
+Name:  DATABASE_URL
+Value: postgresql://neondb_owner:npg_w3V0EFILtTCP@ep-icy-wildflower-a1qc6oi0-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+Variable 2:
+Name:  JWT_SECRET
+Value: bbfb4b05f2ad5b7cdc1bdc2c9b15776584293e74d5e72ea8eb9b4fcc410206bfb6d11bf6ae79e7970ff6a127e46c36bfd00d76ad492f38a56d002413bd0aa05c
+
+Variable 3:
+Name:  VITE_APP_ENV
+Value: production
+
+Variable 4:
+Name:  FRONTEND_URL
+Value: https://himalayanspicesexports.com
+
+Variable 5:
+Name:  VITE_API_URL
+Value: https://himalayanspicesexports.com/api
+
+================================================================================
+OPTIONAL VARIABLES (Add only if using these features)
+================================================================================
+
+For Payments (Razorpay):
+Name:  RAZORPAY_KEY_ID
+Value: rzp_live_YOUR_KEY_ID
+
+Name:  RAZORPAY_KEY_SECRET
+Value: your_razorpay_secret
+
+Name:  VITE_RAZORPAY_KEY_ID
+Value: rzp_live_YOUR_KEY_ID
+
+For Email Notifications (SendGrid):
+Name:  SENDGRID_API_KEY
+Value: SG.YOUR_SENDGRID_KEY
+
+Name:  EMAIL_FROM
+Value: orders@himalayanspicesexports.com
+
+For Analytics (Google Analytics):
+Name:  VITE_GA_MEASUREMENT_ID
+Value: G-YOUR_MEASUREMENT_ID
+
+================================================================================
+STEP-BY-STEP SETUP
+================================================================================
+
+1. Go to https://app.netlify.com
+2. Click "New site from Git"
+3. Select GitHub/GitLab and authorize
+4. Select "perfumes" repository
+5. Fill in build settings (see above)
+6. Click "Deploy site"
+7. Wait for build to complete
+8. Go to Site Settings → Environment Variables
+9. Add all 5 REQUIRED variables (see above)
+10. Go to Deploys tab
+11. Click "Trigger deploy"
+12. Wait for new build to complete
+13. Visit https://himalayanspicesexports.com
+
+================================================================================
+VERIFICATION
+================================================================================
+
+After deployment, check:
+✓ Home page loads (not 404)
+✓ Can navigate to /products
+✓ Browser console is clean (F12)
+✓ No errors in Netlify logs
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+404 Error?
+→ Clear browser cache (Ctrl+Shift+Delete)
+→ Try incognito window
+
+Build Fails?
+→ Check Netlify build logs
+→ Verify environment variables are set
+
+API Errors?
+→ Verify DATABASE_URL is correct
+→ Check JWT_SECRET is set
+
+================================================================================
+TIMELINE
+================================================================================
+
+Connect repository:        1 minute
+Configure build:           2 minutes
+Initial build:             2-3 minutes
+Add environment variables: 2 minutes
+Trigger new deployment:    2-3 minutes
+                          ─────────
+TOTAL:                     ~10 minutes
+
+================================================================================
+YOUR WEBSITE WILL BE LIVE IN ~10 MINUTES! 🚀
+================================================================================

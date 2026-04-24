@@ -1,0 +1,94 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - saas-net
+    # Postgres is NOT exposed to the host — API talks to it over the internal network
+    expose:
+      - "5432"
+
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - saas-net
+    expose:
+      - "6379"
+
+  api:
+    build:
+      context: ../../
+      dockerfile: infra/docker/Dockerfile.server
+    env_file:
+      - ../../.env
+    environment:
+      # Override DB/Redis URLs to use Docker service names instead of localhost
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL:    redis://redis:6379
+      NODE_ENV:     production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"   # Bind to loopback only — Nginx proxies from outside
+    restart: unless-stopped
+    networks:
+      - saas-net
+
+  web:
+    build:
+      context: ../../
+      dockerfile: infra/docker/Dockerfile.client
+      args:
+        VITE_API_URL:          ${VITE_API_URL}
+        VITE_R2_PUBLIC_DOMAIN: ${VITE_R2_PUBLIC_DOMAIN}
+        VITE_RAZORPAY_KEY_ID:  ${VITE_RAZORPAY_KEY_ID}
+        VITE_SENTRY_DSN:       ${VITE_SENTRY_DSN}
+        VITE_ROOT_DOMAIN:      ${VITE_ROOT_DOMAIN}
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:4173:4173"   # Bind to loopback only — Nginx proxies from outside
+    restart: unless-stopped
+    networks:
+      - saas-net
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  saas-net:
+    driver: bridge

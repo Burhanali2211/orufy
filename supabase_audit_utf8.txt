@@ -1,0 +1,217 @@
+﻿apps\web\src\components\Admin\Analytics\AdminAnalyticsPage.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Analytics\AdminAnalyticsPage.tsx:        supabase.from('orders').select('id, total_amount, status, created_at').gte('created_at', periodStartIso),
+apps\web\src\components\Admin\Analytics\AdminAnalyticsPage.tsx:        supabase.from('profiles').select('id, created_at').gte('created_at', periodStartIso)
+apps\web\src\components\Admin\Analytics\AdminAnalyticsPage.tsx:        ? (await supabase.from('order_items').select('product_id, quantity, unit_price').in('order_id', orderIds)).data || []
+apps\web\src\components\Admin\Analytics\AdminAnalyticsPage.tsx:        ? await supabase.from('products').select('id, name, images').in('id', productIds)
+apps\web\src\components\Admin\Categories\CategoriesList.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Categories\CategoriesList.tsx:        supabase.from('categories').select('*').order('sort_order', { ascending: true }),
+apps\web\src\components\Admin\Categories\CategoriesList.tsx:        supabase.from('products').select('category_id'),
+apps\web\src\components\Admin\Categories\CategoriesList.tsx:      const { error } = await supabase.from('categories').delete().eq('id', selectedCategory.id);
+apps\web\src\components\Admin\Categories\CategoryFormPage.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Categories\CategoryFormPage.tsx:      const { data, error } = await supabase
+apps\web\src\components\Admin\Categories\CategoryFormPage.tsx:      const { data: category, error } = await supabase
+apps\web\src\components\Admin\Categories\CategoryFormPage.tsx:        const { error } = await supabase.from('categories').update(payload).eq('id', id);
+apps\web\src\components\Admin\Categories\CategoryFormPage.tsx:        const { error } = await supabase.from('categories').insert(payload);
+apps\web\src\components\Admin\ContactSubmissions\ContactSubmissionsList.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\ContactSubmissions\ContactSubmissionsList.tsx:      let query = supabase
+apps\web\src\components\Admin\ContactSubmissions\ContactSubmissionsList.tsx:      const { error } = await supabase.from('contact_submissions').update(updates).eq('id', id);
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', todayIso),
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:        supabase.from('products').select('*', { count: 'exact', head: true }),
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:        supabase.from('orders').select('*', { count: 'exact', head: true }),
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:        supabase.from('orders').select('id, order_number, total_amount, status, created_at, user_id').order('created_at', { ascending: false }).limit(10),
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:        supabase.from('profiles').select('id, full_name, email'),
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:        supabase.from('products').select('id, name, price, images, stock, min_stock_level'),
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:        supabase.from('products').select('id, name, price, images, stock, min_stock_level').lte('stock', 20).limit(8),
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:      const allOrdersForRevenue = await supabase.from('orders').select('total_amount, status').in('status', ['delivered', 'shipped']);
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:      const orderItemsRes = await supabase.from('order_items').select('product_id, quantity').limit(500);
+apps\web\src\components\Admin\Dashboard\AdminDashboardHome.tsx:        const topRes = await supabase.from('products').select('id, name, price, images, stock').in('id', topIds);
+apps\web\src\components\Admin\Orders\AdminPOSPage.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Orders\AdminPOSPage.tsx:      const { data, error } = await supabase
+apps\web\src\components\Admin\Orders\AdminPOSPage.tsx:      const { data: order, error: orderError } = await supabase
+apps\web\src\components\Admin\Orders\AdminPOSPage.tsx:      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+apps\web\src\components\Admin\Orders\OrderDetails.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Orders\OrderDetails.tsx:      const { data: orderRow, error } = await supabase
+apps\web\src\components\Admin\Orders\OrderDetails.tsx:        supabase.from('order_items').select('*, products(name, images)').eq('order_id', orderId),
+apps\web\src\components\Admin\Orders\OrderDetails.tsx:          ? supabase.from('profiles').select('full_name, email, phone').eq('id', orderRow.user_id).single()
+apps\web\src\components\Admin\Orders\OrderDetails.tsx:      const { error } = await supabase.from('orders').update(updates).eq('id', orderId);
+apps\web\src\components\Admin\Orders\OrderDetails.tsx:      await supabase.from('order_tracking').insert({
+apps\web\src\components\Admin\Orders\OrderDetails.tsx:      const { error } = await supabase.from('orders').update({ payment_status: newPaymentStatus }).eq('id', orderId);
+apps\web\src\components\Admin\Orders\OrderDetails.tsx:      const { error } = await supabase.from('orders').update({ tracking_number: trimmed || null }).eq('id', orderId);
+apps\web\src\components\Admin\Orders\OrdersList.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Orders\OrdersList.tsx:        supabase.from('orders').select('*', { count: 'exact', head: true }),
+apps\web\src\components\Admin\Orders\OrdersList.tsx:        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+apps\web\src\components\Admin\Orders\OrdersList.tsx:        supabase.from('orders').select('*', { count: 'exact', head: true }).gte('created_at', todayStart.toISOString()),
+apps\web\src\components\Admin\Orders\OrdersList.tsx:        supabase.from('orders').select('total_amount').in('status', ['delivered', 'shipped']),
+apps\web\src\components\Admin\Orders\OrdersList.tsx:        supabase.from('orders').select('total_amount').in('status', ['delivered', 'shipped']).gte('created_at', todayStart.toISOString()),
+apps\web\src\components\Admin\Orders\OrdersList.tsx:        supabase.from('orders').select('total_amount').eq('payment_status', 'paid'),
+apps\web\src\components\Admin\Orders\OrdersList.tsx:        supabase.from('orders').select('status'),
+apps\web\src\components\Admin\Orders\OrdersList.tsx:      let query = supabase
+apps\web\src\components\Admin\Orders\OrdersList.tsx:        const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
+apps\web\src\components\Admin\Products\ProductForm.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Products\ProductForm.tsx:      const { data, error } = await supabase.from('categories').select('*').order('name', { ascending: true });
+apps\web\src\components\Admin\Products\ProductForm.tsx:        const { error } = await supabase.from('products').update(payload).eq('id', product.id);
+apps\web\src\components\Admin\Products\ProductForm.tsx:        const { error } = await supabase.from('products').insert(payload);
+apps\web\src\components\Admin\Products\ProductFormPage.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Products\ProductFormPage.tsx:      const { data, error } = await supabase
+apps\web\src\components\Admin\Products\ProductFormPage.tsx:      const { data: product, error } = await supabase
+apps\web\src\components\Admin\Products\ProductFormPage.tsx:        const { error } = await supabase.from('products').update(payload).eq('id', id);
+apps\web\src\components\Admin\Products\ProductFormPage.tsx:        const { error } = await supabase.from('products').insert(payload);
+apps\web\src\components\Admin\Products\ProductsList.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Products\ProductsList.tsx:        supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
+apps\web\src\components\Admin\Products\ProductsList.tsx:        supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true).gt('stock', 0).lt('stock', 10),
+apps\web\src\components\Admin\Products\ProductsList.tsx:        supabase.from('products').select('*', { count: 'exact', head: true }).eq('stock', 0),
+apps\web\src\components\Admin\Products\ProductsList.tsx:      let query = supabase
+apps\web\src\components\Admin\Products\ProductsList.tsx:        const { data: cats } = await supabase.from('categories').select('id, name').in('id', categoryIds);
+apps\web\src\components\Admin\Products\ProductsList.tsx:        supabase.from('cart_items').delete().eq('product_id', pid),
+apps\web\src\components\Admin\Products\ProductsList.tsx:        supabase.from('wishlist_items').delete().eq('product_id', pid),
+apps\web\src\components\Admin\Products\ProductsList.tsx:        supabase.from('order_items').delete().eq('product_id', pid),
+apps\web\src\components\Admin\Products\ProductsList.tsx:        supabase.from('reviews').delete().eq('product_id', pid),
+apps\web\src\components\Admin\Products\ProductsList.tsx:      const { error } = await supabase.from('products').delete().eq('id', pid);
+apps\web\src\components\Admin\Settings\ContactInfoForm.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\ContactInfoForm.tsx:        const { error } = await supabase.from('contact_information').update(payload).eq('id', contact.id);
+apps\web\src\components\Admin\Settings\ContactInfoForm.tsx:        const { error } = await supabase.from('contact_information').insert(payload);
+apps\web\src\components\Admin\Settings\ContactInfoList.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\ContactInfoList.tsx:      const { data, error } = await supabase
+apps\web\src\components\Admin\Settings\ContactInfoList.tsx:      const { error } = await supabase.from('contact_information').delete().eq('id', id);
+apps\web\src\components\Admin\Settings\ContactInfoList.tsx:      const { error } = await supabase
+apps\web\src\components\Admin\Settings\ContactInfoSettings.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\ContactInfoSettings.tsx:      const { data, error } = await supabase.from('contact_information').select('*').order('display_order', { ascending: true });
+apps\web\src\components\Admin\Settings\ContactInfoSettings.tsx:        const { error } = await supabase.from('contact_information').update(payload).eq('id', editingContact.id);
+apps\web\src\components\Admin\Settings\ContactInfoSettings.tsx:        const { error } = await supabase.from('contact_information').insert({ ...payload, display_order: maxOrder, is_active: true, is_primary: false });
+apps\web\src\components\Admin\Settings\ContactInfoSettings.tsx:      const { error } = await supabase.from('contact_information').delete().eq('id', id);
+apps\web\src\components\Admin\Settings\ContactInfoSettings.tsx:      const { error } = await supabase.from('contact_information').delete().in('id', Array.from(selectedIds));
+apps\web\src\components\Admin\Settings\ContactInfoSettings.tsx:      const { error } = await supabase.from('contact_information').update({ is_active: !currentStatus }).eq('id', id);
+apps\web\src\components\Admin\Settings\ContactInfoSettings.tsx:      const { error: clearError } = await supabase.from('contact_information').update({ is_primary: false }).neq('id', id);
+apps\web\src\components\Admin\Settings\ContactInfoSettings.tsx:      const { error } = await supabase.from('contact_information').update({ is_primary: true }).eq('id', id);
+apps\web\src\components\Admin\Settings\FooterLinkForm.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\FooterLinkForm.tsx:        const { error } = await supabase.from('footer_links').update(payload).eq('id', link.id);
+apps\web\src\components\Admin\Settings\FooterLinkForm.tsx:        const { error } = await supabase.from('footer_links').insert(payload);
+apps\web\src\components\Admin\Settings\FooterLinksList.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\FooterLinksList.tsx:      const { data, error } = await supabase
+apps\web\src\components\Admin\Settings\FooterLinksList.tsx:      const { error } = await supabase.from('footer_links').delete().eq('id', id);
+apps\web\src\components\Admin\Settings\FooterLinksList.tsx:      const { error } = await supabase
+apps\web\src\components\Admin\Settings\FooterLinksSettings.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\FooterLinksSettings.tsx:      const { data, error } = await supabase.from('footer_links').select('*').order('display_order', { ascending: true });
+apps\web\src\components\Admin\Settings\FooterLinksSettings.tsx:        const { error } = await supabase.from('footer_links').update(formData).eq('id', editingLink.id);
+apps\web\src\components\Admin\Settings\FooterLinksSettings.tsx:        const { error } = await supabase.from('footer_links').insert({ ...formData, display_order: maxOrder, is_active: true });
+apps\web\src\components\Admin\Settings\FooterLinksSettings.tsx:      const { error } = await supabase.from('footer_links').delete().eq('id', id);
+apps\web\src\components\Admin\Settings\FooterLinksSettings.tsx:      const { error } = await supabase.from('footer_links').delete().in('id', Array.from(selectedIds));
+apps\web\src\components\Admin\Settings\FooterLinksSettings.tsx:      const { error } = await supabase.from('footer_links').update({ is_active: !currentStatus }).eq('id', id);
+apps\web\src\components\Admin\Settings\FooterLinksSettings.tsx:        await supabase.from('footer_links').update({ display_order: link.display_order }).eq('id', link.id);
+apps\web\src\components\Admin\Settings\PolicyPagesManager.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\PolicyPagesManager.tsx:      const { data, error } = await supabase
+apps\web\src\components\Admin\Settings\PolicyPagesManager.tsx:      const { error } = await supabase
+apps\web\src\components\Admin\Settings\SiteSettingsList.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\SiteSettingsList.tsx:      const { data, error } = await supabase
+apps\web\src\components\Admin\Settings\SiteSettingsList.tsx:        const { error } = await supabase
+apps\web\src\components\Admin\Settings\SiteSettingsList.tsx:      const { error: uploadError } = await supabase.storage
+apps\web\src\components\Admin\Settings\SiteSettingsList.tsx:      const { data: { publicUrl } } = supabase.storage.from('public').getPublicUrl(filePath);
+apps\web\src\components\Admin\Settings\SiteSettingsList.tsx:      const { error } = await supabase
+apps\web\src\components\Admin\Settings\SocialMediaForm.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\SocialMediaForm.tsx:        const { error } = await supabase.from('social_media_accounts').update(payload).eq('id', account.id);
+apps\web\src\components\Admin\Settings\SocialMediaForm.tsx:        const { error } = await supabase.from('social_media_accounts').insert(payload);
+apps\web\src\components\Admin\Settings\SocialMediaList.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\SocialMediaList.tsx:      const { data, error } = await supabase
+apps\web\src\components\Admin\Settings\SocialMediaList.tsx:      const { error } = await supabase.from('social_media_accounts').delete().eq('id', id);
+apps\web\src\components\Admin\Settings\SocialMediaList.tsx:      const { error } = await supabase
+apps\web\src\components\Admin\Settings\SocialMediaSettings.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Settings\SocialMediaSettings.tsx:      const { data, error } = await supabase
+apps\web\src\components\Admin\Settings\SocialMediaSettings.tsx:        const { error } = await supabase.from('social_media_accounts').update(payload).eq('id', editingAccount.id);
+apps\web\src\components\Admin\Settings\SocialMediaSettings.tsx:        const { error } = await supabase.from('social_media_accounts').insert({ ...payload, display_order: maxOrder, is_active: true });
+apps\web\src\components\Admin\Settings\SocialMediaSettings.tsx:      const { error } = await supabase.from('social_media_accounts').delete().eq('id', id);
+apps\web\src\components\Admin\Settings\SocialMediaSettings.tsx:      const { error } = await supabase.from('social_media_accounts').delete().in('id', Array.from(selectedIds));
+apps\web\src\components\Admin\Settings\SocialMediaSettings.tsx:      const { error } = await supabase.from('social_media_accounts').update({ is_active: !currentStatus }).eq('id', id);
+apps\web\src\components\Admin\Settings\SocialMediaSettings.tsx:        const { error } = await supabase.from('social_media_accounts').update({ display_order: account.display_order }).eq('id', account.id);
+apps\web\src\components\Admin\Users\UserForm.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Users\UserForm.tsx:        const { error } = await supabase
+apps\web\src\components\Admin\Users\UserForm.tsx:        showError('Add user is not available from the dashboard. New users can sign up via the website, or create users in Supabase Dashboard ÔåÆ Authentication.');
+apps\web\src\components\Admin\Users\UsersList.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Admin\Users\UsersList.tsx:      let query = supabase
+apps\web\src\components\Admin\Users\UsersList.tsx:      const { error } = await supabase.from('profiles').update({ is_active: false }).eq('id', selectedUser.id);
+apps\web\src\components\Admin\Users\UsersList.tsx:      const { error } = await supabase.from('profiles').update({ is_active: !user.is_active }).eq('id', user.id);
+apps\web\src\components\Auth\SocialAuthProvider.tsx:import { supabase } from '../../lib/supabase';
+apps\web\src\components\Auth\SocialAuthProvider.tsx:      const { error } = await supabase.auth.signInWithOAuth({
+apps\web\src\components\Auth\SocialAuthProvider.tsx:        const { data, error } = await supabase.auth.getSession();
+apps\web\src\components\Common\AdminErrorBoundary.tsx:    if (message.includes('database') || message.includes('supabase') || message.includes('postgres')) {
+apps\web\src\components\Common\AdminErrorBoundary.tsx:      const authUser = JSON.parse(localStorage.getItem('supabase.auth.token') || '{}');
+apps\web\src\components\Customer\Orders\CustomerOrdersPage.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Customer\Orders\CustomerOrdersPage.tsx:      const { data: ordersData, error: ordErr } = await supabase
+apps\web\src\components\Customer\Orders\CustomerOrdersPage.tsx:          const { data: itemsData } = await supabase
+apps\web\src\components\Customer\Profile\CustomerProfilePage.tsx:import { supabase } from '../../../lib/supabase';
+apps\web\src\components\Customer\Profile\CustomerProfilePage.tsx:        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+apps\web\src\components\Customer\Profile\CustomerProfilePage.tsx:        supabase.from('reviews').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+apps\web\src\components\Customer\Profile\CustomerProfilePage.tsx:      const { error: uploadError } = await supabase.storage
+apps\web\src\components\Customer\Profile\CustomerProfilePage.tsx:      const { data: { publicUrl } } = supabase.storage
+apps\web\src\components\Settings\ProfileSettings.tsx:import { updateUserProfile } from '../../lib/supabase';
+apps\web\src\config\api.ts:import { supabase, db } from '../lib/supabase';
+apps\web\src\config\api.ts:export { supabase, db, apiClient };
+apps\web\src\config\api.ts:// API Endpoints (for backward compatibility - not used with direct Supabase)
+apps\web\src\contexts\AddressContext.tsx:import { supabase, db } from '../lib/supabase';
+apps\web\src\contexts\CartContext.tsx:import { supabase, db } from '../lib/supabase';
+apps\web\src\contexts\OrderContext.tsx:import { supabase, db } from '../lib/supabase';
+apps\web\src\contexts\OrderContext.tsx:      const { data, error } = await supabase
+apps\web\src\contexts\OrderContext.tsx:      const { data: order, error: orderError } = await supabase
+apps\web\src\contexts\OrderContext.tsx:      const { error: itemsError } = await supabase
+apps\web\src\contexts\OrderContext.tsx:      const { error } = await supabase
+apps\web\src\contexts\OrderContext.tsx:      const { data, error } = await supabase
+apps\web\src\contexts\OrderContext.tsx:      const { data, error } = await supabase
+apps\web\src\contexts\ProductContext.tsx:import { supabase, db } from '../lib/supabase';
+apps\web\src\contexts\ProductContext.tsx:      const { data, error } = await supabase
+apps\web\src\contexts\ProductContext.tsx:      const { data, error } = await supabase
+apps\web\src\contexts\ProductContext.tsx:      const { error } = await supabase
+apps\web\src\contexts\ProductContext.tsx:      const { data, error } = await supabase
+apps\web\src\contexts\ProductContext.tsx:      const { error } = await supabase.from('products').delete().eq('id', id);
+apps\web\src\contexts\ProductContext.tsx:      const { data: category, error } = await supabase
+apps\web\src\contexts\ProductContext.tsx:      const { data: category, error } = await supabase
+apps\web\src\contexts\ProductContext.tsx:      const { error } = await supabase.from('categories').delete().eq('id', id);
+apps\web\src\contexts\ProductContext.tsx:  // All 5 Supabase calls used to fire simultaneously via Promise.all, causing
+apps\web\src\contexts\SettingsContext.tsx:import { db } from '../lib/supabase';
+apps\web\src\contexts\WishlistContext.tsx:import { supabase } from '../lib/supabase';
+apps\web\src\contexts\WishlistContext.tsx:      const { data, error } = await supabase
+apps\web\src\contexts\WishlistContext.tsx:        const { error } = await supabase
+apps\web\src\contexts\WishlistContext.tsx:      const { error } = await supabase
+apps\web\src\contexts\WishlistContext.tsx:      const { error } = await supabase
+apps\web\src\hooks\useAdminDashboardSettings.ts:import { supabase } from '@/lib/supabase';
+apps\web\src\hooks\useAdminDashboardSettings.ts:        const { data, error } = await supabase
+apps\web\src\hooks\usePublicSettings.ts:import { db } from '../lib/supabase';
+apps\web\src\hooks\usePublicSettings.ts:      // Fetch all public settings directly from Supabase
+apps\web\src\hooks\useSocialAuth.ts:import { supabase } from '../lib/supabase';
+apps\web\src\hooks\useSocialAuth.ts:      const { error } = await supabase.auth.signInWithOAuth({
+apps\web\src\hooks\useSocialAuth.ts:      const { error } = await supabase.auth.linkIdentity({
+apps\web\src\hooks\useSocialAuth.ts:      const { data: { user } } = await supabase.auth.getUser();
+apps\web\src\hooks\useSocialAuth.ts:      // Supabase unlinkIdentity expects the identity object, not just a provider name
+apps\web\src\hooks\useSocialAuth.ts:      const { error } = await supabase.auth.unlinkIdentity(identity);
+apps\web\src\lib\auth.ts: * Replaces Supabase Auth with custom Better Auth implementation
+apps\web\src\lib\index.ts:export * from './supabase';
+apps\web\src\main.tsx:// Supabase GoTrue auth lock (mount ÔåÆ unmount before lock release ÔåÆ 5s timeout
+apps\web\src\pages\AuthCallbackPage.tsx:import { supabase } from '../lib/supabase';
+apps\web\src\pages\AuthCallbackPage.tsx:        // Supabase JS v2 automatically exchanges the token/code from the URL
+apps\web\src\pages\AuthCallbackPage.tsx:        const { data: { session }, error } = await supabase.auth.getSession();
+apps\web\src\pages\AuthCallbackPage.tsx:        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+apps\web\src\pages\AuthCallbackPage.tsx:              await supabase.auth.signOut();
+apps\web\src\pages\AuthPage.tsx:// Parse Supabase auth errors into user-friendly field-level messages
+apps\web\src\pages\AuthPage.tsx:  // If Supabase auto-confirms (email confirmation disabled), the useEffect navigates
+apps\web\src\pages\AuthPage.tsx:        // If Supabase requires email confirmation, signUp leaves user=null and no
+apps\web\src\pages\ContactPage.tsx:import { supabase } from '../lib/supabase';
+apps\web\src\pages\ContactPage.tsx:      const { error } = await supabase.from('contact_submissions').insert([{
+apps\web\src\pages\ImprovedCheckoutPage.tsx:import { supabase } from '../lib/supabase';
+apps\web\src\pages\ImprovedCheckoutPage.tsx:        await supabase.from('orders').update({
+apps\web\src\pages\OrderConfirmationPage.tsx:import { supabase } from '../lib/supabase';
+apps\web\src\pages\OrderConfirmationPage.tsx:      const { data: orderRow, error: orderErr } = await supabase
+apps\web\src\pages\OrderConfirmationPage.tsx:      const { data: itemsData } = await supabase
+apps\web\src\pages\OrderTrackingPage.tsx:import { supabase } from '@/lib/supabase';
+apps\web\src\pages\OrderTrackingPage.tsx:      const { data: orderRow, error: ordErr } = await supabase
+apps\web\src\pages\OrderTrackingPage.tsx:        supabase.from('order_items').select('*, products(name, images)').eq('order_id', orderId),
+apps\web\src\pages\OrderTrackingPage.tsx:        supabase.from('order_tracking').select('*').eq('order_id', orderId).order('created_at', { ascending: true }),
+apps\web\src\pages\ResetPasswordPage.tsx:import { supabase } from '../lib/supabase';
+apps\web\src\pages\ResetPasswordPage.tsx:    // Supabase fires PASSWORD_RECOVERY when it detects the hash fragment
+apps\web\src\pages\ResetPasswordPage.tsx:    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+apps\web\src\pages\ResetPasswordPage.tsx:      const { error } = await supabase.auth.updateUser({ password });
+apps\web\src\utils\errorHandling.ts:    return 'Run the rls_policies_fix.sql script in your Supabase SQL Editor to fix Row Level Security policies.';
+apps\web\src\utils\errorHandling.ts:1. Run the rls_policies_fix.sql script in your Supabase SQL Editor
+apps\web\src\utils\preloader.ts:import { db } from '../lib/supabase';
+apps\web\src\vite-env.d.ts:  readonly VITE_SUPABASE_URL: string
+apps\web\src\vite-env.d.ts:  readonly VITE_SUPABASE_ANON_KEY: string

@@ -1,0 +1,9 @@
+{
+  "name": "@saas/db",
+  "version": "0.1.0",
+  "main": "./index.ts",
+  "dependencies": {
+    "drizzle-orm": "latest",
+    "postgres": "latest"
+  }
+}
