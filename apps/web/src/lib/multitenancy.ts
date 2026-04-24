@@ -1,11 +1,12 @@
 /**
  * Multitenancy Utility
- * 
+ *
  * Logic to differentiate between the main SaaS platform and individual storefronts.
  */
 
 export function isStorefront(): boolean {
   const hostname = window.location.hostname;
+  const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || 'orufy.com';
 
   // Local development handling
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
@@ -13,23 +14,23 @@ export function isStorefront(): boolean {
     // For now, default to SaaS on localhost unless specified
     const params = new URLSearchParams(window.location.search);
     if (params.get('mode') === 'storefront') return true;
-    
+
     // Check if we're using a local subdomain like store.localhost
     const parts = hostname.split('.');
     if (parts.length > 1 && parts[0] !== 'www' && parts[parts.length-1] === 'localhost') {
         return true;
     }
-    
+
     return false;
   }
 
   // Production handling
   const parts = hostname.split('.');
-  
-  // Example main domains
-  const mainDomains = ['orufy.com', 'aligarh-attars.pages.dev'];
+
+  // Main domain from environment variable
+  const mainDomains = [rootDomain];
   const currentDomain = parts.slice(-2).join('.');
-  
+
   // If it's the main domain (or www.maindomain), it's the SaaS site
   if (mainDomains.includes(currentDomain)) {
     // If it's a subdomain other than www, it's a storefront
