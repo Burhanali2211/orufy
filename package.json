@@ -10,7 +10,8 @@
     "dev": "bun run --filter './apps/*' dev",
     "dev:web": "bun run --filter './apps/web' dev",
     "dev:api": "bun run --filter './apps/api' dev",
-    "build": "bun run --filter './apps/*' build"
+    "build": "bun run --filter './apps/*' build",
+    "db:migrate": "bun db/migrate.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
