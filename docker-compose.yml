@@ -17,7 +17,6 @@ services:
     restart: unless-stopped
     networks:
       - saas-net
-    # Postgres is NOT exposed to the host — API talks to it over the internal network
     expose:
       - "5432"
 
@@ -45,12 +44,11 @@ services:
 
   api:
     build:
-      context: ../../
+      context: .
       dockerfile: infra/docker/Dockerfile.server
     env_file:
-      - ../../.env
+      - .env
     environment:
-      # Override DB/Redis URLs to use Docker service names instead of localhost
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL:    redis://redis:6379
       NODE_ENV:     production
@@ -60,14 +58,14 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "127.0.0.1:3000:3000"   # Bind to loopback only — Nginx proxies from outside
+      - "127.0.0.1:3000:3000"
     restart: unless-stopped
     networks:
       - saas-net
 
   web:
     build:
-      context: ../../
+      context: .
       dockerfile: infra/docker/Dockerfile.client
       args:
         VITE_API_URL:          ${VITE_API_URL}
@@ -78,7 +76,7 @@ services:
     depends_on:
       - api
     ports:
-      - "127.0.0.1:4173:4173"   # Bind to loopback only — Nginx proxies from outside
+      - "127.0.0.1:4173:4173"
     restart: unless-stopped
     networks:
       - saas-net
