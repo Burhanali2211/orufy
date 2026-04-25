@@ -4,16 +4,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ProfessionalLoader } from '@/components/Common/ProfessionalLoader';
 
 // Import seller dashboard pages
-import { SellerDashboardOverview } from '@/components/Seller/Dashboard/SellerDashboardOverview';
-import { SellerProductsPage } from '@/components/Seller/Pages/SellerProductsPage';
-import { SellerOrdersPage } from '@/components/Seller/Pages/SellerOrdersPage';
-import { SellerAnalyticsPage } from '@/components/Seller/Pages/SellerAnalyticsPage';
-import { SellerEarningsPage } from '@/components/Seller/Pages/SellerEarningsPage';
-import { SellerInventoryPage } from '@/components/Seller/Pages/SellerInventoryPage';
-import { SellerReviewsPage } from '@/components/Seller/Pages/SellerReviewsPage';
-import { SellerReportsPage } from '@/components/Seller/Pages/SellerReportsPage';
-import { SellerProfilePage } from '@/components/Seller/Pages/SellerProfilePage';
-import { SellerSettingsPage } from '@/components/Seller/Pages/SellerSettingsPage';
+import { SellerDashboardOverview } from '../seller/Dashboard/SellerDashboardOverview';
+import { SellerProductsPage } from '../seller/Pages/SellerProductsPage';
+import { SellerOrdersPage } from '../seller/Pages/SellerOrdersPage';
+import { SellerAnalyticsPage } from '../seller/Pages/SellerAnalyticsPage';
+import { SellerEarningsPage } from '../seller/Pages/SellerEarningsPage';
+import { SellerInventoryPage } from '../seller/Pages/SellerInventoryPage';
+import { SellerReviewsPage } from '../seller/Pages/SellerReviewsPage';
+import { SellerReportsPage } from '../seller/Pages/SellerReportsPage';
+import { SellerProfilePage } from '../seller/Pages/SellerProfilePage';
+import { SellerSettingsPage } from '../seller/Pages/SellerSettingsPage';
+import { DomainPage } from './DomainPage';
 
 export const SellerDashboard: React.FC = () => {
   const { user, loading } = useAuth();
@@ -47,6 +48,7 @@ export const SellerDashboard: React.FC = () => {
       <Route path="reviews" element={<SellerReviewsPage />} />
       <Route path="reports" element={<SellerReportsPage />} />
       <Route path="profile" element={<SellerProfilePage />} />
+      <Route path="domain" element={<DomainPage />} />
       <Route path="settings" element={<SellerSettingsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

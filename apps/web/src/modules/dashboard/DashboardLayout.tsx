@@ -3,14 +3,15 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useDashboardAuth } from './hooks/useDashboardAuth';
 
 interface DashboardLayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const NAV_LINKS: { label: string; to: string; end: boolean }[] = [
   { label: 'Overview', to: '/dashboard', end: true },
   { label: 'Products', to: '/dashboard/products', end: false },
   { label: 'Orders', to: '/dashboard/orders', end: false },
-  { label: 'Domain & Settings', to: '/dashboard/settings', end: false },
+  { label: 'Domain', to: '/dashboard/domain', end: false },
+  { label: 'Settings', to: '/dashboard/settings', end: false },
 ];
 
 interface SidebarContentProps {

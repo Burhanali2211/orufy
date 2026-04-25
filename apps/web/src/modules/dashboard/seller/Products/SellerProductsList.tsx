@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, Edit, Trash2 } from 'lucide-react';
-import { DataTable, Column } from '../../Common/DataTable';
-import { ConfirmModal } from '../../Common/Modal';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { DataTable, Column } from '@/components/Common/DataTable';
+import { ConfirmModal } from '@/components/Common/Modal';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface Product {
   id: string;

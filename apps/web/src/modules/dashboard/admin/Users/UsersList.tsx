@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Search, Edit, Trash2, Power, Users as UsersIcon, Filter, X, Loader2, ChevronLeft, ChevronRight, Shield, ShoppingBag } from 'lucide-react';
-import { ConfirmModal } from '../../Common/Modal';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { ConfirmModal } from '@/components/Common/Modal';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 import { UserForm } from './UserForm';
 
 interface User {

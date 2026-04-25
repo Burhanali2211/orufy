@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Phone, Plus, Edit2, Trash2, Save, X, Mail, MapPin, MessageCircle, Star, Eye, EyeOff, CheckSquare, Square, Loader2, Filter, Search } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface ContactInfo {
   id: string;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Eye, Truck, CreditCard, Wallet } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 import { ProfessionalLoader } from '@/components/Common/ProfessionalLoader';
 import { SellerOrderDetails } from './SellerOrderDetails';
 

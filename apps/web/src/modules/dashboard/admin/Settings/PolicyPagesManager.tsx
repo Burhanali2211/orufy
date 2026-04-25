@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle2, XCircle, ExternalLink, Plus, Edit2, Globe, AlertCircle, Loader2, RefreshCw, X } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface PolicyPage {
   id: string;

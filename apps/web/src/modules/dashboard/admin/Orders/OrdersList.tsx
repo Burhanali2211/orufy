@@ -4,8 +4,8 @@ import {
   AlertCircle, Loader2, ChevronLeft, ChevronRight,
   BarChart3, RefreshCw, ArrowUpRight
 } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 import { OrderDetails } from './OrderDetails';
 import {
   getOrderStatusConfig,
@@ -14,7 +14,7 @@ import {
   getAdminStatusClasses,
   ORDER_STATUS_CONFIG,
   PAYMENT_STATUS_CONFIG,
-} from '../../../utils/orderStatusUtils';
+} from '@/utils/orderStatusUtils';
 
 interface Order {
   id: string;

@@ -4,8 +4,8 @@ import {
   ArrowUpRight, ArrowDownRight, Wallet, Clock, CheckCircle, Loader2, RefreshCw
 } from 'lucide-react';
 import { SellerDashboardLayout } from '../Layout/SellerDashboardLayout';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface Transaction {
   id: string;
@@ -101,8 +101,8 @@ export const SellerEarningsPage: React.FC = () => {
   if (loading) {
     return (
       <SellerDashboardLayout title="Earnings" subtitle="Track your revenue and payouts">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
         </div>
       </SellerDashboardLayout>
     );
@@ -110,175 +110,195 @@ export const SellerEarningsPage: React.FC = () => {
 
   return (
     <SellerDashboardLayout title="Earnings" subtitle="Track your revenue and payouts">
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex justify-end">
           <button
             onClick={fetchEarningsData}
-            className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-600 rounded-2xl border border-slate-200 hover:bg-slate-50 hover:border-blue-200 transition-all font-bold text-sm shadow-sm"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            Refresh Data
           </button>
         </div>
+
         {/* Earnings Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 backdrop-blur-sm rounded-2xl p-5 border border-cyan-500/30">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 bg-cyan-500/30 rounded-xl flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-cyan-400" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-blue-600 rounded-[2rem] p-8 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden group">
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md">
+                <Wallet className="w-8 h-8 text-white" />
               </div>
+              <p className="text-blue-100 text-sm font-bold tracking-tight mb-1 uppercase">Available Balance</p>
+              <p className="text-4xl font-black">{formatCurrency(earnings.available)}</p>
+              <button className="mt-8 w-full py-4 bg-white text-blue-600 rounded-2xl text-sm font-black hover:bg-blue-50 transition-all shadow-lg shadow-blue-900/10">
+                Withdraw Funds
+              </button>
             </div>
-            <p className="text-cyan-300 text-sm font-medium mb-1">Available Balance</p>
-            <p className="text-3xl font-bold text-white">{formatCurrency(earnings.available)}</p>
-            <button className="mt-3 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600 transition-colors w-full">
-              Withdraw Funds
-            </button>
+            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-amber-400" />
-              </div>
+          <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-xl shadow-slate-200/40 group hover:border-amber-200 transition-all">
+            <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 border border-amber-100 group-hover:scale-110 transition-transform">
+              <Clock className="w-8 h-8 text-amber-600" />
             </div>
-            <p className="text-white/60 text-sm font-medium mb-1">Pending</p>
-            <p className="text-2xl font-bold text-white">{formatCurrency(earnings.pending)}</p>
-            <p className="text-amber-400 text-xs mt-2">Processing orders</p>
+            <p className="text-slate-500 text-sm font-bold tracking-tight mb-1 uppercase">Pending</p>
+            <p className="text-3xl font-extrabold text-slate-900">{formatCurrency(earnings.pending)}</p>
+            <p className="text-amber-600 text-xs font-black mt-3 flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+              In processing
+            </p>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-emerald-400" />
-              </div>
+          <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-xl shadow-slate-200/40 group hover:border-emerald-200 transition-all">
+            <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 border border-emerald-100 group-hover:scale-110 transition-transform">
+              <TrendingUp className="w-8 h-8 text-emerald-600" />
             </div>
-            <p className="text-white/60 text-sm font-medium mb-1">Total Earned</p>
-            <p className="text-2xl font-bold text-white">{formatCurrency(earnings.total)}</p>
+            <p className="text-slate-500 text-sm font-bold tracking-tight mb-1 uppercase">Total Earned</p>
+            <p className="text-3xl font-extrabold text-slate-900">{formatCurrency(earnings.total)}</p>
             {earnings.total > 0 && (
-              <span className="flex items-center gap-1 text-emerald-400 text-xs mt-2">
-                <ArrowUpRight className="w-3 h-3" /> Total revenue
+              <span className="flex items-center gap-1.5 text-emerald-600 text-xs font-black mt-3">
+                <ArrowUpRight className="w-3.5 h-3.5" /> 
+                All time revenue
               </span>
             )}
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-purple-400" />
-              </div>
+          <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-xl shadow-slate-200/40 group hover:border-purple-200 transition-all">
+            <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 border border-purple-100 group-hover:scale-110 transition-transform">
+              <CreditCard className="w-8 h-8 text-purple-600" />
             </div>
-            <p className="text-white/60 text-sm font-medium mb-1">Withdrawn</p>
-            <p className="text-2xl font-bold text-white">{formatCurrency(earnings.withdrawn)}</p>
-            <p className="text-white/40 text-xs mt-2">All time</p>
+            <p className="text-slate-500 text-sm font-bold tracking-tight mb-1 uppercase">Withdrawn</p>
+            <p className="text-3xl font-extrabold text-slate-900">{formatCurrency(earnings.withdrawn)}</p>
+            <p className="text-slate-400 text-xs font-bold mt-3">Total payouts processed</p>
           </div>
         </div>
 
-        {/* Earnings Chart */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">Earnings Overview</h3>
-            <div className="flex gap-2 bg-white/5 p-1 rounded-xl">
-              {(['week', 'month', 'year'] as const).map((period) => (
-                <button
-                  key={period}
-                  onClick={() => setSelectedPeriod(period)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    selectedPeriod === period
-                      ? 'bg-cyan-500 text-white'
-                      : 'text-white/60 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  {period.charAt(0).toUpperCase() + period.slice(1)}
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Transaction History */}
+          <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
+            <div className="flex items-center justify-between p-8 border-b border-slate-100 bg-slate-50/50">
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight">Recent Transactions</h3>
+              <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 hover:border-blue-200 transition-all font-bold text-sm shadow-sm">
+                <Download className="w-4 h-4" />
+                Export CSV
+              </button>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {transactions.length > 0 ? (
+                transactions.map((transaction) => (
+                  <div key={transaction.id} className="p-6 hover:bg-slate-50 transition-colors group">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-5">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-transform group-hover:scale-105 ${
+                          transaction.type === 'sale' 
+                            ? 'bg-emerald-50 border-emerald-100' 
+                            : transaction.type === 'withdrawal'
+                            ? 'bg-purple-50 border-purple-100'
+                            : 'bg-red-50 border-red-100'
+                        }`}>
+                          {transaction.type === 'sale' ? (
+                            <ArrowUpRight className="w-7 h-7 text-emerald-600" />
+                          ) : transaction.type === 'withdrawal' ? (
+                            <CreditCard className="w-7 h-7 text-purple-600" />
+                          ) : (
+                            <ArrowDownRight className="w-7 h-7 text-red-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-slate-900 font-bold text-lg tracking-tight">{transaction.description}</p>
+                          <p className="text-slate-400 text-sm font-bold">{formatDate(transaction.date)}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-xl font-black mb-1 ${
+                          transaction.amount >= 0 ? 'text-emerald-600' : 'text-red-600'
+                        }`}>
+                          {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(transaction.amount)}
+                        </p>
+                        <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider border ${
+                          transaction.status === 'completed'
+                            ? 'bg-emerald-50 border-emerald-100 text-emerald-600'
+                            : 'bg-amber-50 border-amber-100 text-amber-600'
+                        }`}>
+                          {transaction.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-16 text-center">
+                  <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+                    <Wallet className="w-10 h-10 text-slate-200" />
+                  </div>
+                  <p className="text-slate-400 font-bold text-lg tracking-tight">No transactions yet</p>
+                  <p className="text-slate-300 text-sm mt-1">Earnings will be listed here.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Earnings Insights Chart Placeholder */}
+            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-xl shadow-slate-200/40">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Analytics</h3>
+                <div className="flex gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                  {(['week', 'month', 'year'] as const).map((period) => (
+                    <button
+                      key={period}
+                      onClick={() => setSelectedPeriod(period)}
+                      className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                        selectedPeriod === period
+                          ? 'bg-white text-blue-600 shadow-sm border border-slate-100'
+                          : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                    >
+                      {period.slice(0, 1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="h-64 flex items-center justify-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+                <div className="text-center px-6">
+                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <TrendingUp className="w-8 h-8 text-blue-100" />
+                  </div>
+                  <p className="text-slate-400 font-bold tracking-tight">Revenue Insights</p>
+                  <p className="text-slate-300 text-xs mt-1">Advanced charting coming soon</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Payout Settings */}
+            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-xl shadow-slate-200/40">
+              <h3 className="text-xl font-bold text-slate-900 mb-8 tracking-tight">Payout Methods</h3>
+              <div className="space-y-4">
+                <div className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100 group hover:border-blue-200 transition-all">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-slate-100 shadow-sm">
+                        <CreditCard className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-slate-900 font-bold">Primary Bank</p>
+                        <p className="text-slate-400 text-xs font-bold tracking-widest uppercase">•••• 4523</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-emerald-100 w-fit">
+                    <CheckCircle className="w-3 h-3" /> 
+                    Default Method
+                  </div>
+                </div>
+                <button className="w-full py-6 bg-white rounded-[2rem] border border-dashed border-slate-300 text-slate-400 text-sm font-bold hover:bg-slate-50 hover:border-blue-300 hover:text-blue-500 transition-all flex flex-col items-center justify-center gap-2">
+                  <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center">
+                    <span className="text-2xl font-light">+</span>
+                  </div>
+                  Add Payout Method
                 </button>
-              ))}
-            </div>
-          </div>
-          <div className="h-64 flex items-center justify-center border-2 border-dashed border-white/10 rounded-xl">
-            <div className="text-center">
-              <DollarSign className="w-12 h-12 text-white/20 mx-auto mb-3" />
-              <p className="text-white/40">Earnings chart visualization</p>
-              <p className="text-white/30 text-sm">Coming soon</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Transaction History */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-white/10">
-            <h3 className="text-lg font-semibold text-white">Transaction History</h3>
-            <button className="flex items-center gap-2 px-4 py-2 border border-white/10 rounded-lg text-white/60 hover:bg-white/5 transition-colors">
-              <Download className="w-4 h-4" />
-              Export
-            </button>
-          </div>
-          <div className="divide-y divide-white/10">
-            {transactions.map((transaction) => (
-              <div key={transaction.id} className="p-4 hover:bg-white/5 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      transaction.type === 'sale' 
-                        ? 'bg-emerald-500/20' 
-                        : transaction.type === 'withdrawal'
-                        ? 'bg-purple-500/20'
-                        : 'bg-red-500/20'
-                    }`}>
-                      {transaction.type === 'sale' ? (
-                        <ArrowUpRight className="w-5 h-5 text-emerald-400" />
-                      ) : transaction.type === 'withdrawal' ? (
-                        <CreditCard className="w-5 h-5 text-purple-400" />
-                      ) : (
-                        <ArrowDownRight className="w-5 h-5 text-red-400" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-white font-medium">{transaction.description}</p>
-                      <p className="text-white/50 text-sm">{formatDate(transaction.date)}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-semibold ${
-                      transaction.amount >= 0 ? 'text-emerald-400' : 'text-red-400'
-                    }`}>
-                      {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(transaction.amount)}
-                    </p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      transaction.status === 'completed'
-                        ? 'bg-emerald-500/20 text-emerald-400'
-                        : 'bg-amber-500/20 text-amber-400'
-                    }`}>
-                      {transaction.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Payment Settings */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-          <h3 className="text-lg font-semibold text-white mb-4">Payment Settings</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                    <CreditCard className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">Bank Account</p>
-                    <p className="text-white/50 text-sm">XXXX XXXX 4523</p>
-                  </div>
-                </div>
-                <span className="flex items-center gap-1 text-emerald-400 text-sm">
-                  <CheckCircle className="w-4 h-4" /> Default
-                </span>
               </div>
             </div>
-            <button className="bg-white/5 rounded-xl p-4 border border-dashed border-white/20 text-white/60 hover:bg-white/10 hover:border-white/30 transition-all">
-              + Add Payment Method
-            </button>
           </div>
         </div>
       </div>

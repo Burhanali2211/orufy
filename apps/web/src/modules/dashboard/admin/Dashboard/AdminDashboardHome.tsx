@@ -5,10 +5,10 @@ import {
   AlertTriangle, Clock, ArrowRight,
   RefreshCw
 } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
-import { getAdminStatusClasses, getOrderStatusConfig } from '../../../utils/orderStatusUtils';
+import { getAdminStatusClasses, getOrderStatusConfig } from '@/utils/orderStatusUtils';
 
 interface DashboardMetrics {
   totalUsers: number;

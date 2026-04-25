@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Mail, Lock, AlertCircle, ShieldCheck, Globe, Zap } from 'lucide-react';
+import { Sparkles, ArrowRight, Mail, Lock, AlertCircle, ShieldCheck, Globe, Zap, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePasswordVisibility } from '@/hooks/usePasswordVisibility';
 
 const inputClass =
   'w-full bg-[#FAF9F6] border border-[#E5E1D8] rounded-[24px] px-8 py-5 text-lg font-medium focus:outline-none focus:ring-2 focus:ring-[#6344F5] focus:border-transparent transition-all duration-500 placeholder:text-gray-400';
@@ -15,6 +16,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { showPassword, togglePasswordVisibility } = usePasswordVisibility();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -155,14 +157,22 @@ export default function LoginPage() {
               <div className="relative group">
                 <Lock className="absolute left-7 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#6344F5] transition-colors" size={20} />
                 <input
-                  type="password"
-                  className={`${inputClass} pl-16`}
+                  type={showPassword ? 'text' : 'password'}
+                  className={`${inputClass} pl-16 pr-14`}
                   placeholder="••••••••"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   autoComplete="current-password"
                   disabled={loading}
                 />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#6344F5] hover:bg-[#6344F5]/5 rounded-full transition-all focus:outline-none"
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                </button>
               </div>
             </div>
 

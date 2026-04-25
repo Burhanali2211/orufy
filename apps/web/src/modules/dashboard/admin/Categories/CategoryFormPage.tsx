@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Tag, Image } from 'lucide-react';
-import { FormInput, FormTextarea, FormSelect, FormCheckbox } from '../../Common/FormInput';
-import { ImageUpload } from '../../Common/ImageUpload';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { FormInput, FormTextarea, FormSelect, FormCheckbox } from '@/components/Common/FormInput';
+import { ImageUpload } from '@/components/Common/ImageUpload';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
 
 interface FormData {

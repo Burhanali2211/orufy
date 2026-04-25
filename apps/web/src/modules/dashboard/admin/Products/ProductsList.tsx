@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, Package, CheckCircle, AlertTriangle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { ConfirmModal } from '../../Common/Modal';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
-import { isValidImageUrl, getFirstValidImage } from '../../../utils/imageUrlUtils';
+import { ConfirmModal } from '@/components/Common/Modal';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
+import { isValidImageUrl, getFirstValidImage } from '@/utils/imageUrlUtils';
 
 interface Product {
   id: string;

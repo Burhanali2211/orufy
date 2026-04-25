@@ -15,7 +15,11 @@ const ResetPasswordPage = lazy(() => import('../auth/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('../dashboard/pages/DashboardPage'));
 const OnboardingPage = lazy(() => import('../onboarding/pages/OnboardingPage'));
 
-const NotFoundPage = lazy(() => import('../../pages/NotFoundPage'));
+// Auth
+const AuthCallbackPage = lazy(() => import('../auth/pages/AuthCallbackPage'));
+
+// Shared
+const NotFoundPage = lazy(() => import('../shared/NotFoundPage'));
 
 export const SaaSRouter: React.FC = () => {
   return (
@@ -26,6 +30,7 @@ export const SaaSRouter: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 

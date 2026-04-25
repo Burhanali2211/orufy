@@ -8,8 +8,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface AnalyticsMetrics {
   totalRevenue: { value: number; change: number; trend: 'up' | 'down' };

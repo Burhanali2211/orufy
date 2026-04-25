@@ -25,9 +25,9 @@ import {
   Store,
   MessageSquare,
 } from 'lucide-react';
-import { useAuth } from '../../../contexts/AuthContext';
-import { useAdminDashboardSettings } from '../../../hooks/useAdminDashboardSettings';
-import { isValidImageUrl } from '../../../utils/imageUrlUtils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAdminDashboardSettings } from '@/hooks/useAdminDashboardSettings';
+import { isValidImageUrl } from '@/utils/imageUrlUtils';
 
 interface AdminDashboardLayoutProps {
   children: React.ReactNode;

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Modal } from '../../Common/Modal';
-import { FormInput, FormTextarea, FormSelect, FormCheckbox } from '../../Common/FormInput';
-import { ImageUpload } from '../../Common/ImageUpload';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { Modal } from '@/components/Common/Modal';
+import { FormInput, FormTextarea, FormSelect, FormCheckbox } from '@/components/Common/FormInput';
+import { ImageUpload } from '@/components/Common/ImageUpload';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProductFormProps {

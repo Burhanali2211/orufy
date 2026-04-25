@@ -2,16 +2,16 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProfessionalLoader } from '@/components/Common/ProfessionalLoader';
-import { AdminDashboardHome } from '@/components/Admin/Dashboard/AdminDashboardHome';
-import { AdminProductsPage } from '@/components/Admin/Products/AdminProductsPage';
-import { AdminCategoriesPage } from '@/components/Admin/Categories/AdminCategoriesPage';
-import { AdminOrdersPage } from '@/components/Admin/Orders/AdminOrdersPage';
-import { AdminUsersPage } from '@/components/Admin/Users/AdminUsersPage';
-import { AdminAnalyticsPage } from '@/components/Admin/Analytics/AdminAnalyticsPage';
-import { AdminSettingsPage } from '@/components/Admin/Settings/AdminSettingsPage';
-import { AdminContactSubmissionsPage } from '@/components/Admin/ContactSubmissions/AdminContactSubmissionsPage';
-import { AdminInventoryPage } from '@/components/Admin/Products/AdminInventoryPage';
-import { AdminPOSPage } from '@/components/Admin/Orders/AdminPOSPage';
+import { AdminDashboardHome } from '../admin/Dashboard/AdminDashboardHome';
+import { AdminProductsPage } from '../admin/Products/AdminProductsPage';
+import { AdminCategoriesPage } from '../admin/Categories/AdminCategoriesPage';
+import { AdminOrdersPage } from '../admin/Orders/AdminOrdersPage';
+import { AdminUsersPage } from '../admin/Users/AdminUsersPage';
+import { AdminAnalyticsPage } from '../admin/Analytics/AdminAnalyticsPage';
+import { AdminSettingsPage } from '../admin/Settings/AdminSettingsPage';
+import { AdminContactSubmissionsPage } from '../admin/ContactSubmissions/AdminContactSubmissionsPage';
+import { AdminInventoryPage } from '../admin/Products/AdminInventoryPage';
+import { AdminPOSPage } from '../admin/Orders/AdminPOSPage';
 
 export const AdminDashboard: React.FC = () => {
   const { user, loading } = useAuth();

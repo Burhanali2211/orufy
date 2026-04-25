@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiClient } from '@/lib/apiClient';
 import { useDashboardAuth } from '../hooks/useDashboardAuth';
-import { DomainCard } from '../components/DomainCard';
 
 // ─── Store info ───────────────────────────────────────────────────────────────
 
@@ -369,7 +368,6 @@ const SettingsPage: React.FC = () => {
 
       <StoreInfoCard initial={storeInfoInitial} onSave={handleSaveStoreInfo} />
       <AppearanceCard initial={appearanceInitial} onSave={handleSaveAppearance} />
-      <DomainCard />
       <SubscriptionCard info={subscriptionInfo} />
       <DangerZoneCard />
     </div>

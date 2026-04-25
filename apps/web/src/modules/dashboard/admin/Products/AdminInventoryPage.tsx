@@ -12,8 +12,8 @@ import {
   Plus,
   Minus
 } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 import { AdminLayout } from '../Layout/AdminLayout';
 
 interface InventoryItem {

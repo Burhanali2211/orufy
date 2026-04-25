@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Save, RefreshCw, Upload, Globe, Mail, Phone, DollarSign, Truck, FileText, Palette, Settings } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { StorageService } from '../../../services/storageService';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { StorageService } from '@/components/../services/storageService';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface SiteSetting {
   id: string;

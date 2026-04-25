@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Mail, Lock, Store, User, AlertCircle, ShieldCheck, Zap } from 'lucide-react';
+import { Sparkles, ArrowRight, Mail, Lock, Store, User, AlertCircle, ShieldCheck, Zap, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-
-const slugify = (str: string) =>
-  str.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+import { slugify } from '@/utils/stringFormatting';
+import { useMultiplePasswordVisibility } from '@/hooks/usePasswordVisibility';
 
 interface FormState {
   name: string;
@@ -31,6 +30,7 @@ export default function SignupPage() {
     password: '',
     confirmPassword: '',
   });
+  const { getVisibility, toggleField } = useMultiplePasswordVisibility(2);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -211,14 +211,22 @@ export default function SignupPage() {
                 <div className="relative group">
                   <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#6344F5] transition-colors" size={18} />
                   <input
-                    type="password"
-                    className={`${inputClass} pl-14 py-4`}
+                    type={getVisibility(0) ? 'text' : 'password'}
+                    className={`${inputClass} pl-14 pr-12 py-4`}
                     placeholder="Min 8 chars"
                     value={form.password}
                     onChange={set('password')}
                     autoComplete="new-password"
                     disabled={loading}
                   />
+                  <button
+                    type="button"
+                    onClick={() => toggleField(0)}
+                    className="absolute right-5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center text-gray-400 hover:text-[#6344F5] hover:bg-[#6344F5]/5 rounded-full transition-all focus:outline-none"
+                    title={getVisibility(0) ? 'Hide password' : 'Show password'}
+                  >
+                    {getVisibility(0) ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
               </div>
 
@@ -227,14 +235,22 @@ export default function SignupPage() {
                 <div className="relative group">
                   <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#6344F5] transition-colors" size={18} />
                   <input
-                    type="password"
-                    className={`${inputClass} pl-14 py-4`}
+                    type={getVisibility(1) ? 'text' : 'password'}
+                    className={`${inputClass} pl-14 pr-12 py-4`}
                     placeholder="••••••••"
                     value={form.confirmPassword}
                     onChange={set('confirmPassword')}
                     autoComplete="new-password"
                     disabled={loading}
                   />
+                  <button
+                    type="button"
+                    onClick={() => toggleField(1)}
+                    className="absolute right-5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center text-gray-400 hover:text-[#6344F5] hover:bg-[#6344F5]/5 rounded-full transition-all focus:outline-none"
+                    title={getVisibility(1) ? 'Hide password' : 'Show password'}
+                  >
+                    {getVisibility(1) ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
               </div>
             </div>

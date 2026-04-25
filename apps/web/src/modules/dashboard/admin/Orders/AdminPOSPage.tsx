@@ -11,8 +11,8 @@ import {
   X,
   CheckCircle2
 } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 import { AdminLayout } from '../Layout/AdminLayout';
 
 interface Product {

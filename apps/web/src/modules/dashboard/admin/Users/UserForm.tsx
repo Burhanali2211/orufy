@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Modal } from '../../Common/Modal';
-import { FormInput, FormSelect, FormCheckbox } from '../../Common/FormInput';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { Modal } from '@/components/Common/Modal';
+import { FormInput, FormSelect, FormCheckbox } from '@/components/Common/FormInput';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 interface UserFormProps {

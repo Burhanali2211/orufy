@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Package, Truck, Printer, Loader2, Edit } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
-import { ConfirmModal } from '../../Common/Modal';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
+import { ConfirmModal } from '@/components/Common/Modal';
 
 interface SellerOrderDetailsProps {
   orderId: string;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link2, Plus, Edit2, Trash2, Save, X, ChevronUp, ChevronDown, Eye, EyeOff, ExternalLink, CheckSquare, Square, Loader2, Filter, Search } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface FooterLink {
   id: string;

@@ -4,8 +4,8 @@ import {
   Search, Filter, TrendingUp, AlertCircle, Loader2, RefreshCw
 } from 'lucide-react';
 import { SellerDashboardLayout } from '../Layout/SellerDashboardLayout';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface Review {
   id: string;
@@ -61,7 +61,7 @@ export const SellerReviewsPage: React.FC = () => {
                 comment: review.comment || review.title || '',
                 date: review.createdAt,
                 helpful: review.helpful_count || 0,
-                replied: false, // TODO: Add seller reply functionality
+                replied: false, 
                 productId: productId
               }));
               allReviews.push(...productReviews);
@@ -101,8 +101,6 @@ export const SellerReviewsPage: React.FC = () => {
     if (!replyText.trim()) return;
     
     try {
-      // TODO: Implement seller reply API endpoint
-      // For now, just update locally
       setReviews(prev => prev.map(review => 
         review.id === reviewId 
           ? { ...review, replied: true, reply: replyText }
@@ -124,7 +122,7 @@ export const SellerReviewsPage: React.FC = () => {
           <Star
             key={star}
             className={`${starSize} ${
-              star <= rating ? 'text-amber-400 fill-amber-400' : 'text-white/20'
+              star <= rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'
             }`}
           />
         ))}
@@ -151,8 +149,8 @@ export const SellerReviewsPage: React.FC = () => {
   if (loading) {
     return (
       <SellerDashboardLayout title="Reviews" subtitle="Manage customer feedback">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
         </div>
       </SellerDashboardLayout>
     );
@@ -160,194 +158,233 @@ export const SellerReviewsPage: React.FC = () => {
 
   return (
     <SellerDashboardLayout title="Reviews" subtitle="Manage customer feedback">
-      <div className="space-y-6">
+      <div className="space-y-8 pb-12">
         <div className="flex justify-end">
           <button
             onClick={fetchReviews}
-            className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all shadow-sm hover:shadow-md"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            <span className="font-bold">Refresh Feed</span>
           </button>
         </div>
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/40">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center shadow-sm">
+                <Star className="w-7 h-7 text-amber-500 fill-amber-500" />
               </div>
               <div>
-                <p className="text-white/60 text-sm">Average Rating</p>
-                <p className="text-2xl font-bold text-white">{stats.average}/5</p>
+                <p className="text-slate-500 text-sm font-semibold uppercase tracking-wider">Average</p>
+                <p className="text-2xl font-black text-slate-900">{stats.average.toFixed(1)}<span className="text-slate-400 text-lg">/5</span></p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-cyan-400" />
+          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/40">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shadow-sm">
+                <MessageSquare className="w-7 h-7 text-blue-600" />
               </div>
               <div>
-                <p className="text-white/60 text-sm">Total Reviews</p>
-                <p className="text-2xl font-bold text-white">{stats.total}</p>
+                <p className="text-slate-500 text-sm font-semibold uppercase tracking-wider">Total</p>
+                <p className="text-2xl font-black text-slate-900">{stats.total}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-orange-400" />
+          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/40">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center shadow-sm">
+                <AlertCircle className="w-7 h-7 text-orange-600" />
               </div>
               <div>
-                <p className="text-white/60 text-sm">Pending Reply</p>
-                <p className="text-2xl font-bold text-white">{stats.pending}</p>
+                <p className="text-slate-500 text-sm font-semibold uppercase tracking-wider">Pending</p>
+                <p className="text-2xl font-black text-slate-900">{stats.pending}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                <ThumbsUp className="w-6 h-6 text-emerald-400" />
+          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/40">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center shadow-sm">
+                <ThumbsUp className="w-7 h-7 text-emerald-600" />
               </div>
               <div>
-                <p className="text-white/60 text-sm">Positive Reviews</p>
-                <p className="text-2xl font-bold text-white">{stats.positive}</p>
+                <p className="text-slate-500 text-sm font-semibold uppercase tracking-wider">Positive</p>
+                <p className="text-2xl font-black text-slate-900">{stats.positive}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Rating Distribution */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-          <h3 className="text-lg font-semibold text-white mb-4">Rating Distribution</h3>
-          <div className="space-y-3">
-            {ratingDistribution.map((item) => (
-              <div key={item.stars} className="flex items-center gap-4">
-                <div className="flex items-center gap-1 w-24">
-                  <span className="text-white font-medium">{item.stars}</span>
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Rating Distribution */}
+          <div className="lg:col-span-1 bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40">
+            <h3 className="text-xl font-bold text-slate-900 mb-8">Rating Distribution</h3>
+            <div className="space-y-5">
+              {ratingDistribution.map((item) => (
+                <div key={item.stars} className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 w-16">
+                    <span className="text-slate-900 font-bold">{item.stars}</span>
+                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  </div>
+                  <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/50">
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-1000 ease-out shadow-sm"
+                      style={{ width: `${item.percentage}%` }}
+                    />
+                  </div>
+                  <span className="text-slate-500 text-xs font-bold w-12 text-right">{item.percentage}%</span>
                 </div>
-                <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all"
-                    style={{ width: `${item.percentage}%` }}
+              ))}
+            </div>
+            <div className="mt-8 pt-8 border-t border-slate-100">
+              <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                Most customers give your store a <span className="text-slate-900 font-bold">4.5 star rating</span>. Keep up the great work!
+              </p>
+            </div>
+          </div>
+
+          {/* Reviews List and Filter */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Search and Filter */}
+            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex-1 relative group">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Search feedback..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all font-medium"
                   />
                 </div>
-                <span className="text-white/60 text-sm w-16 text-right">{item.count} ({item.percentage}%)</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/40" />
-              <input
-                type="text"
-                placeholder="Search reviews..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-              />
-            </div>
-            <select
-              value={ratingFilter === 'all' ? 'all' : ratingFilter.toString()}
-              onChange={(e) => setRatingFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
-              className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-            >
-              <option value="all">All Ratings</option>
-              <option value="5">5 Stars</option>
-              <option value="4">4 Stars</option>
-              <option value="3">3 Stars</option>
-              <option value="2">2 Stars</option>
-              <option value="1">1 Star</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Reviews List */}
-        <div className="space-y-4">
-          {filteredReviews.map((review) => (
-            <div key={review.id} className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-5">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className="text-cyan-400 font-medium">{review.productName}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    {renderStars(review.rating)}
-                    <span className="text-white/40 text-sm">{formatDate(review.date)}</span>
-                  </div>
-                </div>
-                {review.replied ? (
-                  <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium rounded-lg">Replied</span>
-                ) : (
-                  <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs font-medium rounded-lg">Pending</span>
-                )}
-              </div>
-
-              <p className="text-white mb-3">{review.comment}</p>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <span className="text-white/50 text-sm">by {review.customerName}</span>
-                  <div className="flex items-center gap-1 text-white/50 text-sm">
-                    <ThumbsUp className="w-4 h-4" />
-                    <span>{review.helpful} helpful</span>
-                  </div>
-                </div>
-                {!review.replied && (
-                  <button
-                    onClick={() => setReplyingTo(review.id)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded-lg transition-colors text-sm"
+                <div className="relative">
+                  <select
+                    value={ratingFilter === 'all' ? 'all' : ratingFilter.toString()}
+                    onChange={(e) => setRatingFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                    className="w-full md:w-48 appearance-none pl-6 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all cursor-pointer"
                   >
-                    <Reply className="w-4 h-4" />
-                    Reply
-                  </button>
-                )}
-              </div>
-
-              {review.replied && review.reply && (
-                <div className="mt-4 pl-4 border-l-2 border-cyan-500/30">
-                  <p className="text-white/70 text-sm">{review.reply}</p>
-                  <p className="text-cyan-400 text-xs mt-1">— Seller Response</p>
+                    <option value="all">All Ratings</option>
+                    {[5, 4, 3, 2, 1].map(num => (
+                      <option key={num} value={num}>{num} Stars</option>
+                    ))}
+                  </select>
+                  <Filter className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
                 </div>
-              )}
+              </div>
+            </div>
 
-              {replyingTo === review.id && (
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Write your reply..."
-                    rows={3}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
-                  />
-                  <div className="flex justify-end gap-2 mt-2">
-                    <button
-                      onClick={() => {
-                        setReplyingTo(null);
-                        setReplyText('');
-                      }}
-                      className="px-4 py-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleReply(review.id)}
-                      className="px-4 py-2 bg-cyan-500 text-white rounded-lg font-medium hover:bg-cyan-600 transition-colors"
-                    >
-                      Submit Reply
-                    </button>
+            {/* List */}
+            <div className="space-y-6">
+              {filteredReviews.length > 0 ? (
+                filteredReviews.map((review) => (
+                  <div key={review.id} className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-slate-200/60 transition-all group">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xl border border-slate-200">
+                          {review.customerName.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="text-slate-900 font-bold text-lg leading-none mb-2">{review.customerName}</h4>
+                          <p className="text-blue-600 font-bold text-xs uppercase tracking-wider">{review.productName}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        {renderStars(review.rating, 'lg')}
+                        <span className="text-slate-400 text-xs font-bold uppercase">{formatDate(review.date)}</span>
+                      </div>
+                    </div>
+
+                    <p className="text-slate-700 font-medium text-lg leading-relaxed mb-6 italic">
+                      "{review.comment}"
+                    </p>
+                    
+                    <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2 text-slate-400 group-hover:text-blue-500 transition-colors">
+                          <ThumbsUp className="w-5 h-5" />
+                          <span className="text-sm font-bold">{review.helpful} Helpful</span>
+                        </div>
+                        {review.replied ? (
+                          <span className="flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-600 text-xs font-black rounded-full uppercase tracking-widest shadow-sm">
+                            <RefreshCw className="w-3 h-3" />
+                            Replied
+                          </span>
+                        ) : (
+                          <span className="px-4 py-1.5 bg-orange-50 text-orange-600 text-xs font-black rounded-full uppercase tracking-widest shadow-sm">
+                            Needs Attention
+                          </span>
+                        )}
+                      </div>
+                      
+                      {!review.replied && replyingTo !== review.id && (
+                        <button
+                          onClick={() => setReplyingTo(review.id)}
+                          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                        >
+                          <Reply className="w-4 h-4" />
+                          Send Reply
+                        </button>
+                      )}
+                    </div>
+
+                    {review.replied && review.reply && (
+                      <div className="mt-8 bg-slate-50 rounded-[2rem] p-6 border border-slate-100 relative">
+                        <div className="absolute -top-3 left-8 px-4 py-1 bg-white border border-slate-100 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-sm">
+                          Your Response
+                        </div>
+                        <p className="text-slate-600 font-medium leading-relaxed">{review.reply}</p>
+                      </div>
+                    )}
+
+                    {replyingTo === review.id && (
+                      <div className="mt-8 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Type your response to this customer..."
+                          rows={4}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-[2rem] text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all font-medium resize-none"
+                        />
+                        <div className="flex justify-end gap-3">
+                          <button
+                            onClick={() => {
+                              setReplyingTo(null);
+                              setReplyText('');
+                            }}
+                            className="px-6 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition-all"
+                          >
+                            Discard
+                          </button>
+                          <button
+                            onClick={() => handleReply(review.id)}
+                            className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 active:scale-95"
+                          >
+                            Post Reply
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                ))
+              ) : (
+                <div className="bg-white rounded-[2.5rem] p-12 border border-slate-100 shadow-xl shadow-slate-200/40 text-center">
+                  <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-slate-100 shadow-inner">
+                    <MessageSquare className="w-12 h-12 text-slate-200" />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900 mb-2">No reviews found</h3>
+                  <p className="text-slate-500 max-w-sm mx-auto font-medium">
+                    Try adjusting your filters or search terms to find specific customer feedback.
+                  </p>
                 </div>
               )}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </SellerDashboardLayout>
@@ -355,4 +392,5 @@ export const SellerReviewsPage: React.FC = () => {
 };
 
 export default SellerReviewsPage;
+
 

@@ -3,9 +3,9 @@ import {
   ArrowLeft, Package, Truck, Printer, Loader2, AlertCircle,
   DollarSign, User, MapPin, Calendar, CreditCard, Edit, Save, Phone
 } from 'lucide-react';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
-import { ConfirmModal } from '../../Common/Modal';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
+import { ConfirmModal } from '@/components/Common/Modal';
 import {
   getOrderStatusConfig,
   getPaymentStatusConfig,
@@ -14,7 +14,7 @@ import {
   ORDER_STATUS_CONFIG,
   PAYMENT_STATUS_CONFIG,
   OrderStatus
-} from '../../../utils/orderStatusUtils';
+} from '@/utils/orderStatusUtils';
 
 interface OrderDetailsProps {
   orderId: string;

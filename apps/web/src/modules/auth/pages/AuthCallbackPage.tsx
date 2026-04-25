@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import * as auth from '../lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
+import * as auth from '@/lib/auth';
 
 type Status = 'loading' | 'success' | 'error' | 'already_verified';
 

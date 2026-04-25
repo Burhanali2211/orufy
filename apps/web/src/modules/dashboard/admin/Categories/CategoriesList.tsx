@@ -13,10 +13,10 @@ import {
   ChevronUp,
   ChevronDown as ChevronDownIcon,
 } from 'lucide-react';
-import { ConfirmModal } from '../../Common/Modal';
-import { apiClient } from '../../../lib/apiClient';
-import { useNotification } from '../../../contexts/NotificationContext';
-import { getSafeImageUrl, isValidImageUrl } from '../../../utils/imageUrlUtils';
+import { ConfirmModal } from '@/components/Common/Modal';
+import { apiClient } from '@/lib/apiClient';
+import { useNotification } from '@/contexts/NotificationContext';
+import { getSafeImageUrl, isValidImageUrl } from '@/utils/imageUrlUtils';
 
 interface Category {
   id: string;
