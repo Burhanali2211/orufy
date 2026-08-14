@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { User, AuthContextType } from '../types';
+import { User, Store, AuthContextType } from '../types';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -17,6 +17,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [store, setStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMobileAuthOpen, setIsMobileAuthOpen] = useState(false);
   const [mobileAuthMode, setMobileAuthMode] = useState<'login' | 'signup' | 'profile'>('login');
@@ -35,12 +36,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             fullName: data.user.full_name || 'User',
             role: data.user.role || 'customer'
           });
+          setStore(data.store || null);
         } else {
           setUser(null);
+          setStore(null);
         }
       } catch (error) {
         console.error('Session check failed:', error);
         setUser(null);
+        setStore(null);
       } finally {
         setLoading(false);
       }
@@ -73,6 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         fullName: data.user.full_name || 'User',
         role: data.user.role || 'customer'
       });
+      setStore(data.store || null);
     }
   };
 
@@ -111,6 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         fullName: data.user.full_name || 'User',
         role: data.user.role || 'customer'
       });
+      setStore(data.store || null);
     }
   };
 
@@ -119,6 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       await fetch('/api/auth/logout', { method: 'POST' });
       setUser(null);
+      setStore(null);
       localStorage.removeItem('user_preferences');
       localStorage.removeItem('cart_items');
     } catch (error: any) {
@@ -158,6 +165,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const value: AuthContextType = {
     user,
+    store,
     loading,
     signIn,
     signUp,

@@ -3,13 +3,15 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, Package, ShoppingCart, DollarSign,
-  AlertTriangle, Clock, ArrowUpRight, ArrowRight,
-  RefreshCw, BarChart3, TrendingUp
+  AlertTriangle, Clock, ArrowRight,
+  RefreshCw, TrendingUp, Globe, Plus,
+  ArrowUpRight, Zap
 } from 'lucide-react';
 import { supabase } from '../../../lib/legacyDb';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
 import { getAdminStatusClasses, getOrderStatusConfig } from '../../../utils/orderStatusUtils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -58,6 +60,7 @@ let _dashboardCache: {
 } | null = null;
 
 export const AdminDashboardHome: React.FC = () => {
+  const { user, store } = useAuth();
   const [loading, setLoading] = useState(_dashboardCache === null);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(_dashboardCache?.metrics ?? null);
   const [topProducts, setTopProducts] = useState<TopProduct[]>(_dashboardCache?.topProducts ?? []);
@@ -65,6 +68,9 @@ export const AdminDashboardHome: React.FC = () => {
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>(_dashboardCache?.lowStockProducts ?? []);
   const { showError } = useNotification();
   const isFirstMount = React.useRef(true);
+
+  const storeUrl = store ? `https://${store.hostname}` : null;
+  const isNewStore = !loading && metrics?.totalProducts === 0 && metrics?.totalOrders === 0;
 
   useEffect(() => {
     const background = isFirstMount.current && _dashboardCache !== null;
@@ -116,7 +122,7 @@ export const AdminDashboardHome: React.FC = () => {
         p.min_stock_level != null ? p.stock <= p.min_stock_level : p.stock <= 20
       ).length;
 
-      setMetrics({
+      const newMetrics = {
         totalUsers: totalUsers ?? 0,
         totalProducts: totalProducts ?? 0,
         totalOrders: totalOrders ?? 0,
@@ -126,21 +132,24 @@ export const AdminDashboardHome: React.FC = () => {
         newUsersToday: newUsersToday ?? 0,
         ordersToday,
         revenueToday,
-      });
+      };
+      setMetrics(newMetrics);
 
-      setRecentOrders(orders.slice(0, 5).map((o: any) => ({
+      const newRecentOrders = orders.slice(0, 5).map((o: any) => ({
         id: o.id,
         order_number: o.order_number || o.id,
         total_amount: o.total_amount,
         status: o.status,
         created_at: o.created_at,
         customer_name: profileMap[o.user_id]?.full_name || 'Guest',
-      })));
+      }));
+      setRecentOrders(newRecentOrders);
 
-      setLowStockProducts((lowStockRes.data || []).map((p: any) => ({
+      const newLowStock = (lowStockRes.data || []).map((p: any) => ({
         id: p.id, name: p.name, stock: p.stock,
         min_stock_level: p.min_stock_level ?? 20, images: p.images || [],
-      })));
+      }));
+      setLowStockProducts(newLowStock);
 
       const orderItemsRes = await apiClient.get('/order-items');
       const soldByProduct: Record<string, number> = {};
@@ -159,32 +168,11 @@ export const AdminDashboardHome: React.FC = () => {
       }
       setTopProducts(computedTopProducts);
 
-      // Update module-level cache so next navigation is instant
       _dashboardCache = {
-        metrics: {
-          totalUsers: totalUsers ?? 0,
-          totalProducts: totalProducts ?? 0,
-          totalOrders: totalOrders ?? 0,
-          totalRevenue,
-          pendingOrders: pendingOrders ?? 0,
-          lowStockProducts: lowStockCount,
-          newUsersToday: newUsersToday ?? 0,
-          ordersToday,
-          revenueToday,
-        },
+        metrics: newMetrics,
         topProducts: computedTopProducts,
-        recentOrders: orders.slice(0, 5).map((o: any) => ({
-          id: o.id,
-          order_number: o.order_number || o.id,
-          total_amount: o.total_amount,
-          status: o.status,
-          created_at: o.created_at,
-          customer_name: profileMap[o.user_id]?.full_name || 'Guest',
-        })),
-        lowStockProducts: (lowStockRes.data || []).map((p: any) => ({
-          id: p.id, name: p.name, stock: p.stock,
-          min_stock_level: p.min_stock_level ?? 20, images: p.images || [],
-        })),
+        recentOrders: newRecentOrders,
+        lowStockProducts: newLowStock,
       };
     } catch (error: any) {
       if (!background) showError('Error', error.message || 'Failed to load dashboard data');
@@ -198,18 +186,23 @@ export const AdminDashboardHome: React.FC = () => {
     return `₹${v.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
   };
 
+  const greetingHour = new Date().getHours();
+  const greeting = greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = user?.fullName?.split(' ')[0] || 'there';
+
   if (loading) {
     return (
-      <AdminDashboardLayout title="Dashboard" subtitle="Welcome back, Admin!">
-        <div className="space-y-5">
+      <AdminDashboardLayout title="Dashboard" subtitle="Loading your store overview...">
+        <div className="space-y-6 animate-pulse">
+          <div className="h-36 bg-zinc-100 rounded-2xl" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white border border-zinc-200 rounded-xl p-4 hidden">
-                <div className="h-3 bg-zinc-100 rounded w-16 mb-3" />
-                <div className="h-6 bg-zinc-100 rounded w-12 mb-1" />
-                <div className="h-2.5 bg-zinc-100 rounded w-20" />
-              </div>
+              <div key={i} className="h-24 bg-zinc-100 rounded-xl" />
             ))}
+          </div>
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 h-64 bg-zinc-100 rounded-2xl" />
+            <div className="h-64 bg-zinc-100 rounded-2xl" />
           </div>
         </div>
       </AdminDashboardLayout>
@@ -218,83 +211,168 @@ export const AdminDashboardHome: React.FC = () => {
 
   const statCards = metrics ? [
     {
-      title: 'Total Revenue', value: fmt(metrics.totalRevenue),
-      sub: metrics.revenueToday > 0 ? `+${fmt(metrics.revenueToday)} today` : 'All time total',
+      title: 'Total Revenue',
+      value: fmt(metrics.totalRevenue),
+      sub: metrics.revenueToday > 0 ? `+${fmt(metrics.revenueToday)} today` : 'All time',
       icon: DollarSign,
+      trend: metrics.revenueToday > 0 ? 'up' : null,
     },
     {
-      title: 'Total Orders', value: String(metrics.totalOrders),
-      sub: metrics.ordersToday > 0 ? `${metrics.ordersToday} placed today` : 'Total completed',
+      title: 'Orders',
+      value: String(metrics.totalOrders),
+      sub: metrics.ordersToday > 0 ? `${metrics.ordersToday} today` : 'Total placed',
       icon: ShoppingCart,
+      trend: metrics.ordersToday > 0 ? 'up' : null,
     },
     {
-      title: 'Active Products', value: String(metrics.totalProducts),
-      sub: metrics.lowStockProducts > 0 ? `${metrics.lowStockProducts} items low stock` : 'Catalog healthy',
+      title: 'Products',
+      value: String(metrics.totalProducts),
+      sub: metrics.lowStockProducts > 0 ? `${metrics.lowStockProducts} low stock` : 'Catalog healthy',
       icon: Package,
+      trend: metrics.lowStockProducts > 0 ? 'warn' : null,
     },
     {
-      title: 'Registered Customers', value: String(metrics.totalUsers),
-      sub: metrics.newUsersToday > 0 ? `${metrics.newUsersToday} new today` : 'Total customer base',
+      title: 'Customers',
+      value: String(metrics.totalUsers),
+      sub: metrics.newUsersToday > 0 ? `${metrics.newUsersToday} new today` : 'Total registered',
       icon: Users,
+      trend: metrics.newUsersToday > 0 ? 'up' : null,
     },
   ] : [];
 
   return (
-    <AdminDashboardLayout title="Overview" subtitle="Monitor sales, orders, and product performance">
-      <div className="space-y-8 max-w-7xl mx-auto">
-        {/* Quick actions banner - Clean Human SaaS Bar */}
-        <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-2xs">
-          <div>
-            <h2 className="text-lg font-bold text-zinc-900 tracking-tight mb-1">Store Dashboard</h2>
-            <p className="text-xs sm:text-sm text-zinc-500 font-medium">Quick shortcuts for daily catalog and order management</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <Link to="/admin/products/add"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 active:bg-black text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-xs min-h-[44px]">
-              <Package className="w-4 h-4 text-zinc-300" />
-              <span>+ Quick Add Product</span>
-            </Link>
-            <Link to="/admin/orders"
-              className="inline-flex items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors min-h-[44px]">
-              <ShoppingCart className="w-4 h-4 text-zinc-400" />
-              <span>View Orders</span>
-            </Link>
-            <button onClick={fetchDashboardData}
-              className="inline-flex items-center justify-center gap-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors min-h-[44px]"
-              title="Refresh Data">
-              <RefreshCw className="w-4 h-4 text-zinc-400" />
-            </button>
+    <AdminDashboardLayout title="Overview" subtitle="Monitor your store performance">
+      <div className="space-y-6 max-w-7xl mx-auto">
+
+        {/* ── Hero Welcome Section ── */}
+        <div className="relative bg-zinc-900 rounded-2xl overflow-hidden">
+          {/* Subtle background texture */}
+          <div className="absolute inset-0 opacity-[0.04]" style={{
+            backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)',
+            backgroundSize: '40px 40px, 30px 30px'
+          }} />
+
+          <div className="relative px-6 py-7 sm:px-8 sm:py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+            <div>
+              <p className="text-zinc-400 text-[13px] font-medium mb-1">{greeting}, {firstName} 👋</p>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight mb-2">
+                {store?.name || 'Your Store'}
+              </h2>
+              {storeUrl && (
+                <a
+                  href={storeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[12px] font-medium text-zinc-400 hover:text-white transition-colors"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  {store?.hostname}
+                  <ArrowUpRight className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2.5">
+              <Link
+                to="/admin/products/add"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-zinc-900 rounded-xl text-[13px] font-bold hover:bg-zinc-50 active:scale-95 transition-all shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Product
+              </Link>
+              {storeUrl && (
+                <a
+                  href={storeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl text-[13px] font-semibold hover:bg-white/15 active:scale-95 transition-all"
+                >
+                  <Globe className="w-4 h-4" />
+                  View Live Store
+                </a>
+              )}
+              <button
+                onClick={() => fetchDashboardData()}
+                className="inline-flex items-center justify-center px-3 py-2.5 bg-white/10 text-white/70 border border-white/10 rounded-xl hover:bg-white/15 transition-all"
+                title="Refresh data"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Stat cards - 2-col on mobile, 4-col on desktop */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        {/* ── New Store Empty State ── */}
+        {isNewStore && (
+          <div className="bg-white border border-zinc-200 rounded-2xl px-6 py-8 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-6 h-6 text-zinc-400" />
+            </div>
+            <h3 className="text-base font-bold text-zinc-900 mb-1">Ready to launch? Start building your catalog</h3>
+            <p className="text-sm text-zinc-500 mb-5 max-w-md mx-auto">
+              Add your first product to start selling. Your store is live — customers are already able to browse it!
+            </p>
+            <Link
+              to="/admin/products/add"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-semibold hover:bg-zinc-800 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Your First Product
+            </Link>
+          </div>
+        )}
+
+        {/* ── Stat Cards ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {statCards.map((stat) => (
-            <div key={stat.title} className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 hover:border-zinc-300 transition-all duration-200">
-              <div className="flex items-center justify-between mb-2">
-                <stat.icon className="w-4 h-4 text-zinc-400" />
+            <div
+              key={stat.title}
+              className="bg-white border border-zinc-200/80 rounded-xl p-4 sm:p-5 hover:shadow-sm hover:border-zinc-300 transition-all duration-200"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-8 h-8 rounded-lg bg-zinc-50 flex items-center justify-center">
+                  <stat.icon className="w-4 h-4 text-zinc-500" />
+                </div>
+                {stat.trend === 'up' && (
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                    <TrendingUp className="w-2.5 h-2.5" /> UP
+                  </span>
+                )}
+                {stat.trend === 'warn' && (
+                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">
+                    LOW
+                  </span>
+                )}
               </div>
-              <p className="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight leading-none mb-1.5">{stat.value}</p>
-              <p className="text-[10px] sm:text-xs text-zinc-400 font-semibold uppercase tracking-wide leading-tight">{stat.title}</p>
-              {stat.sub && <p className="text-[10px] text-zinc-400 mt-1 leading-tight hidden sm:block">{stat.sub}</p>}
+              <p className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight leading-none mb-1">
+                {stat.value}
+              </p>
+              <p className="text-[10px] sm:text-[11px] text-zinc-400 font-semibold uppercase tracking-wide">{stat.title}</p>
+              {stat.sub && (
+                <p className="text-[10px] text-zinc-400 mt-1 hidden sm:block">{stat.sub}</p>
+              )}
             </div>
           ))}
         </div>
 
-        {/* Action Alerts */}
+        {/* ── Action Alerts ── */}
         {metrics && (metrics.pendingOrders > 0 || metrics.lowStockProducts > 0) && (
           <div className="grid sm:grid-cols-2 gap-3">
             {metrics.pendingOrders > 0 && (
               <div className="bg-white border border-zinc-200 rounded-xl p-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <Clock className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-4 h-4 text-blue-500" />
+                  </div>
                   <div>
                     <p className="text-sm font-bold text-zinc-900">{metrics.pendingOrders} Pending Orders</p>
                     <p className="text-xs text-zinc-400">Awaiting fulfillment</p>
                   </div>
                 </div>
-                <Link to="/admin/orders"
-                  className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors flex-shrink-0">
+                <Link
+                  to="/admin/orders"
+                  className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors flex-shrink-0"
+                >
                   Review
                 </Link>
               </div>
@@ -302,14 +380,18 @@ export const AdminDashboardHome: React.FC = () => {
             {metrics.lowStockProducts > 0 && (
               <div className="bg-white border border-zinc-200 rounded-xl p-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <AlertTriangle className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  </div>
                   <div>
                     <p className="text-sm font-bold text-zinc-900">{metrics.lowStockProducts} Low Stock Items</p>
                     <p className="text-xs text-zinc-400">Re-stock threshold reached</p>
                   </div>
                 </div>
-                <Link to="/admin/products"
-                  className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors flex-shrink-0">
+                <Link
+                  to="/admin/products"
+                  className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors flex-shrink-0"
+                >
                   Manage
                 </Link>
               </div>
@@ -317,131 +399,138 @@ export const AdminDashboardHome: React.FC = () => {
           </div>
         )}
 
-        {/* Recent orders + top products */}
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Recent Orders Table */}
-          <div className="lg:col-span-2 bg-white border border-zinc-200/80 rounded-2xl shadow-2xs overflow-hidden">
+        {/* ── Recent Orders + Top Products ── */}
+        <div className="grid lg:grid-cols-3 gap-5">
+
+          {/* Recent Orders */}
+          <div className="lg:col-span-2 bg-white border border-zinc-200/80 rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-100">
               <div>
-                <h3 className="text-base font-bold text-zinc-900">Recent Orders</h3>
-                <p className="text-xs text-zinc-400 font-medium mt-0.5">Latest customer purchases</p>
+                <h3 className="text-[14px] font-bold text-zinc-900">Recent Orders</h3>
+                <p className="text-[11px] text-zinc-400 font-medium mt-0.5">Latest customer purchases</p>
               </div>
-              <Link to="/admin/orders"
-                className="text-xs text-zinc-600 hover:text-zinc-900 font-semibold flex items-center gap-1">
-                <span>View All Orders</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+              <Link
+                to="/admin/orders"
+                className="text-[12px] text-zinc-500 hover:text-zinc-900 font-semibold flex items-center gap-1 transition-colors"
+              >
+                View All <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
-            <div className="divide-y divide-zinc-100">
+            <div className="divide-y divide-zinc-50">
               {recentOrders.length > 0 ? recentOrders.map((order) => {
                 const cfg = getOrderStatusConfig(order.status);
                 const cls = getAdminStatusClasses(order.status);
                 const Icon = cfg.icon;
                 return (
-                  <div key={order.id} className="flex items-center justify-between px-6 py-4 hover:bg-zinc-50/80 transition-colors">
-                    <div className="flex items-center gap-4 min-w-0">
+                  <div key={order.id} className="flex items-center justify-between px-6 py-4 hover:bg-zinc-50/60 transition-colors">
+                    <div className="flex items-center gap-3.5 min-w-0">
                       <div className="w-9 h-9 bg-zinc-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <ShoppingCart className="w-4 h-4 text-zinc-600" />
+                        <ShoppingCart className="w-4 h-4 text-zinc-500" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-sm text-zinc-900">{order.order_number}</p>
-                        <p className="text-xs text-zinc-500 font-medium truncate">{order.customer_name}</p>
+                        <p className="font-bold text-[13px] text-zinc-900">{order.order_number}</p>
+                        <p className="text-[11px] text-zinc-400 font-medium truncate">{order.customer_name}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                      <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${cls}`}>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold border ${cls}`}>
                         <Icon className="w-3 h-3" />
                         <span>{cfg.label}</span>
                       </div>
-                      <p className="font-bold text-sm text-zinc-900">{fmt(order.total_amount)}</p>
+                      <p className="font-bold text-[13px] text-zinc-900 w-20 text-right">{fmt(order.total_amount)}</p>
                     </div>
                   </div>
                 );
               }) : (
-                <div className="px-6 py-12 text-center">
+                <div className="px-6 py-14 text-center">
                   <ShoppingCart className="w-10 h-10 text-zinc-200 mx-auto mb-2" />
-                  <p className="text-xs text-zinc-400 font-medium">No recent orders found</p>
+                  <p className="text-[12px] text-zinc-400 font-medium">No orders yet</p>
+                  <p className="text-[11px] text-zinc-300 mt-0.5">Share your store to start receiving orders</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Right column */}
-          <div className="space-y-6">
-            {/* Top Products */}
-            <div className="bg-white border border-zinc-200/80 rounded-2xl shadow-2xs overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-100">
+          <div className="space-y-5">
+            {/* Top Selling */}
+            <div className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
                 <div>
-                  <h3 className="text-base font-bold text-zinc-900">Top Selling</h3>
-                  <p className="text-xs text-zinc-400 font-medium mt-0.5">Best performing items</p>
+                  <h3 className="text-[14px] font-bold text-zinc-900">Top Selling</h3>
+                  <p className="text-[11px] text-zinc-400 font-medium mt-0.5">Best performers</p>
                 </div>
-                <Link to="/admin/products" className="text-xs text-zinc-600 hover:text-zinc-900 font-semibold">View Catalog</Link>
+                <Link to="/admin/products" className="text-[12px] text-zinc-500 hover:text-zinc-900 font-semibold transition-colors">
+                  Catalog
+                </Link>
               </div>
-              <div className="divide-y divide-zinc-100">
+              <div className="divide-y divide-zinc-50">
                 {topProducts.slice(0, 4).map((product, i) => (
-                  <div key={product.id} className="flex items-center gap-3.5 px-6 py-3.5 hover:bg-zinc-50/80 transition-colors">
-                    <span className="text-xs font-bold text-zinc-400 w-5 flex-shrink-0">#{i + 1}</span>
+                  <div key={product.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-zinc-50/60 transition-colors">
+                    <span className="text-[11px] font-bold text-zinc-300 w-4 flex-shrink-0">#{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm font-bold text-zinc-900 truncate">{product.name}</p>
-                      <p className="text-[11px] text-zinc-400 font-medium">{product.total_sold} units sold</p>
+                      <p className="text-[12px] font-semibold text-zinc-900 truncate">{product.name}</p>
+                      <p className="text-[10px] text-zinc-400">{product.total_sold} sold</p>
                     </div>
-                    <p className="text-xs sm:text-sm font-extrabold text-zinc-900 flex-shrink-0">{fmt(product.price)}</p>
+                    <p className="text-[12px] font-extrabold text-zinc-900 flex-shrink-0">{fmt(product.price)}</p>
                   </div>
                 ))}
                 {topProducts.length === 0 && (
-                  <div className="px-6 py-8 text-center">
-                    <p className="text-xs text-zinc-400 font-medium">No sales data recorded yet</p>
+                  <div className="px-5 py-8 text-center">
+                    <p className="text-[11px] text-zinc-400">No sales data yet</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Today summary */}
-            <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs">
-              <h3 className="text-base font-bold text-zinc-900 mb-1">Daily Summary</h3>
-              <p className="text-xs text-zinc-400 font-medium mb-5">Activity recorded today</p>
-
+            {/* Today Summary */}
+            <div className="bg-white border border-zinc-200/80 rounded-2xl p-5">
+              <h3 className="text-[14px] font-bold text-zinc-900 mb-0.5">Daily Summary</h3>
+              <p className="text-[11px] text-zinc-400 font-medium mb-5">Activity recorded today</p>
               <div className="space-y-4">
                 <div>
-                  <div className="flex items-center justify-between text-xs font-semibold text-zinc-700 mb-1.5">
+                  <div className="flex items-center justify-between text-[12px] font-semibold text-zinc-700 mb-1.5">
                     <span>New Orders</span>
-                    <span className="font-bold text-zinc-900">{metrics?.ordersToday ?? 0}</span>
-                  </div>
-                  <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-zinc-900 rounded-full transition-all duration-500" style={{ width: `${Math.min((metrics?.ordersToday ?? 0) * 10, 100)}%` }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-xs font-semibold text-zinc-700 mb-1.5">
-                    <span>New Customers</span>
-                    <span className="font-bold text-zinc-900">{metrics?.newUsersToday ?? 0}</span>
+                    <span className="text-zinc-900 font-bold">{metrics?.ordersToday ?? 0}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-zinc-900 rounded-full transition-all duration-500" style={{ width: `${Math.min((metrics?.newUsersToday ?? 0) * 10, 100)}%` }} />
+                    <div className="h-full bg-zinc-900 rounded-full transition-all duration-700" style={{ width: `${Math.min((metrics?.ordersToday ?? 0) * 10, 100)}%` }} />
                   </div>
                 </div>
-
+                <div>
+                  <div className="flex items-center justify-between text-[12px] font-semibold text-zinc-700 mb-1.5">
+                    <span>New Customers</span>
+                    <span className="text-zinc-900 font-bold">{metrics?.newUsersToday ?? 0}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-zinc-900 rounded-full transition-all duration-700" style={{ width: `${Math.min((metrics?.newUsersToday ?? 0) * 10, 100)}%` }} />
+                  </div>
+                </div>
                 <div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-zinc-500">Today's Revenue</span>
-                  <span className="text-sm font-extrabold text-zinc-900">{fmt(metrics?.revenueToday ?? 0)}</span>
+                  <span className="text-[12px] font-semibold text-zinc-500">Revenue Today</span>
+                  <span className="text-[13px] font-extrabold text-zinc-900">{fmt(metrics?.revenueToday ?? 0)}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Low Stock Alert */}
+        {/* ── Low Stock Alert ── */}
         {lowStockProducts.length > 0 && (
-          <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-2 px-5 py-4 border-b border-zinc-100">
-              <AlertTriangle className="w-4 h-4 text-zinc-500" />
-              <h3 className="text-sm font-bold text-zinc-900">Low Stock Alert</h3>
+          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-2.5 px-5 py-4 border-b border-zinc-100">
+              <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-[13px] font-bold text-zinc-900">Low Stock Alert</h3>
+                <p className="text-[10px] text-zinc-400">{lowStockProducts.length} items need restocking</p>
+              </div>
             </div>
-            <div className="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5">
+            <div className="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
               {lowStockProducts.map((product) => (
-                <div key={product.id} className="border border-zinc-100 rounded-lg p-2.5 flex items-center gap-2.5">
-                  <div className="w-8 h-8 bg-zinc-100 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center">
+                <div key={product.id} className="border border-zinc-100 rounded-xl p-2.5 flex items-center gap-2.5 hover:border-zinc-200 transition-colors">
+                  <div className="w-8 h-8 bg-zinc-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
                     {product.images?.[0]
                       ? <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                       : <Package className="w-4 h-4 text-zinc-300" />
@@ -449,7 +538,7 @@ export const AdminDashboardHome: React.FC = () => {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold text-zinc-900 truncate">{product.name}</p>
-                    <p className="text-[10px] text-zinc-400">{product.stock} left</p>
+                    <p className="text-[10px] text-amber-500 font-semibold">{product.stock} left</p>
                   </div>
                 </div>
               ))}

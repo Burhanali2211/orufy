@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { lucia } from "../lib/auth";
 import { db } from "../db/db";
-import { profiles, store_members } from "../db/schema";
+import { profiles, store_members, stores } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { Argon2id } from "oslo/password";
 
@@ -152,7 +152,33 @@ authRouter.get("/me", async (req, res) => {
       res.setHeader("Set-Cookie", sessionCookie.serialize());
     }
 
-    return res.status(200).json({ user });
+    // Fetch the user's owned/admin store so the dashboard can show store context
+    let store = null;
+    try {
+      const [membership] = await db
+        .select({ store_id: store_members.store_id, role: store_members.role })
+        .from(store_members)
+        .where(
+          and(
+            eq(store_members.user_id, user.id),
+            eq(store_members.role, 'owner')
+          )
+        )
+        .limit(1);
+
+      if (membership) {
+        const [storeRow] = await db
+          .select({ id: stores.id, name: stores.name, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
+          .from(stores)
+          .where(eq(stores.id, membership.store_id))
+          .limit(1);
+        store = storeRow || null;
+      }
+    } catch (_) {
+      // non-fatal: dashboard works without store info
+    }
+
+    return res.status(200).json({ user, store });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "An error occurred" });

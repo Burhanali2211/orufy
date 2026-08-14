@@ -3,7 +3,7 @@ export interface User {
   name?: string; // Alias for fullName (for backward compatibility)
   fullName?: string; // Maps to full_name in DB
   email: string;
-  role: 'admin' | 'seller' | 'customer';
+  role: 'admin' | 'seller' | 'customer' | 'merchant';
   avatar?: string; // Maps to avatar_url in DB
   phone?: string;
   dateOfBirth?: string; // Maps to date_of_birth in DB
@@ -22,6 +22,15 @@ export interface User {
   updatedAt?: Date; // Maps to updated_at in DB
   password?: string; // Added for registration
 }
+
+export interface Store {
+  id: string;
+  name: string;
+  hostname: string; // e.g. 'seriqueavenue.get-oru.com'
+  logo_url?: string | null;
+  is_active?: boolean;
+}
+
 
   export interface Product {
     id: string;
@@ -306,6 +315,7 @@ export interface CategoryPerformance {
 
 export interface AuthContextType {
   user: User | null;
+  store: Store | null;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
   register: (userData: Partial<User>) => Promise<boolean>;
@@ -324,6 +334,7 @@ export interface AuthContextType {
   closeMobileAuth: () => void;
   isMobileAuthOpen: boolean;
   mobileAuthMode: 'login' | 'signup' | 'profile';
+  setMobileAuthMode: (mode: 'login' | 'signup' | 'profile') => void;
 }
 
 export interface CartContextType {
