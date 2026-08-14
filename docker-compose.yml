@@ -25,7 +25,7 @@ services:
     environment:
       - PORT=3001
       - DATABASE_URL=postgres://platform_app:password@postgres:5432/platform_db
-      - PLATFORM_DOMAIN=yourplatform.com
+      - PLATFORM_DOMAIN=get-oru.com
     # NO PORTS EXPOSED OUTSIDE. Only reachable via Nginx on the internal network.
     depends_on:
       - postgres

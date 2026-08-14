@@ -172,7 +172,17 @@ function App() {
               {/* Platform Landing Page - Root, NO Layout wrapper */}
               <Route 
                 path="/" 
-                element={<PlatformLandingPage />} 
+                element={
+                  // If we are on a subdomain (e.g. shop.get-oru.com) or custom domain, redirect / to /store
+                  // If we are on the base domain (get-oru.com) or localhost without a subdomain, show the platform landing page
+                  (() => {
+                    const host = typeof window !== 'undefined' ? window.location.hostname : '';
+                    const baseDomain = import.meta.env.VITE_SITE_URL ? new URL(import.meta.env.VITE_SITE_URL).hostname : 'get-oru.com';
+                    const isSubdomain = host !== baseDomain && host !== 'localhost' && host !== '127.0.0.1';
+                    
+                    return isSubdomain ? <Navigate to="/store" replace /> : <PlatformLandingPage />;
+                  })()
+                } 
               />
 
               {/* Regular routes - WITH Layout wrapper */}

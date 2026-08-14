@@ -10,7 +10,10 @@ export const DomainStep: React.FC = () => {
   const [customInput, setCustomInput] = useState(data.domain.customHostname || '');
 
   const sub = data.business.subdomain || data.domain.subdomain || 'my-store';
-  const defaultSubdomainDisplay = `${sub}.platform.local`;
+  const siteHostname = import.meta.env.VITE_SITE_URL 
+    ? new URL(import.meta.env.VITE_SITE_URL).hostname 
+    : 'get-oru.com';
+  const defaultSubdomainDisplay = `${sub}.${siteHostname}`;
 
   const handleSelectSubdomain = () => {
     setSelectedType('subdomain');
