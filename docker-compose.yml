@@ -42,7 +42,7 @@ services:
       - "80"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.orufy.rule=Host(`get-oru.com`) || HostRegexp(`{subdomain:[a-z0-9-]+}.get-oru.com`)"
+      - "traefik.http.routers.orufy.rule=Host(`get-oru.com`) || HostRegexp(`^[a-z0-9-]+\\.get-oru\\.com$`)"
       - "traefik.http.routers.orufy.entrypoints=websecure"
       - "traefik.http.routers.orufy.tls.certresolver=letsencrypt"
       - "traefik.http.services.orufy.loadbalancer.server.port=80"
