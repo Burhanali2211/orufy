@@ -63,7 +63,7 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-stone-50/60 font-sans text-stone-900 antialiased">
+    <div className="min-h-screen font-sans antialiased" style={{ background: '#f8f9fa', color: '#202124' }}>
       <MobileHeader 
         settings={settings} 
         setSidebarOpen={setSidebarOpen} 
@@ -82,9 +82,10 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-stone-200/80 shadow-xs transform transition-transform duration-250 ease-in-out flex flex-col lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 shadow-none transform transition-transform duration-250 ease-in-out flex flex-col lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{ background: '#fff', borderRight: '1px solid #e8eaed' }}
       >
         <Sidebar 
           settings={settings}
@@ -100,7 +101,6 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
         />
       </aside>
 
-      {/* Main Content Area */}
       <main className="lg:ml-64 min-h-screen flex flex-col">
         <DesktopHeader 
           title={title} 

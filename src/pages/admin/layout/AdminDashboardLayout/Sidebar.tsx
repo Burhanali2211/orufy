@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { X, ExternalLink, LogOut, Store, Globe } from 'lucide-react';
+import { X, ExternalLink, LogOut, LayoutDashboard, Store, ChevronRight } from 'lucide-react';
 import { NavItem } from './types';
 import { DashboardSettings } from '@/hooks/useAdminDashboardSettings';
 import { User } from '@/types';
@@ -31,59 +31,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const storeUrl = store ? `https://${store.hostname}` : null;
 
   return (
-    <aside className="flex flex-col h-full bg-white border-r border-zinc-100 select-none">
+    <aside className="flex flex-col h-full select-none" style={{ background: '#fff', borderRight: '1px solid #e8eaed' }}>
 
-      {/* ── Store Context Header ── */}
-      <div className="px-5 pt-6 pb-4 border-b border-zinc-100 flex-shrink-0">
-        {/* Close button (mobile only) */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-zinc-900 flex items-center justify-center flex-shrink-0">
-              <Store className="w-4 h-4 text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-zinc-900 leading-tight truncate max-w-[148px]">
-                {store?.name || 'Your Store'}
-              </p>
-              <p className="text-[10px] text-zinc-400 font-medium mt-0.5">Store Dashboard</p>
-            </div>
+      {/* ── Brand / App header ── */}
+      <div className="flex items-center justify-between px-4 h-16 flex-shrink-0" style={{ borderBottom: '1px solid #e8eaed' }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: '#1a73e8' }}>
+            <LayoutDashboard className="w-4 h-4 text-white" />
           </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 transition-colors lg:hidden flex-shrink-0"
-            aria-label="Close menu"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div>
+            <p className="text-[13px] font-semibold leading-tight" style={{ color: '#202124', fontFamily: "'Google Sans', Inter, sans-serif" }}>
+              {store?.name || 'Orufy'}
+            </p>
+            <p className="text-[10px] leading-tight" style={{ color: '#5f6368' }}>Admin Console</p>
+          </div>
         </div>
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden p-1.5 rounded-full transition-colors"
+          style={{ color: '#5f6368' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          aria-label="Close menu"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
 
-        {/* Live Store chip */}
-        {storeUrl ? (
+      {/* ── Live store chip ── */}
+      {storeUrl && (
+        <div className="px-3 pt-3 pb-1 flex-shrink-0">
           <a
             href={storeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200/70 hover:bg-zinc-100 transition-colors group"
+            className="flex items-center gap-2 px-3 py-2 rounded-full text-[12px] font-medium transition-colors"
+            style={{ background: '#e8f0fe', color: '#1a73e8' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#d2e3fc')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#e8f0fe')}
           >
-            <Globe className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
-            <span className="text-[11px] font-semibold text-zinc-500 truncate flex-1 group-hover:text-zinc-800 transition-colors">
-              {store?.hostname}
-            </span>
-            <ExternalLink className="w-3 h-3 text-zinc-300 group-hover:text-zinc-500 flex-shrink-0 transition-colors" />
+            <Store className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="truncate flex-1">{store?.hostname}</span>
+            <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-60" />
           </a>
-        ) : (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-50 border border-dashed border-zinc-200">
-            <Globe className="w-3.5 h-3.5 text-zinc-300 flex-shrink-0" />
-            <span className="text-[11px] font-medium text-zinc-400">No store connected</span>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* ── Main Navigation ── */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        <p className="px-3 pb-2.5 text-[10px] font-bold tracking-widest text-zinc-400 uppercase">
-          Navigation
-        </p>
+      {/* ── Navigation ── */}
+      <nav className="flex-1 px-2 py-2 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -92,39 +88,57 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 min-h-[42px] ${
-                active
-                  ? 'bg-zinc-900 text-white font-semibold shadow-sm'
-                  : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
-              }`}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-full text-[13px] font-medium transition-all duration-100 min-h-[40px] mb-0.5"
+              style={{
+                background: active ? '#e8f0fe' : 'transparent',
+                color: active ? '#1a73e8' : '#3c4043',
+                fontFamily: "'Google Sans', Inter, sans-serif",
+                fontWeight: active ? 600 : 500,
+              }}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#f1f3f4'; }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
             >
-              <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${active ? 'text-white' : 'text-zinc-400'}`} />
-              <span className="flex-1 tracking-tight">{item.name}</span>
-              {active && <span className="w-1.5 h-1.5 rounded-full bg-white/50 flex-shrink-0" />}
+              <Icon
+                className="w-[18px] h-[18px] flex-shrink-0"
+                style={{ color: active ? '#1a73e8' : '#5f6368' }}
+              />
+              <span className="flex-1 tracking-[0.01em]">{item.name}</span>
+              {active && <div className="w-1 h-4 rounded-full flex-shrink-0" style={{ background: '#1a73e8' }} />}
             </Link>
           );
         })}
       </nav>
 
       {/* ── User Footer ── */}
-      <div className="p-3 border-t border-zinc-100 flex-shrink-0">
-        {/* User info row */}
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1">
-          <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+      <div className="flex-shrink-0 px-3 py-3" style={{ borderTop: '1px solid #e8eaed' }}>
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl mb-1"
+          style={{ background: '#f8f9fa' }}>
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0"
+            style={{ background: '#1a73e8' }}
+          >
             {getInitials()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-zinc-900 truncate">{user?.fullName || 'Administrator'}</p>
-            <p className="text-[10px] text-zinc-400 truncate">{user?.email}</p>
+            <p className="text-[12px] font-semibold truncate" style={{ color: '#202124' }}>{user?.fullName || 'Admin'}</p>
+            <p className="text-[10px] truncate" style={{ color: '#5f6368' }}>{user?.email}</p>
           </div>
         </div>
-
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13px] font-medium text-zinc-500 hover:text-red-600 hover:bg-red-50 transition-colors min-h-[40px]"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-[13px] font-medium transition-colors"
+          style={{ color: '#5f6368' }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#fce8e6';
+            e.currentTarget.style.color = '#d93025';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = '#5f6368';
+          }}
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
-          <span>Sign Out</span>
+          <span>Sign out</span>
         </button>
       </div>
     </aside>

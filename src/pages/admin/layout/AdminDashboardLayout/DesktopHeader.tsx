@@ -1,5 +1,6 @@
-import React from 'react';
-import { ExternalLink, Globe } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Search, HelpCircle, Settings, Bell } from 'lucide-react';
 import { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -10,66 +11,118 @@ interface DesktopHeaderProps {
   getInitials: () => string;
 }
 
+// Google-style breadcrumb from path
+function buildBreadcrumb(pathname: string): string[] {
+  const segments = pathname.split('/').filter(Boolean);
+  return segments.map(s => s.charAt(0).toUpperCase() + s.slice(1));
+}
+
 export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
   title,
-  subtitle,
   user,
   getInitials,
 }) => {
   const { store } = useAuth();
-  const storeUrl = store ? `https://${store.hostname}` : null;
-  const userRole = user?.role === 'admin' || user?.role === 'merchant' ? 'Store Owner' : 'Administrator';
+  const location = useLocation();
+  const crumbs = buildBreadcrumb(location.pathname);
+  const [searchFocused, setSearchFocused] = useState(false);
 
   return (
-    <header className="hidden lg:block sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-zinc-100">
-      <div className="flex items-center justify-between px-8 h-16">
-
-        {/* ── Breadcrumb + Title ── */}
-        <div className="flex items-center gap-3 min-w-0">
-          {/* Page title */}
-          <div className="min-w-0">
-            <h1 className="text-[15px] font-bold text-zinc-900 tracking-tight leading-tight">{title}</h1>
-            {subtitle && (
-              <p className="text-[11px] text-zinc-400 font-medium mt-0.5 leading-tight">{subtitle}</p>
+    <header
+      className="hidden lg:flex items-center justify-between sticky top-0 z-30 px-6 h-16"
+      style={{
+        background: '#fff',
+        borderBottom: '1px solid #e8eaed',
+      }}
+    >
+      {/* ── Breadcrumbs ── */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        {crumbs.map((crumb, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && (
+              <span className="text-[13px]" style={{ color: '#bdc1c6' }}>/</span>
             )}
-          </div>
-        </div>
-
-        {/* ── Right Actions ── */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-
-          {/* Live store link */}
-          {storeUrl ? (
-            <a
-              href={storeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-semibold text-zinc-600 hover:text-zinc-900 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 transition-all"
-              title={`Visit ${store?.hostname}`}
+            <span
+              className="text-[13px] font-medium"
+              style={{
+                color: i === crumbs.length - 1 ? '#202124' : '#5f6368',
+                fontFamily: "'Google Sans', Inter, sans-serif",
+              }}
             >
-              <Globe className="w-3.5 h-3.5 text-zinc-400" />
-              <span className="max-w-[140px] truncate">{store?.hostname || 'Live Store'}</span>
-              <ExternalLink className="w-3 h-3 text-zinc-300" />
-            </a>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-medium text-zinc-400 bg-zinc-50 border border-dashed border-zinc-200">
-              <Globe className="w-3.5 h-3.5" />
-              No store
+              {crumb}
             </span>
-          )}
+          </React.Fragment>
+        ))}
+      </div>
 
-          {/* User pill */}
-          <div className="flex items-center gap-2.5 pl-3 border-l border-zinc-100">
-            <div className="text-right hidden sm:block">
-              <p className="text-[12px] font-semibold text-zinc-900 leading-tight">{user?.fullName || 'Administrator'}</p>
-              <p className="text-[10px] text-zinc-400 font-normal">{userRole}</p>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-              {getInitials()}
-            </div>
-          </div>
+      {/* ── Search bar (Google style) ── */}
+      <div className="flex-1 max-w-md mx-8">
+        <div
+          className="flex items-center gap-3 px-4 py-2 rounded-full transition-all duration-150"
+          style={{
+            background: searchFocused ? '#fff' : '#f1f3f4',
+            border: searchFocused ? '1px solid #1a73e8' : '1px solid transparent',
+            boxShadow: searchFocused ? '0 1px 6px rgba(32,33,36,.28)' : 'none',
+          }}
+        >
+          <Search className="w-4 h-4 flex-shrink-0" style={{ color: '#5f6368' }} />
+          <input
+            type="text"
+            placeholder="Search orders, products, customers..."
+            className="flex-1 bg-transparent text-[13px] outline-none"
+            style={{ color: '#202124', fontFamily: "'Google Sans', Inter, sans-serif" }}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+          />
         </div>
+      </div>
 
+      {/* ── Right actions ── */}
+      <div className="flex items-center gap-1">
+        {/* Help */}
+        <button
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+          style={{ color: '#5f6368' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          title="Help"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
+
+        {/* Settings */}
+        <button
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+          style={{ color: '#5f6368' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          title="Settings"
+        >
+          <Settings className="w-5 h-5" />
+        </button>
+
+        {/* Notifications */}
+        <button
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors relative"
+          style={{ color: '#5f6368' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          title="Notifications"
+        >
+          <Bell className="w-5 h-5" />
+        </button>
+
+        {/* Divider */}
+        <div className="w-px h-5 mx-2" style={{ background: '#e8eaed' }} />
+
+        {/* User avatar */}
+        <button
+          className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0 transition-opacity hover:opacity-80"
+          style={{ background: '#1a73e8' }}
+          title={user?.fullName || 'Account'}
+        >
+          {getInitials()}
+        </button>
       </div>
     </header>
   );

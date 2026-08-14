@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, Store } from 'lucide-react';
 import { DashboardSettings } from '@/hooks/useAdminDashboardSettings';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MobileHeaderProps {
   settings: DashboardSettings;
@@ -11,33 +12,49 @@ interface MobileHeaderProps {
 }
 
 export const MobileHeader: React.FC<MobileHeaderProps> = ({
-  settings,
   setSidebarOpen,
   title,
 }) => {
+  const { store } = useAuth();
+
   return (
-    <header className="lg:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200">
-      <div className="flex items-center justify-between px-3.5 py-2.5 h-14">
+    <header
+      className="lg:hidden sticky top-0 z-40"
+      style={{ background: '#fff', borderBottom: '1px solid #e8eaed' }}
+    >
+      <div className="flex items-center justify-between px-3 h-14">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="p-2 -ml-1 rounded-xl hover:bg-stone-100 transition-colors"
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+          style={{ color: '#5f6368' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           aria-label="Open menu"
         >
-          <Menu className="w-5 h-5 text-stone-800" />
+          <Menu className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-slate-900 flex items-center justify-center text-white">
-            <div className="w-3.5 h-3.5" />
+          <div
+            className="w-6 h-6 rounded flex items-center justify-center"
+            style={{ background: '#1a73e8' }}
+          >
+            <div className="w-3 h-3 rounded-sm" style={{ background: '#fff', opacity: 0.9 }} />
           </div>
-          <span className="text-sm font-extrabold text-stone-900 tracking-tight">
-            {title || settings.dashboard_name || 'Admin'}
+          <span
+            className="text-[14px] font-semibold"
+            style={{ color: '#202124', fontFamily: "'Google Sans', Inter, sans-serif" }}
+          >
+            {title || store?.name || 'Admin'}
           </span>
         </div>
 
         <Link
-          to="/"
-          className="p-2 rounded-xl hover:bg-stone-100 transition-colors text-stone-700"
+          to={store ? `https://${store.hostname}` : '/'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+          style={{ color: '#5f6368' }}
           aria-label="View store"
         >
           <Store className="w-5 h-5" />

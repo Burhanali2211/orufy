@@ -2,10 +2,10 @@ import { apiClient } from '@/lib/apiClient';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Users, Package, ShoppingCart, DollarSign,
+  Users, Package, ShoppingCart, TrendingUp,
   AlertTriangle, Clock, ArrowRight,
-  RefreshCw, TrendingUp, Globe, Plus,
-  ArrowUpRight, Zap
+  RefreshCw, Plus, ExternalLink, CheckCircle2,
+  BarChart2, Inbox
 } from 'lucide-react';
 import { supabase } from '../../../lib/legacyDb';
 import { useNotification } from '../../../contexts/NotificationContext';
@@ -51,7 +51,6 @@ interface LowStockProduct {
   images: string[];
 }
 
-// Module-level cache – survives SPA navigation, cleared on hard refresh
 let _dashboardCache: {
   metrics: DashboardMetrics;
   topProducts: TopProduct[];
@@ -59,6 +58,111 @@ let _dashboardCache: {
   lowStockProducts: LowStockProduct[];
 } | null = null;
 
+// ─── Design tokens (Google Material 3) ───────────────────────────────────────
+const G = {
+  blue: '#1a73e8',
+  blueLight: '#e8f0fe',
+  blueMid: '#d2e3fc',
+  green: '#34a853',
+  greenLight: '#e6f4ea',
+  yellow: '#fbbc04',
+  yellowLight: '#fef7e0',
+  red: '#ea4335',
+  redLight: '#fce8e6',
+  text: '#202124',
+  textSec: '#5f6368',
+  textTer: '#80868b',
+  border: '#e8eaed',
+  surface: '#fff',
+  bg: '#f8f9fa',
+  divider: '#f1f3f4',
+};
+
+// ─── Utility: format INR ─────────────────────────────────────────────────────
+const fmt = (n: number | string) => {
+  const v = typeof n === 'string' ? parseFloat(n) : n;
+  if (isNaN(v)) return '₹0';
+  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
+  if (v >= 1000) return `₹${(v / 1000).toFixed(1)}K`;
+  return `₹${v.toFixed(0)}`;
+};
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function MetricCard({
+  label, value, sub, icon: Icon, trend, color = G.blue,
+}: {
+  label: string; value: string; sub?: string;
+  icon: React.ElementType; trend?: 'up' | 'down' | 'warn' | null; color?: string;
+}) {
+  return (
+    <div
+      className="rounded-2xl p-5 flex flex-col gap-3 transition-shadow duration-150"
+      style={{
+        background: G.surface,
+        border: `1px solid ${G.border}`,
+      }}
+      onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 8px rgba(32,33,36,.12)')}
+      onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.boxShadow = 'none')}
+    >
+      <div className="flex items-center justify-between">
+        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: color + '18' }}>
+          <Icon className="w-[18px] h-[18px]" style={{ color }} />
+        </div>
+        {trend === 'up' && (
+          <span className="flex items-center gap-0.5 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+            style={{ background: G.greenLight, color: G.green }}>
+            <TrendingUp className="w-3 h-3" /> Up
+          </span>
+        )}
+        {trend === 'warn' && (
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+            style={{ background: G.yellowLight, color: '#b45309' }}>Low</span>
+        )}
+      </div>
+      <div>
+        <p className="text-[28px] font-bold leading-none tracking-tight" style={{ color: G.text, fontFamily: "'Google Sans', Inter, sans-serif" }}>
+          {value}
+        </p>
+        <p className="text-[12px] font-medium mt-1" style={{ color: G.textSec }}>{label}</p>
+        {sub && <p className="text-[11px] mt-0.5" style={{ color: G.textTer }}>{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({ title, subtitle, action, actionTo, children }: {
+  title: string; subtitle?: string;
+  action?: string; actionTo?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: G.surface, border: `1px solid ${G.border}` }}>
+      <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${G.divider}` }}>
+        <div>
+          <h3 className="text-[14px] font-semibold" style={{ color: G.text, fontFamily: "'Google Sans', Inter, sans-serif" }}>
+            {title}
+          </h3>
+          {subtitle && <p className="text-[11px] mt-0.5" style={{ color: G.textSec }}>{subtitle}</p>}
+        </div>
+        {action && actionTo && (
+          <Link
+            to={actionTo}
+            className="flex items-center gap-1 text-[12px] font-semibold transition-colors"
+            style={{ color: G.blue }}
+            onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
+            onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
+          >
+            {action} <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
 export const AdminDashboardHome: React.FC = () => {
   const { user, store } = useAuth();
   const [loading, setLoading] = useState(_dashboardCache === null);
@@ -68,14 +172,18 @@ export const AdminDashboardHome: React.FC = () => {
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>(_dashboardCache?.lowStockProducts ?? []);
   const { showError } = useNotification();
   const isFirstMount = React.useRef(true);
-
   const storeUrl = store ? `https://${store.hostname}` : null;
+
+  // Greeting
+  const hr = new Date().getHours();
+  const greeting = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = user?.fullName?.split(' ')[0] || 'there';
   const isNewStore = !loading && metrics?.totalProducts === 0 && metrics?.totalOrders === 0;
 
   useEffect(() => {
-    const background = isFirstMount.current && _dashboardCache !== null;
+    const bg = isFirstMount.current && _dashboardCache !== null;
     isFirstMount.current = false;
-    fetchDashboardData(background);
+    fetchDashboardData(bg);
   }, []);
 
   const fetchDashboardData = async (background = false) => {
@@ -86,15 +194,10 @@ export const AdminDashboardHome: React.FC = () => {
       const todayIso = todayStart.toISOString();
 
       const [
-        { count: totalUsers },
-        { count: newUsersToday },
-        { count: totalProducts },
-        { count: totalOrders },
+        { count: totalUsers }, { count: newUsersToday },
+        { count: totalProducts }, { count: totalOrders },
         { count: pendingOrders },
-        ordersRes,
-        profilesRes,
-        productsAllRes,
-        lowStockRes,
+        ordersRes, profilesRes, productsAllRes, lowStockRes,
       ] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', todayIso),
@@ -112,286 +215,198 @@ export const AdminDashboardHome: React.FC = () => {
       const profileMap = Object.fromEntries(profiles.map((p: any) => [p.id, p]));
       const ordersToday = orders.filter((o: any) => o.created_at >= todayIso).length;
       const revenueToday = orders
-        .filter((o: any) => o.created_at >= todayIso && (o.status === 'delivered' || o.status === 'shipped'))
+        .filter((o: any) => o.created_at >= todayIso && ['delivered', 'shipped'].includes(o.status))
         .reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || '0'), 0);
 
-      const allOrdersForRevenue = await apiClient.get('/orders');
-      const totalRevenue = (allOrdersForRevenue.data || []).reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || '0'), 0);
+      const allOrdersRes = await apiClient.get('/orders');
+      const totalRevenue = (allOrdersRes.data || []).reduce((s: number, o: any) => s + parseFloat(o.total_amount || '0'), 0);
 
       const lowStockCount = (productsAllRes.data || []).filter((p: any) =>
         p.min_stock_level != null ? p.stock <= p.min_stock_level : p.stock <= 20
       ).length;
 
-      const newMetrics = {
-        totalUsers: totalUsers ?? 0,
-        totalProducts: totalProducts ?? 0,
-        totalOrders: totalOrders ?? 0,
-        totalRevenue,
-        pendingOrders: pendingOrders ?? 0,
-        lowStockProducts: lowStockCount,
-        newUsersToday: newUsersToday ?? 0,
-        ordersToday,
-        revenueToday,
+      const m: DashboardMetrics = {
+        totalUsers: totalUsers ?? 0, totalProducts: totalProducts ?? 0,
+        totalOrders: totalOrders ?? 0, totalRevenue,
+        pendingOrders: pendingOrders ?? 0, lowStockProducts: lowStockCount,
+        newUsersToday: newUsersToday ?? 0, ordersToday, revenueToday,
       };
-      setMetrics(newMetrics);
+      setMetrics(m);
 
-      const newRecentOrders = orders.slice(0, 5).map((o: any) => ({
-        id: o.id,
-        order_number: o.order_number || o.id,
-        total_amount: o.total_amount,
-        status: o.status,
-        created_at: o.created_at,
-        customer_name: profileMap[o.user_id]?.full_name || 'Guest',
+      const ro = orders.slice(0, 5).map((o: any) => ({
+        id: o.id, order_number: o.order_number || o.id,
+        total_amount: o.total_amount, status: o.status,
+        created_at: o.created_at, customer_name: profileMap[o.user_id]?.full_name || 'Guest',
       }));
-      setRecentOrders(newRecentOrders);
+      setRecentOrders(ro);
 
-      const newLowStock = (lowStockRes.data || []).map((p: any) => ({
-        id: p.id, name: p.name, stock: p.stock,
-        min_stock_level: p.min_stock_level ?? 20, images: p.images || [],
+      const ls = (lowStockRes.data || []).map((p: any) => ({
+        id: p.id, name: p.name, stock: p.stock, min_stock_level: p.min_stock_level ?? 20, images: p.images || [],
       }));
-      setLowStockProducts(newLowStock);
+      setLowStockProducts(ls);
 
-      const orderItemsRes = await apiClient.get('/order-items');
-      const soldByProduct: Record<string, number> = {};
-      (orderItemsRes.data || []).forEach((oi: any) => {
-        soldByProduct[oi.product_id] = (soldByProduct[oi.product_id] || 0) + (oi.quantity || 0);
-      });
-      const topIds = Object.entries(soldByProduct).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
-      let computedTopProducts: TopProduct[];
-      if (topIds.length > 0) {
-        const topRes = await apiClient.get('/products');
-        computedTopProducts = (topRes.data || [])
-          .map((p: any) => ({ ...p, total_sold: String(soldByProduct[p.id] || 0) }))
-          .sort((a, b) => parseInt(b.total_sold) - parseInt(a.total_sold));
+      const oiRes = await apiClient.get('/order-items');
+      const soldMap: Record<string, number> = {};
+      (oiRes.data || []).forEach((oi: any) => { soldMap[oi.product_id] = (soldMap[oi.product_id] || 0) + (oi.quantity || 0); });
+      let tp: TopProduct[];
+      if (Object.keys(soldMap).length > 0) {
+        const tr = await apiClient.get('/products');
+        tp = (tr.data || []).map((p: any) => ({ ...p, total_sold: String(soldMap[p.id] || 0) }))
+          .sort((a: any, b: any) => parseInt(b.total_sold) - parseInt(a.total_sold));
       } else {
-        computedTopProducts = (productsAllRes.data || []).slice(0, 5).map((p: any) => ({ ...p, total_sold: '0' }));
+        tp = (productsAllRes.data || []).slice(0, 5).map((p: any) => ({ ...p, total_sold: '0' }));
       }
-      setTopProducts(computedTopProducts);
-
-      _dashboardCache = {
-        metrics: newMetrics,
-        topProducts: computedTopProducts,
-        recentOrders: newRecentOrders,
-        lowStockProducts: newLowStock,
-      };
+      setTopProducts(tp);
+      _dashboardCache = { metrics: m, topProducts: tp, recentOrders: ro, lowStockProducts: ls };
     } catch (error: any) {
-      if (!background) showError('Error', error.message || 'Failed to load dashboard data');
+      if (!background) showError('Error', error.message || 'Failed to load dashboard');
     } finally {
       if (!background) setLoading(false);
     }
   };
 
-  const fmt = (n: number | string) => {
-    const v = typeof n === 'string' ? parseFloat(n) : n;
-    return `₹${v.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-  };
-
-  const greetingHour = new Date().getHours();
-  const greeting = greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening';
-  const firstName = user?.fullName?.split(' ')[0] || 'there';
-
+  // ─── Loading skeleton ────────────────────────────────────────────────────
   if (loading) {
     return (
-      <AdminDashboardLayout title="Dashboard" subtitle="Loading your store overview...">
-        <div className="space-y-6 animate-pulse">
-          <div className="h-36 bg-zinc-100 rounded-2xl" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <AdminDashboardLayout title="Overview">
+        <div className="space-y-5">
+          <div className="h-8 w-48 rounded-lg animate-pulse" style={{ background: G.border }} />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-zinc-100 rounded-xl" />
+              <div key={i} className="h-28 rounded-2xl animate-pulse" style={{ background: G.border }} />
             ))}
           </div>
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 h-64 bg-zinc-100 rounded-2xl" />
-            <div className="h-64 bg-zinc-100 rounded-2xl" />
+          <div className="grid lg:grid-cols-3 gap-5">
+            <div className="lg:col-span-2 h-72 rounded-2xl animate-pulse" style={{ background: G.border }} />
+            <div className="h-72 rounded-2xl animate-pulse" style={{ background: G.border }} />
           </div>
         </div>
       </AdminDashboardLayout>
     );
   }
 
-  const statCards = metrics ? [
-    {
-      title: 'Total Revenue',
-      value: fmt(metrics.totalRevenue),
-      sub: metrics.revenueToday > 0 ? `+${fmt(metrics.revenueToday)} today` : 'All time',
-      icon: DollarSign,
-      trend: metrics.revenueToday > 0 ? 'up' : null,
-    },
-    {
-      title: 'Orders',
-      value: String(metrics.totalOrders),
-      sub: metrics.ordersToday > 0 ? `${metrics.ordersToday} today` : 'Total placed',
-      icon: ShoppingCart,
-      trend: metrics.ordersToday > 0 ? 'up' : null,
-    },
-    {
-      title: 'Products',
-      value: String(metrics.totalProducts),
-      sub: metrics.lowStockProducts > 0 ? `${metrics.lowStockProducts} low stock` : 'Catalog healthy',
-      icon: Package,
-      trend: metrics.lowStockProducts > 0 ? 'warn' : null,
-    },
-    {
-      title: 'Customers',
-      value: String(metrics.totalUsers),
-      sub: metrics.newUsersToday > 0 ? `${metrics.newUsersToday} new today` : 'Total registered',
-      icon: Users,
-      trend: metrics.newUsersToday > 0 ? 'up' : null,
-    },
-  ] : [];
-
+  // ─── Render ──────────────────────────────────────────────────────────────
   return (
-    <AdminDashboardLayout title="Overview" subtitle="Monitor your store performance">
-      <div className="space-y-6 max-w-7xl mx-auto">
+    <AdminDashboardLayout title="Overview">
+      <div className="space-y-6 pb-10">
 
-        {/* ── Hero Welcome Section ── */}
-        <div className="relative bg-zinc-900 rounded-2xl overflow-hidden">
-          {/* Subtle background texture */}
-          <div className="absolute inset-0 opacity-[0.04]" style={{
-            backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)',
-            backgroundSize: '40px 40px, 30px 30px'
-          }} />
+        {/* ── Page title + actions ───────────────────────────────────────── */}
+        <div className="flex items-start justify-between gap-4 pt-1">
+          <div>
+            <h1
+              className="text-[22px] font-normal leading-tight"
+              style={{ color: G.text, fontFamily: "'Google Sans', Inter, sans-serif" }}
+            >
+              {greeting}, {firstName}
+            </h1>
+            <p className="text-[13px] mt-0.5" style={{ color: G.textSec }}>
+              {store?.name || 'Your store'} · <span style={{ color: G.blue }}>{new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+            </p>
+          </div>
 
-          <div className="relative px-6 py-7 sm:px-8 sm:py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
-            <div>
-              <p className="text-zinc-400 text-[13px] font-medium mb-1">{greeting}, {firstName} 👋</p>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight mb-2">
-                {store?.name || 'Your Store'}
-              </h2>
-              {storeUrl && (
-                <a
-                  href={storeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[12px] font-medium text-zinc-400 hover:text-white transition-colors"
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  {store?.hostname}
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2.5">
-              <Link
-                to="/admin/products/add"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-zinc-900 rounded-xl text-[13px] font-bold hover:bg-zinc-50 active:scale-95 transition-all shadow-sm"
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {storeUrl && (
+              <a
+                href={storeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-medium border transition-colors"
+                style={{ color: G.blue, borderColor: '#dadce0', background: G.surface }}
+                onMouseEnter={e => (e.currentTarget.style.background = G.blueLight)}
+                onMouseLeave={e => (e.currentTarget.style.background = G.surface)}
               >
-                <Plus className="w-4 h-4" />
-                Add Product
-              </Link>
-              {storeUrl && (
-                <a
-                  href={storeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl text-[13px] font-semibold hover:bg-white/15 active:scale-95 transition-all"
-                >
-                  <Globe className="w-4 h-4" />
-                  View Live Store
-                </a>
-              )}
-              <button
-                onClick={() => fetchDashboardData()}
-                className="inline-flex items-center justify-center px-3 py-2.5 bg-white/10 text-white/70 border border-white/10 rounded-xl hover:bg-white/15 transition-all"
-                title="Refresh data"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            </div>
+                <ExternalLink className="w-3.5 h-3.5" />
+                View store
+              </a>
+            )}
+            <Link
+              to="/admin/products/add"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-colors"
+              style={{ background: G.blue, color: '#fff' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#1557b0')}
+              onMouseLeave={e => (e.currentTarget.style.background = G.blue)}
+            >
+              <Plus className="w-4 h-4" />
+              Add product
+            </Link>
+            <button
+              onClick={() => fetchDashboardData()}
+              className="w-9 h-9 rounded-full flex items-center justify-center border transition-colors"
+              style={{ borderColor: '#dadce0', color: G.textSec, background: G.surface }}
+              onMouseEnter={e => (e.currentTarget.style.background = G.bg)}
+              onMouseLeave={e => (e.currentTarget.style.background = G.surface)}
+              title="Refresh"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        {/* ── New Store Empty State ── */}
+        {/* ── New store empty state ──────────────────────────────────────── */}
         {isNewStore && (
-          <div className="bg-white border border-zinc-200 rounded-2xl px-6 py-8 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-6 h-6 text-zinc-400" />
+          <div
+            className="rounded-2xl p-8 flex flex-col sm:flex-row items-center gap-6"
+            style={{ background: G.blueLight, border: `1px solid ${G.blueMid}` }}
+          >
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: G.blue }}>
+              <Package className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-base font-bold text-zinc-900 mb-1">Ready to launch? Start building your catalog</h3>
-            <p className="text-sm text-zinc-500 mb-5 max-w-md mx-auto">
-              Add your first product to start selling. Your store is live — customers are already able to browse it!
-            </p>
+            <div className="text-center sm:text-left">
+              <p className="text-[15px] font-semibold mb-1" style={{ color: G.text }}>
+                Your store is live — start adding products
+              </p>
+              <p className="text-[13px]" style={{ color: G.textSec }}>
+                Customers can already browse your store at <span style={{ color: G.blue }}>{store?.hostname}</span>. Add your first product to start selling.
+              </p>
+            </div>
             <Link
               to="/admin/products/add"
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-semibold hover:bg-zinc-800 transition-colors"
+              className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[13px] font-semibold"
+              style={{ background: G.blue, color: '#fff' }}
             >
-              <Plus className="w-4 h-4" />
-              Add Your First Product
+              <Plus className="w-4 h-4" /> Add product
             </Link>
           </div>
         )}
 
-        {/* ── Stat Cards ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {statCards.map((stat) => (
-            <div
-              key={stat.title}
-              className="bg-white border border-zinc-200/80 rounded-xl p-4 sm:p-5 hover:shadow-sm hover:border-zinc-300 transition-all duration-200"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded-lg bg-zinc-50 flex items-center justify-center">
-                  <stat.icon className="w-4 h-4 text-zinc-500" />
-                </div>
-                {stat.trend === 'up' && (
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" /> UP
-                  </span>
-                )}
-                {stat.trend === 'warn' && (
-                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">
-                    LOW
-                  </span>
-                )}
-              </div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight leading-none mb-1">
-                {stat.value}
-              </p>
-              <p className="text-[10px] sm:text-[11px] text-zinc-400 font-semibold uppercase tracking-wide">{stat.title}</p>
-              {stat.sub && (
-                <p className="text-[10px] text-zinc-400 mt-1 hidden sm:block">{stat.sub}</p>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* ── Action Alerts ── */}
+        {/* ── Alert banners ──────────────────────────────────────────────── */}
         {metrics && (metrics.pendingOrders > 0 || metrics.lowStockProducts > 0) && (
           <div className="grid sm:grid-cols-2 gap-3">
             {metrics.pendingOrders > 0 && (
-              <div className="bg-white border border-zinc-200 rounded-xl p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                style={{ background: G.blueLight, border: `1px solid ${G.blueMid}` }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-4 h-4 text-blue-500" />
-                  </div>
+                  <Clock className="w-4 h-4 flex-shrink-0" style={{ color: G.blue }} />
                   <div>
-                    <p className="text-sm font-bold text-zinc-900">{metrics.pendingOrders} Pending Orders</p>
-                    <p className="text-xs text-zinc-400">Awaiting fulfillment</p>
+                    <p className="text-[13px] font-semibold" style={{ color: G.blue }}>
+                      {metrics.pendingOrders} orders waiting
+                    </p>
+                    <p className="text-[11px]" style={{ color: '#4a90d9' }}>Need fulfillment</p>
                   </div>
                 </div>
-                <Link
-                  to="/admin/orders"
-                  className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors flex-shrink-0"
-                >
+                <Link to="/admin/orders"
+                  className="text-[12px] font-semibold px-3 py-1.5 rounded-full transition-colors"
+                  style={{ background: G.blue, color: '#fff' }}>
                   Review
                 </Link>
               </div>
             )}
             {metrics.lowStockProducts > 0 && (
-              <div className="bg-white border border-zinc-200 rounded-xl p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                style={{ background: G.yellowLight, border: '1px solid #fce9a6' }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  </div>
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: '#b45309' }} />
                   <div>
-                    <p className="text-sm font-bold text-zinc-900">{metrics.lowStockProducts} Low Stock Items</p>
-                    <p className="text-xs text-zinc-400">Re-stock threshold reached</p>
+                    <p className="text-[13px] font-semibold" style={{ color: '#92400e' }}>
+                      {metrics.lowStockProducts} items low stock
+                    </p>
+                    <p className="text-[11px]" style={{ color: '#b45309' }}>Restock soon</p>
                   </div>
                 </div>
-                <Link
-                  to="/admin/products"
-                  className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors flex-shrink-0"
-                >
+                <Link to="/admin/inventory"
+                  className="text-[12px] font-semibold px-3 py-1.5 rounded-full border transition-colors"
+                  style={{ borderColor: '#d97706', color: '#92400e', background: 'transparent' }}>
                   Manage
                 </Link>
               </div>
@@ -399,151 +414,217 @@ export const AdminDashboardHome: React.FC = () => {
           </div>
         )}
 
-        {/* ── Recent Orders + Top Products ── */}
+        {/* ── Metric cards ──────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard
+            label="Total Revenue" icon={BarChart2}
+            value={fmt(metrics?.totalRevenue ?? 0)} color={G.blue}
+            sub={metrics?.revenueToday ? `+${fmt(metrics.revenueToday)} today` : 'All time'}
+            trend={metrics?.revenueToday ? 'up' : null}
+          />
+          <MetricCard
+            label="Orders" icon={ShoppingCart}
+            value={String(metrics?.totalOrders ?? 0)} color={G.green}
+            sub={metrics?.ordersToday ? `${metrics.ordersToday} placed today` : 'Total'}
+            trend={metrics?.ordersToday ? 'up' : null}
+          />
+          <MetricCard
+            label="Products" icon={Package}
+            value={String(metrics?.totalProducts ?? 0)} color="#f9ab00"
+            sub={metrics?.lowStockProducts ? `${metrics.lowStockProducts} low stock` : 'Catalog healthy'}
+            trend={metrics?.lowStockProducts ? 'warn' : null}
+          />
+          <MetricCard
+            label="Customers" icon={Users}
+            value={String(metrics?.totalUsers ?? 0)} color="#a142f4"
+            sub={metrics?.newUsersToday ? `+${metrics.newUsersToday} today` : 'Total registered'}
+            trend={metrics?.newUsersToday ? 'up' : null}
+          />
+        </div>
+
+        {/* ── Main content grid ──────────────────────────────────────────── */}
         <div className="grid lg:grid-cols-3 gap-5">
 
           {/* Recent Orders */}
-          <div className="lg:col-span-2 bg-white border border-zinc-200/80 rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-100">
-              <div>
-                <h3 className="text-[14px] font-bold text-zinc-900">Recent Orders</h3>
-                <p className="text-[11px] text-zinc-400 font-medium mt-0.5">Latest customer purchases</p>
-              </div>
-              <Link
-                to="/admin/orders"
-                className="text-[12px] text-zinc-500 hover:text-zinc-900 font-semibold flex items-center gap-1 transition-colors"
-              >
-                View All <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-            <div className="divide-y divide-zinc-50">
-              {recentOrders.length > 0 ? recentOrders.map((order) => {
-                const cfg = getOrderStatusConfig(order.status);
-                const cls = getAdminStatusClasses(order.status);
-                const Icon = cfg.icon;
-                return (
-                  <div key={order.id} className="flex items-center justify-between px-6 py-4 hover:bg-zinc-50/60 transition-colors">
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="w-9 h-9 bg-zinc-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <ShoppingCart className="w-4 h-4 text-zinc-500" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-[13px] text-zinc-900">{order.order_number}</p>
-                        <p className="text-[11px] text-zinc-400 font-medium truncate">{order.customer_name}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold border ${cls}`}>
-                        <Icon className="w-3 h-3" />
-                        <span>{cfg.label}</span>
-                      </div>
-                      <p className="font-bold text-[13px] text-zinc-900 w-20 text-right">{fmt(order.total_amount)}</p>
-                    </div>
-                  </div>
-                );
-              }) : (
-                <div className="px-6 py-14 text-center">
-                  <ShoppingCart className="w-10 h-10 text-zinc-200 mx-auto mb-2" />
-                  <p className="text-[12px] text-zinc-400 font-medium">No orders yet</p>
-                  <p className="text-[11px] text-zinc-300 mt-0.5">Share your store to start receiving orders</p>
+          <div className="lg:col-span-2">
+            <SectionCard title="Recent Orders" subtitle="Latest transactions" action="View all" actionTo="/admin/orders">
+              {recentOrders.length > 0 ? (
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${G.divider}` }}>
+                      {['Order', 'Customer', 'Status', 'Amount'].map(h => (
+                        <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider"
+                          style={{ color: G.textSec }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentOrders.map((order, i) => {
+                      const cfg = getOrderStatusConfig(order.status);
+                      const Icon = cfg.icon;
+                      const isLast = i === recentOrders.length - 1;
+
+                      // Color each status distinctly
+                      const statusStyle = order.status === 'delivered'
+                        ? { background: G.greenLight, color: G.green }
+                        : order.status === 'pending'
+                        ? { background: G.blueLight, color: G.blue }
+                        : order.status === 'cancelled'
+                        ? { background: G.redLight, color: G.red }
+                        : { background: G.yellowLight, color: '#b45309' };
+
+                      return (
+                        <tr
+                          key={order.id}
+                          style={{ borderBottom: isLast ? 'none' : `1px solid ${G.divider}` }}
+                          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = G.bg)}
+                          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+                          className="transition-colors cursor-default"
+                        >
+                          <td className="px-5 py-3.5">
+                            <span className="text-[13px] font-semibold" style={{ color: G.blue }}>
+                              {order.order_number}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span className="text-[13px]" style={{ color: G.text }}>{order.customer_name}</span>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                              style={statusStyle}
+                            >
+                              <Icon className="w-3 h-3" />
+                              {cfg.label}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span className="text-[13px] font-semibold" style={{ color: G.text }}>
+                              {fmt(order.total_amount)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="py-14 text-center flex flex-col items-center gap-3">
+                  <Inbox className="w-10 h-10" style={{ color: G.border }} />
+                  <p className="text-[13px]" style={{ color: G.textSec }}>No orders yet</p>
+                  {storeUrl && (
+                    <a href={storeUrl} target="_blank" rel="noopener noreferrer"
+                      className="text-[12px] font-semibold" style={{ color: G.blue }}>
+                      Share your store →
+                    </a>
+                  )}
                 </div>
               )}
-            </div>
+            </SectionCard>
           </div>
 
           {/* Right column */}
           <div className="space-y-5">
+
             {/* Top Selling */}
-            <div className="bg-white border border-zinc-200/80 rounded-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
-                <div>
-                  <h3 className="text-[14px] font-bold text-zinc-900">Top Selling</h3>
-                  <p className="text-[11px] text-zinc-400 font-medium mt-0.5">Best performers</p>
-                </div>
-                <Link to="/admin/products" className="text-[12px] text-zinc-500 hover:text-zinc-900 font-semibold transition-colors">
-                  Catalog
-                </Link>
-              </div>
-              <div className="divide-y divide-zinc-50">
-                {topProducts.slice(0, 4).map((product, i) => (
-                  <div key={product.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-zinc-50/60 transition-colors">
-                    <span className="text-[11px] font-bold text-zinc-300 w-4 flex-shrink-0">#{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-semibold text-zinc-900 truncate">{product.name}</p>
-                      <p className="text-[10px] text-zinc-400">{product.total_sold} sold</p>
+            <SectionCard title="Top Products" subtitle="By units sold" action="Catalog" actionTo="/admin/products">
+              <div>
+                {topProducts.slice(0, 5).map((product, i) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center gap-3 px-5 py-3 transition-colors"
+                    style={{ borderBottom: i < 4 ? `1px solid ${G.divider}` : 'none' }}
+                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = G.bg)}
+                    onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+                  >
+                    <span className="text-[12px] font-bold w-4 flex-shrink-0" style={{ color: G.textTer }}>
+                      {i + 1}
+                    </span>
+                    <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
+                      style={{ background: G.bg }}>
+                      {product.images?.[0]
+                        ? <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                        : <Package className="w-4 h-4" style={{ color: G.textTer }} />}
                     </div>
-                    <p className="text-[12px] font-extrabold text-zinc-900 flex-shrink-0">{fmt(product.price)}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-medium truncate" style={{ color: G.text }}>{product.name}</p>
+                      <p className="text-[10px]" style={{ color: G.textSec }}>{product.total_sold} sold</p>
+                    </div>
+                    <p className="text-[12px] font-semibold flex-shrink-0" style={{ color: G.text }}>
+                      {fmt(product.price)}
+                    </p>
                   </div>
                 ))}
                 {topProducts.length === 0 && (
-                  <div className="px-5 py-8 text-center">
-                    <p className="text-[11px] text-zinc-400">No sales data yet</p>
+                  <div className="py-8 text-center">
+                    <p className="text-[12px]" style={{ color: G.textSec }}>No sales data yet</p>
                   </div>
                 )}
               </div>
-            </div>
+            </SectionCard>
 
-            {/* Today Summary */}
-            <div className="bg-white border border-zinc-200/80 rounded-2xl p-5">
-              <h3 className="text-[14px] font-bold text-zinc-900 mb-0.5">Daily Summary</h3>
-              <p className="text-[11px] text-zinc-400 font-medium mb-5">Activity recorded today</p>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between text-[12px] font-semibold text-zinc-700 mb-1.5">
-                    <span>New Orders</span>
-                    <span className="text-zinc-900 font-bold">{metrics?.ordersToday ?? 0}</span>
+            {/* Today at a glance */}
+            <SectionCard title="Today" subtitle="Activity summary">
+              <div className="px-5 py-4 space-y-5">
+                {/* Progress rows */}
+                {[
+                  { label: 'Orders', value: metrics?.ordersToday ?? 0, max: 20 },
+                  { label: 'New customers', value: metrics?.newUsersToday ?? 0, max: 10 },
+                ].map(({ label, value, max }) => (
+                  <div key={label}>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-[12px] font-medium" style={{ color: G.text }}>{label}</span>
+                      <span className="text-[12px] font-bold" style={{ color: G.text }}>{value}</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: G.divider }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min((value / max) * 100, 100)}%`, background: G.blue }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-zinc-900 rounded-full transition-all duration-700" style={{ width: `${Math.min((metrics?.ordersToday ?? 0) * 10, 100)}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-[12px] font-semibold text-zinc-700 mb-1.5">
-                    <span>New Customers</span>
-                    <span className="text-zinc-900 font-bold">{metrics?.newUsersToday ?? 0}</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-zinc-900 rounded-full transition-all duration-700" style={{ width: `${Math.min((metrics?.newUsersToday ?? 0) * 10, 100)}%` }} />
-                  </div>
-                </div>
-                <div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
-                  <span className="text-[12px] font-semibold text-zinc-500">Revenue Today</span>
-                  <span className="text-[13px] font-extrabold text-zinc-900">{fmt(metrics?.revenueToday ?? 0)}</span>
+                ))}
+
+                {/* Revenue today */}
+                <div className="flex items-center justify-between pt-3" style={{ borderTop: `1px solid ${G.divider}` }}>
+                  <span className="text-[12px] font-medium" style={{ color: G.textSec }}>Revenue today</span>
+                  <span className="text-[14px] font-bold" style={{ color: G.text }}>
+                    {fmt(metrics?.revenueToday ?? 0)}
+                  </span>
                 </div>
               </div>
-            </div>
+            </SectionCard>
           </div>
         </div>
 
-        {/* ── Low Stock Alert ── */}
+        {/* ── Low Stock ──────────────────────────────────────────────────── */}
         {lowStockProducts.length > 0 && (
-          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
-            <div className="flex items-center gap-2.5 px-5 py-4 border-b border-zinc-100">
-              <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-              </div>
-              <div>
-                <h3 className="text-[13px] font-bold text-zinc-900">Low Stock Alert</h3>
-                <p className="text-[10px] text-zinc-400">{lowStockProducts.length} items need restocking</p>
-              </div>
-            </div>
-            <div className="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-              {lowStockProducts.map((product) => (
-                <div key={product.id} className="border border-zinc-100 rounded-xl p-2.5 flex items-center gap-2.5 hover:border-zinc-200 transition-colors">
-                  <div className="w-8 h-8 bg-zinc-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+          <SectionCard title="Low Stock Alert" subtitle={`${lowStockProducts.length} items need restocking`}>
+            <div className="p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5">
+              {lowStockProducts.map(product => (
+                <div
+                  key={product.id}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                  style={{ border: `1px solid ${G.border}`, background: G.surface }}
+                  onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = G.bg)}
+                  onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = G.surface)}
+                >
+                  <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
+                    style={{ background: G.bg }}>
                     {product.images?.[0]
                       ? <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                      : <Package className="w-4 h-4 text-zinc-300" />
-                    }
+                      : <Package className="w-4 h-4" style={{ color: G.textTer }} />}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold text-zinc-900 truncate">{product.name}</p>
-                    <p className="text-[10px] text-amber-500 font-semibold">{product.stock} left</p>
+                    <p className="text-[11px] font-medium truncate" style={{ color: G.text }}>{product.name}</p>
+                    <p className="text-[10px] font-semibold" style={{ color: '#b45309' }}>{product.stock} left</p>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </SectionCard>
         )}
       </div>
     </AdminDashboardLayout>
