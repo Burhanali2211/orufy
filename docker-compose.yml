@@ -44,7 +44,9 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.orufy.rule=Host(`get-oru.com`) || HostRegexp(`^[a-z0-9-]+\\.get-oru\\.com$`)"
       - "traefik.http.routers.orufy.entrypoints=websecure"
-      - "traefik.http.routers.orufy.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.orufy.tls.certresolver=cloudflare"
+      - "traefik.http.routers.orufy.tls.domains[0].main=get-oru.com"
+      - "traefik.http.routers.orufy.tls.domains[0].sans=*.get-oru.com"
       - "traefik.http.services.orufy.loadbalancer.server.port=80"
     depends_on:
       - backend
