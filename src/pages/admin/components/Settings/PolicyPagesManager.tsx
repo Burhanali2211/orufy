@@ -242,34 +242,32 @@ export const PolicyPagesManager: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center">
-              <Globe className="w-6 h-6 text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Policy Pages Manager</h1>
-              <p className="text-sm text-white/60 mt-0.5">Manage required policy pages for Razorpay compliance</p>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-[#e8f0fe] rounded-2xl flex items-center justify-center">
+            <Globe className="w-6 h-6 text-[#1a73e8]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>Policy Pages Manager</h1>
+            <p className="text-[13px] text-[#5f6368] font-medium mt-1">Manage required policy pages for Razorpay compliance</p>
           </div>
         </div>
         <button
           onClick={checkRouteExistence}
           disabled={checkingRoutes}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl hover:bg-blue-500/30 transition-all disabled:opacity-50"
+          className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#1a73e8] border border-[#d2e3fc] rounded-full hover:bg-[#f8f9fa] transition-colors disabled:opacity-50 text-[14px] font-medium shadow-sm min-h-[44px]"
         >
-          <RefreshCw className={`h-5 w-5 ${checkingRoutes ? 'hidden' : ''}`} />
+          <RefreshCw className={`h-5 w-5 ${checkingRoutes ? 'animate-spin' : ''}`} />
           <span>Refresh Status</span>
         </button>
       </div>
 
       {/* Info Banner */}
-      <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-4">
+      <div className="bg-[#e8f0fe] border border-[#d2e3fc] rounded-[24px] p-5">
         <div className="flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-5 w-5 text-[#1a73e8] flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="text-sm font-semibold text-white mb-1">Razorpay Compliance</h3>
-            <p className="text-xs text-white/60">
+            <h3 className="text-[14px] font-medium text-[#1a73e8] mb-1" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>Razorpay Compliance</h3>
+            <p className="text-[13px] text-[#1a73e8]">
               These policy pages are required for Razorpay verification. Make sure all pages exist and are linked in your footer.
             </p>
           </div>
@@ -277,94 +275,89 @@ export const PolicyPagesManager: React.FC = () => {
       </div>
 
       {/* Policy Pages List */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {policyPages.map((page) => (
           <div
             key={page.id}
-            className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 hover:border-indigo-500/30 transition-all"
+            className="bg-white rounded-[24px] border border-[#e8eaed] p-6 hover:border-[#1a73e8] transition-all shadow-sm flex flex-col"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <h3 className="text-lg font-semibold text-white">{page.name}</h3>
-                  <div className="flex items-center gap-2">
-                    {page.exists ? (
-                      <span className="px-2 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Page Exists
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30 rounded-full flex items-center gap-1">
-                        <XCircle className="h-3 w-3" />
-                        Missing
-                      </span>
-                    )}
-                    {page.inFooter ? (
-                      <span className="px-2 py-1 text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full">
-                        In Footer
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full">
-                        Not in Footer
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-xs text-white/60 mb-1">Route:</p>
-                    <code className="text-sm text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded">
-                      {page.route}
-                    </code>
-                  </div>
-
-                  {page.razorpayUrl && (
-                    <div>
-                      <p className="text-xs text-white/60 mb-1">Razorpay URL:</p>
-                      <a
-                        href={page.razorpayUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
-                      >
-                        {page.razorpayUrl}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </div>
+            <div className="flex-1">
+              <div className="flex flex-col gap-3 mb-4">
+                <h3 className="text-[18px] font-medium text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{page.name}</h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {page.exists ? (
+                    <span className="px-2.5 py-1 text-[11px] font-medium bg-[#e6f4ea] text-[#137333] border border-[#ceead6] rounded-full flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> Page Exists
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 text-[11px] font-medium bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf] rounded-full flex items-center gap-1">
+                      <XCircle className="h-3 w-3" /> Missing
+                    </span>
                   )}
-
-                  {page.inFooter && page.footerLinkText && (
-                    <div>
-                      <p className="text-xs text-white/60 mb-1">Footer Link:</p>
-                      <p className="text-sm text-white">
-                        {page.footerLinkText} ({page.section})
-                      </p>
-                    </div>
+                  {page.inFooter ? (
+                    <span className="px-2.5 py-1 text-[11px] font-medium bg-[#e8f0fe] text-[#1a73e8] border border-[#d2e3fc] rounded-full">
+                      In Footer
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 text-[11px] font-medium bg-[#fef7e0] text-[#b06000] border border-[#fce8b2] rounded-full">
+                      Not in Footer
+                    </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {page.inFooter ? (
-                  <button
-                    onClick={() => handleUpdateFooterLink(page)}
-                    className="px-4 py-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl hover:bg-blue-500/30 transition-all flex items-center gap-2"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                    <span>Update</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => openAddModal(page)}
-                    disabled={!page.exists}
-                    className="px-4 py-2 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl hover:bg-amber-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add to Footer</span>
-                  </button>
+              <div className="space-y-3 mb-6">
+                <div>
+                  <p className="text-[12px] text-[#5f6368] font-medium mb-1 uppercase tracking-wider">Route</p>
+                  <code className="text-[13px] text-[#202124] bg-[#f8f9fa] px-2 py-1 rounded-[8px] border border-[#e8eaed]">
+                    {page.route}
+                  </code>
+                </div>
+
+                {page.razorpayUrl && (
+                  <div>
+                    <p className="text-[12px] text-[#5f6368] font-medium mb-1 uppercase tracking-wider">Razorpay URL</p>
+                    <a
+                      href={page.razorpayUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[13px] text-[#1a73e8] hover:text-[#1557b0] flex items-center gap-1"
+                    >
+                      View Live <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                )}
+
+                {page.inFooter && page.footerLinkText && (
+                  <div>
+                    <p className="text-[12px] text-[#5f6368] font-medium mb-1 uppercase tracking-wider">Footer Link</p>
+                    <p className="text-[14px] text-[#202124]">
+                      {page.footerLinkText} <span className="text-[#5f6368]">({page.section})</span>
+                    </p>
+                  </div>
                 )}
               </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#e8eaed] mt-auto">
+              {page.inFooter ? (
+                <button
+                  onClick={() => handleUpdateFooterLink(page)}
+                  className="w-full px-5 py-2.5 bg-white text-[#1a73e8] border border-[#d2e3fc] rounded-full hover:bg-[#e8f0fe] transition-colors flex items-center justify-center gap-2 text-[14px] font-medium"
+                >
+                  <Edit2 className="h-4 w-4" />
+                  <span>Update Footer Link</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => openAddModal(page)}
+                  disabled={!page.exists}
+                  className="w-full px-5 py-2.5 bg-[#1a73e8] text-white rounded-full hover:bg-[#1557b0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[14px] font-medium shadow-sm"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add to Footer</span>
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -372,89 +365,91 @@ export const PolicyPagesManager: React.FC = () => {
 
       {/* Add to Footer Modal */}
       {showAddModal && selectedPage && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full border border-white/10">
-            <div className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border-b border-white/10 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-xl font-bold text-white">
+        <div className="fixed inset-0 bg-[#202124]/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[24px] shadow-lg max-w-md w-full border border-[#e8eaed] overflow-hidden">
+            <div className="bg-white border-b border-[#e8eaed] px-6 py-5 flex items-center justify-between">
+              <h2 className="text-[18px] font-medium text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>
                 {selectedPage.inFooter ? 'Update' : 'Add'} Footer Link
               </h2>
               <button
                 onClick={closeAddModal}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/60 hover:text-white"
+                className="p-2 hover:bg-[#f1f3f4] rounded-full transition-colors text-[#5f6368]"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-                <p className="text-xs text-white/60 mb-1">Page Route:</p>
-                <code className="text-sm text-blue-400">{selectedPage.route}</code>
+            <div className="p-6 space-y-5">
+              <div className="bg-[#f8f9fa] border border-[#e8eaed] rounded-[24px] p-5">
+                <p className="text-[13px] font-medium text-[#5f6368] mb-1">Page Route:</p>
+                <code className="text-[14px] text-[#202124]">{selectedPage.route}</code>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
+                <label className="block text-[13px] font-medium text-[#5f6368] mb-2">
                   Link Text (Display Name) *
                 </label>
                 <input
                   type="text"
                   value={formData.link_text}
                   onChange={(e) => setFormData((prev) => ({ ...prev, link_text: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 text-white placeholder-white/40 transition-all"
+                  className="w-full px-4 py-3 bg-white border border-[#e8eaed] rounded-[24px] focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] placeholder-[#5f6368] transition-all hover:bg-[#f8f9fa] focus:bg-white"
                   placeholder="e.g., Contact Us, Privacy Policy"
                   required
                 />
-                <p className="text-xs text-white/40 mt-1">
-                  This is the text that will appear in the footer. The route ({selectedPage.route}) will be used as the link URL.
+                <p className="text-[12px] text-[#5f6368] mt-2 ml-2">
+                  This is the text that will appear in the footer.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">Section *</label>
+                <label className="block text-[13px] font-medium text-[#5f6368] mb-2">Section *</label>
                 <select
                   value={formData.section_name}
                   onChange={(e) => setFormData((prev) => ({ ...prev, section_name: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 text-white transition-all"
+                  className="w-full px-4 py-3 bg-white border border-[#e8eaed] rounded-[24px] focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] transition-all hover:bg-[#f8f9fa] focus:bg-white appearance-none pr-10"
+                  style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}
                 >
-                  <option value="Customer Care" className="bg-gray-900">Customer Care</option>
-                  <option value="Company" className="bg-gray-900">Company</option>
-                  <option value="Legal" className="bg-gray-900">Legal</option>
-                  <option value="Shop" className="bg-gray-900">Shop</option>
+                  <option value="Customer Care">Customer Care</option>
+                  <option value="Company">Company</option>
+                  <option value="Legal">Legal</option>
+                  <option value="Shop">Shop</option>
                   {getSections()
                     .filter((s) => !['Customer Care', 'Company', 'Legal', 'Shop'].includes(s))
                     .map((section) => (
-                      <option key={section} value={section} className="bg-gray-900">
+                      <option key={section} value={section}>
                         {section}
                       </option>
                     ))}
                 </select>
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="opens_new_tab"
-                  checked={formData.opens_new_tab}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, opens_new_tab: e.target.checked }))}
-                  className="w-4 h-4 text-amber-500 border-white/20 rounded focus:ring-amber-500 bg-white/5"
-                />
-                <label htmlFor="opens_new_tab" className="text-sm text-white/80">
-                  Open in new tab
-                </label>
-              </div>
+              <label className="flex items-center gap-3 cursor-pointer mt-2">
+                <div className="relative flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    id="opens_new_tab"
+                    checked={formData.opens_new_tab}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, opens_new_tab: e.target.checked }))}
+                    className="peer appearance-none w-5 h-5 border-2 border-[#5f6368] rounded-[4px] checked:bg-[#1a73e8] checked:border-[#1a73e8] transition-colors cursor-pointer"
+                  />
+                  <CheckSquare className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" />
+                </div>
+                <span className="text-[14px] text-[#202124]">Open in new tab</span>
+              </label>
             </div>
 
-            <div className="bg-white/5 px-6 py-4 flex items-center justify-end gap-3 border-t border-white/10 rounded-b-2xl">
+            <div className="bg-[#f8f9fa] px-6 py-4 flex items-center justify-end gap-3 border-t border-[#e8eaed]">
               <button
                 onClick={closeAddModal}
-                className="px-6 py-2 bg-white/10 border border-white/20 text-white rounded-xl hover:bg-white/20 transition-colors"
+                className="px-6 py-2.5 bg-white border border-[#e8eaed] text-[#5f6368] rounded-full hover:bg-[#f8f9fa] transition-colors text-[14px] font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddToFooter}
                 disabled={!formData.link_text}
-                className="px-6 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors font-semibold"
+                className="px-6 py-2.5 bg-[#1a73e8] text-white rounded-full hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors text-[14px] font-medium"
               >
                 <Plus className="h-4 w-4" />
                 {selectedPage.inFooter ? 'Update' : 'Add'} Link
@@ -466,5 +461,3 @@ export const PolicyPagesManager: React.FC = () => {
     </div>
   );
 };
-
-

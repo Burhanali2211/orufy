@@ -23,7 +23,6 @@ const navItems: NavItem[] = [
   { name: 'Categories', path: '/admin/categories', icon: Tag },
   { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
   { name: 'Customers', path: '/admin/users', icon: Users },
-  { name: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
   { name: 'Settings', path: '/admin/settings', icon: Settings },
 ];
 

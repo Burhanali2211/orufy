@@ -292,35 +292,35 @@ export const ProductFormPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/admin/products')}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-600 hover:text-stone-900 bg-white border border-stone-200 px-3 py-2 rounded-xl shadow-xs transition-colors min-h-[44px]"
+            className="inline-flex items-center gap-2 text-[14px] font-medium text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] bg-white border border-[#e8eaed] px-4 py-2.5 rounded-full transition-colors min-h-[44px]"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
             <span>Products</span>
           </button>
 
           {/* Mode Switcher Tabs */}
-          <div className="flex bg-stone-100 p-1 rounded-xl border border-stone-200">
+          <div className="flex bg-[#f1f3f4] p-1.5 rounded-full">
             <button
               type="button"
               onClick={() => setActiveTab('quick')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                 activeTab === 'quick'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-white text-[#1a73e8] shadow-sm'
+                  : 'text-[#5f6368] hover:text-[#202124] hover:bg-[#e8eaed]'
               }`}
             >
-              <Zap className="w-3.5 h-3.5" /> Quick Add
+              <Zap className="w-4 h-4" /> Quick Add
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('full')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                 activeTab === 'full'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-white text-[#1a73e8] shadow-sm'
+                  : 'text-[#5f6368] hover:text-[#202124] hover:bg-[#e8eaed]'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" /> All Details
+              <Layers className="w-4 h-4" /> All Details
             </button>
           </div>
         </div>
@@ -330,13 +330,13 @@ export const ProductFormPage: React.FC = () => {
           {activeTab === 'quick' && (
             <div className="space-y-6">
               {/* Product Basic Info Card */}
-              <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 sm:p-7 shadow-2xs space-y-5">
-                <div className="flex items-center justify-between pb-3.5 border-b border-zinc-100">
+              <div className="bg-white border border-[#e8eaed] rounded-[24px] p-6 sm:p-8 space-y-6">
+                <div className="flex items-center justify-between pb-4 border-b border-[#e8eaed]">
                   <div>
-                    <h3 className="font-bold text-zinc-900 text-base">Essential Product Details</h3>
-                    <p className="text-xs text-zinc-400 font-medium mt-0.5">Core information shown in the customer storefront</p>
+                    <h3 className="font-semibold text-[#202124] text-[18px]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>Essential Product Details</h3>
+                    <p className="text-[13px] text-[#5f6368] mt-1">Core information shown in the customer storefront</p>
                   </div>
-                  <span className="text-[11px] font-semibold text-zinc-400 bg-zinc-50 border border-zinc-200/60 px-2.5 py-1 rounded-md">Step 1 of 2</span>
+                  <span className="text-[12px] font-medium text-[#1a73e8] bg-[#e8f0fe] px-3 py-1 rounded-full">Step 1 of 2</span>
                 </div>
 
                 <FormInput
@@ -397,13 +397,13 @@ export const ProductFormPage: React.FC = () => {
                       placeholder="10"
                     />
                     {/* Fast increment buttons for mobile admins */}
-                    <div className="flex gap-1.5 mt-1.5">
+                    <div className="flex gap-2 mt-2">
                       {['10', '25', '50', '100'].map(val => (
                         <button
                           key={val}
                           type="button"
                           onClick={() => setFormData(prev => ({ ...prev, stock: val }))}
-                          className="px-2 py-0.5 text-xs bg-gray-100 hover:bg-amber-100 hover:text-amber-800 text-gray-600 rounded font-semibold transition-colors"
+                          className="px-3 py-1 text-[13px] bg-[#f1f3f4] hover:bg-[#e8eaed] text-[#5f6368] hover:text-[#202124] rounded-full font-medium transition-colors"
                         >
                           +{val}
                         </button>
@@ -414,12 +414,12 @@ export const ProductFormPage: React.FC = () => {
               </div>
 
               {/* Photos Card */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-                <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-700">
-                    <Image className="w-4 h-4" />
+              <div className="bg-white border border-[#e8eaed] rounded-[24px] p-6 sm:p-8 space-y-6">
+                <div className="flex items-center gap-3 pb-4 border-b border-[#e8eaed]">
+                  <div className="w-10 h-10 bg-[#e8f0fe] rounded-full flex items-center justify-center text-[#1a73e8]">
+                    <Image className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-gray-900 text-base">Product Images</h3>
+                  <h3 className="font-semibold text-[#202124] text-[18px]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>Product Images</h3>
                 </div>
 
                 <ImageUpload
@@ -454,7 +454,7 @@ export const ProductFormPage: React.FC = () => {
               </div>
 
               {/* Short Description */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+              <div className="bg-white border border-[#e8eaed] rounded-[24px] p-6 sm:p-8 space-y-6">
                 <FormTextarea
                   label="Short Summary"
                   name="short_description"
@@ -471,9 +471,12 @@ export const ProductFormPage: React.FC = () => {
           {activeTab === 'full' && (
             <div className="space-y-4">
               {/* Full Basic Info */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-                <h3 className="font-bold text-gray-900 text-base pb-2 border-b border-gray-100 flex items-center gap-2">
-                  <Package className="w-4 h-4 text-amber-600" /> Basic Details
+              <div className="bg-white border border-[#e8eaed] rounded-[24px] p-6 sm:p-8 space-y-6">
+                <h3 className="font-semibold text-[#202124] text-[18px] pb-4 border-b border-[#e8eaed] flex items-center gap-3" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>
+                  <div className="w-10 h-10 bg-[#fef7e0] rounded-full flex items-center justify-center text-[#f29900]">
+                    <Package className="w-5 h-5" />
+                  </div>
+                  Basic Details
                 </h3>
 
                 <FormInput
@@ -525,9 +528,12 @@ export const ProductFormPage: React.FC = () => {
               </div>
 
               {/* Full Pricing & Stock */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-                <h3 className="font-bold text-gray-900 text-base pb-2 border-b border-gray-100 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-emerald-600" /> Pricing & Inventory
+              <div className="bg-white border border-[#e8eaed] rounded-[24px] p-6 sm:p-8 space-y-6">
+                <h3 className="font-semibold text-[#202124] text-[18px] pb-4 border-b border-[#e8eaed] flex items-center gap-3" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>
+                  <div className="w-10 h-10 bg-[#e6f4ea] rounded-full flex items-center justify-center text-[#137333]">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  Pricing & Inventory
                 </h3>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -589,9 +595,12 @@ export const ProductFormPage: React.FC = () => {
               </div>
 
               {/* Full Images */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-                <h3 className="font-bold text-gray-900 text-base pb-2 border-b border-gray-100 flex items-center gap-2">
-                  <Image className="w-4 h-4 text-blue-600" /> Images
+              <div className="bg-white border border-[#e8eaed] rounded-[24px] p-6 sm:p-8 space-y-6">
+                <h3 className="font-semibold text-[#202124] text-[18px] pb-4 border-b border-[#e8eaed] flex items-center gap-3" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>
+                  <div className="w-10 h-10 bg-[#e8f0fe] rounded-full flex items-center justify-center text-[#1a73e8]">
+                    <Image className="w-5 h-5" />
+                  </div>
+                  Images
                 </h3>
                 <ImageUpload
                   value={formData.images}
@@ -623,9 +632,12 @@ export const ProductFormPage: React.FC = () => {
               </div>
 
               {/* Tags & Settings */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-                <h3 className="font-bold text-gray-900 text-base pb-2 border-b border-gray-100 flex items-center gap-2">
-                  <Settings2 className="w-4 h-4 text-purple-600" /> Options & Display
+              <div className="bg-white border border-[#e8eaed] rounded-[24px] p-6 sm:p-8 space-y-6">
+                <h3 className="font-semibold text-[#202124] text-[18px] pb-4 border-b border-[#e8eaed] flex items-center gap-3" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>
+                  <div className="w-10 h-10 bg-[#f3e8fd] rounded-full flex items-center justify-center text-[#a142f4]">
+                    <Settings2 className="w-5 h-5" />
+                  </div>
+                  Options & Display
                 </h3>
 
                 <FormTextarea
@@ -637,8 +649,8 @@ export const ProductFormPage: React.FC = () => {
                   placeholder="rose, attar, luxury, wood, unisex"
                 />
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="p-4 bg-[#f8f9fa] rounded-2xl border border-[#e8eaed] hover:border-[#1a73e8] transition-colors cursor-pointer">
                     <FormCheckbox
                       label="Active (Visible in Store)"
                       name="is_active"
@@ -646,7 +658,7 @@ export const ProductFormPage: React.FC = () => {
                       onChange={handleChange}
                     />
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <div className="p-4 bg-[#f8f9fa] rounded-2xl border border-[#e8eaed] hover:border-[#1a73e8] transition-colors cursor-pointer">
                     <FormCheckbox
                       label="Featured Product"
                       name="is_featured"
@@ -654,7 +666,7 @@ export const ProductFormPage: React.FC = () => {
                       onChange={handleChange}
                     />
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <div className="p-4 bg-[#f8f9fa] rounded-2xl border border-[#e8eaed] hover:border-[#1a73e8] transition-colors cursor-pointer">
                     <FormCheckbox
                       label="Show on Homepage"
                       name="show_on_homepage"
@@ -666,9 +678,12 @@ export const ProductFormPage: React.FC = () => {
               </div>
 
               {/* SEO */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-                <h3 className="font-bold text-gray-900 text-base pb-2 border-b border-gray-100 flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-teal-600" /> Search Engine Optimization (SEO)
+              <div className="bg-white border border-[#e8eaed] rounded-[24px] p-6 sm:p-8 space-y-6">
+                <h3 className="font-semibold text-[#202124] text-[18px] pb-4 border-b border-[#e8eaed] flex items-center gap-3" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>
+                  <div className="w-10 h-10 bg-[#e4f7fb] rounded-full flex items-center justify-center text-[#12b5cb]">
+                    <Globe className="w-5 h-5" />
+                  </div>
+                  Search Engine Optimization (SEO)
                 </h3>
                 <FormInput
                   label="Meta Title"
@@ -690,19 +705,19 @@ export const ProductFormPage: React.FC = () => {
           )}
 
           {/* Sticky Action Footer (Mobile First) */}
-          <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 p-3 sm:px-8 flex items-center justify-end gap-3 shadow-lg">
+          <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#e8eaed] p-3 sm:px-8 flex items-center justify-end gap-3 shadow-lg">
             <button
               type="button"
               onClick={() => navigate('/admin/products')}
               disabled={loading}
-              className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors min-h-[46px]"
+              className="px-5 py-2.5 text-[14px] font-medium text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] bg-white border border-[#e8eaed] rounded-full disabled:opacity-50 transition-colors min-h-[46px]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 sm:flex-initial px-6 py-2.5 text-sm font-extrabold text-white bg-slate-900 hover:bg-slate-800 active:bg-black rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 min-h-[46px] shadow-sm"
+              className="flex-1 sm:flex-initial px-6 py-2.5 text-[14px] font-medium text-white bg-[#1a73e8] hover:bg-[#1557b0] rounded-full disabled:opacity-50 transition-all flex items-center justify-center gap-2 min-h-[46px] shadow-sm"
             >
               {loading ? (
                 <></>

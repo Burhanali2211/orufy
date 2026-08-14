@@ -24,16 +24,16 @@ const SettingsOverview: React.FC = () => (
       <Link
         key={item.path}
         to={item.path}
-        className="bg-white border border-gray-200 rounded-xl p-5 hover:border-slate-300 hover:shadow-sm transition-all group"
+        className="bg-white border border-[#e8eaed] rounded-[24px] p-6 hover:shadow-sm hover:border-[#dadce0] transition-all group"
       >
-        <div className="flex items-start justify-between mb-4">
-          <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center group-hover:bg-slate-100 transition-colors">
-            <item.icon className="w-5 h-5 text-slate-600" />
+        <div className="flex items-start justify-between mb-5">
+          <div className="w-12 h-12 bg-[#f8f9fa] rounded-full flex items-center justify-center group-hover:bg-[#e8f0fe] transition-colors">
+            <item.icon className="w-6 h-6 text-[#5f6368] group-hover:text-[#1a73e8] transition-colors" />
           </div>
-          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-slate-500 transition-colors" />
+          <ChevronRight className="w-5 h-5 text-[#dadce0] group-hover:text-[#1a73e8] transition-colors" />
         </div>
-        <h3 className="text-sm font-semibold text-gray-900">{item.name}</h3>
-        <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+        <h3 className="text-[16px] font-medium text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{item.name}</h3>
+        <p className="text-[13px] text-[#5f6368] mt-1">{item.description}</p>
       </Link>
     ))}
   </div>

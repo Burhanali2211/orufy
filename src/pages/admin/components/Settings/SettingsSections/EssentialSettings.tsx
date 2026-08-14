@@ -33,14 +33,14 @@ export const EssentialSettings: React.FC<EssentialSettingsProps> = ({
   const copyrightText = getEssentialSetting('copyright_text');
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
-        <h3 className="font-semibold text-gray-900">Essential Website Settings</h3>
-        <p className="text-sm text-gray-500 mt-0.5">Configure your website identity and basic information</p>
+    <div className="bg-white border border-[#e8eaed] rounded-[24px] overflow-hidden">
+      <div className="px-6 py-5 border-b border-[#e8eaed] bg-[#f8f9fa]">
+        <h3 className="text-[18px] font-medium text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>Essential Website Settings</h3>
+        <p className="text-[13px] text-[#5f6368] mt-1">Configure your website identity and basic information</p>
       </div>
 
-      <div className="p-5">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {siteName && (
             <FieldWrapper settingKey={siteName.setting_key} label="Website Name" icon={Globe} isSaved={isSettingSaved(siteName.setting_key)} isModified={isModified(siteName.setting_key)}>
               <input type="text" value={siteName.setting_value || ''} onChange={(e) => handleChange(siteName.setting_key, e.target.value)} className={inputCls(siteName.setting_key)} placeholder="Enter website name" />
@@ -51,13 +51,13 @@ export const EssentialSettings: React.FC<EssentialSettingsProps> = ({
             <FieldWrapper settingKey={logoUrl.setting_key} label="Website Logo" icon={Upload} isSaved={isSettingSaved(logoUrl.setting_key)} isModified={isModified(logoUrl.setting_key)}>
               <div className="flex flex-col gap-3">
                 {logoUrl.setting_value && (
-                  <div className="flex items-center justify-center p-4 bg-gray-50 rounded-xl border border-gray-200 min-h-[80px]">
-                    <img src={logoUrl.setting_value} alt="Logo preview" className="h-20 w-auto max-w-full object-contain rounded" onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2" ry="2"/%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"/%3E%3Cpolyline points="21 15 16 10 5 21"/%3E%3C/svg%3E'; }} />
+                  <div className="flex items-center justify-center p-4 bg-[#f8f9fa] rounded-[24px] border border-[#e8eaed] min-h-[100px]">
+                    <img src={logoUrl.setting_value} alt="Logo preview" className="h-20 w-auto max-w-full object-contain rounded-lg" onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2" ry="2"/%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"/%3E%3Cpolyline points="21 15 16 10 5 21"/%3E%3C/svg%3E'; }} />
                   </div>
                 )}
                 <input ref={logoFileInputRef} type="file" accept="image/*" onChange={(e) => handleFileUpload(e, logoUrl.setting_key)} className="hidden" />
-                <button onClick={() => logoFileInputRef.current?.click()} disabled={uploading === logoUrl.setting_key} className="w-full px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-slate-400 hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm min-h-[44px]">
-                  {uploading === logoUrl.setting_key ? <><RefreshCw className="h-4 w-4 hidden" /><span>Uploading...</span></> : <><Upload className="h-4 w-4" /><span>Upload Logo</span></>}
+                <button onClick={() => logoFileInputRef.current?.click()} disabled={uploading === logoUrl.setting_key} className="w-full px-5 py-3 border-2 border-dashed border-[#dadce0] rounded-full text-[#5f6368] hover:border-[#1a73e8] hover:bg-[#f8f9fa] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-[14px] font-medium min-h-[48px]">
+                  {uploading === logoUrl.setting_key ? <><div className="w-4 h-4 border-2 border-[#5f6368] border-t-transparent rounded-full animate-spin" /><span>Uploading...</span></> : <><Upload className="h-5 w-5" /><span>Upload Logo</span></>}
                 </button>
               </div>
             </FieldWrapper>
@@ -66,7 +66,7 @@ export const EssentialSettings: React.FC<EssentialSettingsProps> = ({
           {siteDescription && (
             <div className="lg:col-span-2">
               <FieldWrapper settingKey={siteDescription.setting_key} label="Website Description" icon={FileText} isSaved={isSettingSaved(siteDescription.setting_key)} isModified={isModified(siteDescription.setting_key)}>
-                <textarea value={siteDescription.setting_value} onChange={(e) => handleChange(siteDescription.setting_key, e.target.value)} className={`w-full px-3 sm:px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-400 text-sm text-gray-900 placeholder-gray-400 resize-y transition-colors ${isModified(siteDescription.setting_key) ? 'border-orange-300 bg-orange-50' : 'border-gray-200 bg-white'}`} placeholder="Enter website description" rows={3} />
+                <textarea value={siteDescription.setting_value} onChange={(e) => handleChange(siteDescription.setting_key, e.target.value)} className={`w-full px-5 py-4 border rounded-[24px] focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] placeholder-[#5f6368] resize-y transition-all ${isModified(siteDescription.setting_key) ? 'border-[#fad2cf] bg-[#fef7e0]' : 'border-[#e8eaed] bg-[#f8f9fa] hover:bg-[#f1f3f4] focus:bg-white'}`} placeholder="Enter website description" rows={3} />
               </FieldWrapper>
             </div>
           )}
@@ -97,7 +97,7 @@ export const EssentialSettings: React.FC<EssentialSettingsProps> = ({
 
           {copyrightText && (
             <div className="lg:col-span-2">
-              <FieldWrapper settingKey={copyrightText.setting_key} label="Copyright Text" icon={FileText} isSaved={isSettingSaved(copyrightText.setting_key)} isModified={isModified(copyrightText.copyrightText)}>
+              <FieldWrapper settingKey={copyrightText.setting_key} label="Copyright Text" icon={FileText} isSaved={isSettingSaved(copyrightText.setting_key)} isModified={isModified(copyrightText.setting_key)}>
                 <input type="text" value={copyrightText.setting_value} onChange={(e) => handleChange(copyrightText.setting_key, e.target.value)} className={inputCls(copyrightText.setting_key)} placeholder="© 2024 Your Company. All rights reserved." />
               </FieldWrapper>
             </div>

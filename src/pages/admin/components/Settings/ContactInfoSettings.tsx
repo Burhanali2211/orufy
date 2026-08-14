@@ -190,70 +190,67 @@ export const ContactInfoSettings: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center border border-emerald-100">
-            <Phone className="w-4 h-4 text-emerald-600" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-[#e8f0fe] rounded-2xl flex items-center justify-center">
+            <Phone className="w-6 h-6 text-[#1a73e8]" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Contact Information</h2>
-            <p className="text-xs text-gray-500">Manage your contact details</p>
+            <h2 className="text-2xl font-semibold text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>Contact Information</h2>
+            <p className="text-[13px] text-[#5f6368] font-medium mt-1">Manage your contact details</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           {selectionMode && selectedIds.size > 0 && (
-            <button onClick={handleBulkDelete} className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
-              <Trash2 className="h-4 w-4" /><span>Delete ({selectedIds.size})</span>
+            <button onClick={handleBulkDelete} className="flex items-center gap-2 px-5 py-2.5 bg-[#ea4335] text-white rounded-full font-medium hover:bg-[#d93025] transition-colors text-[14px] shadow-sm min-h-[44px]">
+              <Trash2 className="h-5 w-5" /><span>Delete ({selectedIds.size})</span>
             </button>
           )}
-          <button onClick={toggleSelectionMode} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${selectionMode ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
-            {selectionMode ? <><X className="h-4 w-4" /><span>Cancel</span></> : <><CheckSquare className="h-4 w-4" /><span className="hidden sm:inline">Select</span></>}
+          <button onClick={toggleSelectionMode} className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-[14px] transition-colors min-h-[44px] ${selectionMode ? 'bg-[#e8eaed] text-[#202124] hover:bg-[#dadce0]' : 'bg-white border border-[#e8eaed] text-[#5f6368] hover:bg-[#f8f9fa] shadow-sm'}`}>
+            {selectionMode ? <><X className="h-5 w-5" /><span>Cancel</span></> : <><CheckSquare className="h-5 w-5" /><span className="hidden sm:inline">Select</span></>}
           </button>
           {!selectionMode && (
-            <button onClick={() => openModal()} className="flex items-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors">
-              <Plus className="h-4 w-4" /><span>Add Contact</span>
+            <button onClick={() => openModal()} className="flex items-center gap-2 px-5 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-full font-medium text-[14px] transition-colors shadow-sm min-h-[44px]">
+              <Plus className="h-5 w-5" /><span>Add Contact</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Contacts', value: totalContacts, icon: Phone, bg: 'bg-emerald-50', border: 'border-emerald-100', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', valueColor: 'text-emerald-800' },
-          { label: 'Active', value: activeContacts, icon: Eye, bg: 'bg-blue-50', border: 'border-blue-100', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', valueColor: 'text-blue-800' },
-          { label: 'Primary', value: primaryContacts, icon: Star, bg: 'bg-amber-50', border: 'border-amber-100', iconBg: 'bg-amber-100', iconColor: 'text-amber-600', valueColor: 'text-amber-800' },
-          { label: 'Types', value: totalTypes, icon: Filter, bg: 'bg-purple-50', border: 'border-purple-100', iconBg: 'bg-purple-100', iconColor: 'text-purple-600', valueColor: 'text-purple-800' },
-        ].map(({ label, value, icon: Icon, bg, border, iconBg, iconColor, valueColor }) => (
-          <div key={label} className={`${bg} border ${border} rounded-lg p-3`}>
-            <div className={`w-8 h-8 ${iconBg} rounded-lg flex items-center justify-center mb-2`}>
-              <Icon className={`w-4 h-4 ${iconColor}`} />
-            </div>
-            <p className="text-xs text-gray-500 font-medium">{label}</p>
-            <p className={`text-xl font-bold ${valueColor}`}>{value}</p>
+          { label: 'Total Contacts', value: totalContacts },
+          { label: 'Active', value: activeContacts },
+          { label: 'Primary', value: primaryContacts },
+          { label: 'Types', value: totalTypes },
+        ].map(({ label, value }) => (
+          <div key={label} className="bg-white border border-[#e8eaed] rounded-[24px] p-5 shadow-sm">
+            <p className="text-[13px] text-[#5f6368] font-medium">{label}</p>
+            <p className="text-2xl font-semibold text-[#202124] mt-1" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{value}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Filter className="w-4 h-4 text-gray-400" />
-          <h3 className="text-sm font-semibold text-gray-700">Filters</h3>
+      <div className="bg-white border border-[#e8eaed] rounded-[24px] p-5 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-4 h-4 text-[#5f6368]" />
+          <h3 className="text-[14px] font-medium text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>Filters</h3>
           {(searchTerm || typeFilter) && (
-            <button onClick={() => { setSearchTerm(''); setTypeFilter(''); }} className="ml-auto flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
-              <X className="w-3 h-3" />Clear
+            <button onClick={() => { setSearchTerm(''); setTypeFilter(''); }} className="ml-auto flex items-center gap-1 px-3 py-1.5 text-[13px] font-medium text-[#1a73e8] hover:bg-[#e8f0fe] rounded-full transition-colors">
+              <X className="w-4 h-4" />Clear
             </button>
           )}
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#5f6368]" />
             <input type="text" placeholder="Search contacts..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300 text-sm text-gray-900 placeholder-gray-400" />
+              className="w-full pl-11 pr-4 py-3 bg-white border border-[#e8eaed] rounded-[24px] focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] placeholder-[#5f6368] transition-all hover:bg-[#f8f9fa] focus:bg-white" />
           </div>
           <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300 text-sm text-gray-900 sm:w-44">
+            className="px-4 py-3 bg-white border border-[#e8eaed] rounded-[24px] focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] transition-all hover:bg-[#f8f9fa] focus:bg-white appearance-none pr-10" style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}>
             <option value="">All Types</option>
             {contactTypesList.map((type) => (
               <option key={type} value={type} className="capitalize">{type}</option>
@@ -264,87 +261,88 @@ export const ContactInfoSettings: React.FC = () => {
 
       {/* Selection Controls */}
       {selectionMode && (
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <span className="text-sm font-medium text-gray-700">{selectedIds.size} of {contacts.length} selected</span>
-          <div className="flex gap-2">
-            <button onClick={selectAll} className="px-3 py-1.5 text-xs bg-white border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">Select All</button>
-            <button onClick={deselectAll} className="px-3 py-1.5 text-xs bg-white border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">Deselect All</button>
+        <div className="bg-[#e8f0fe] border border-[#d2e3fc] rounded-[24px] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <span className="text-[14px] font-medium text-[#1a73e8]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{selectedIds.size} of {contacts.length} selected</span>
+          <div className="flex items-center gap-3">
+            <button onClick={selectAll} className="px-4 py-2 text-[14px] font-medium bg-white text-[#1a73e8] border border-[#d2e3fc] rounded-full hover:bg-[#f8f9fa] transition-colors">Select All</button>
+            <button onClick={deselectAll} className="px-4 py-2 text-[14px] font-medium bg-white text-[#1a73e8] border border-[#d2e3fc] rounded-full hover:bg-[#f8f9fa] transition-colors">Deselect All</button>
           </div>
         </div>
       )}
 
       {/* Grouped Contacts */}
       {Object.keys(groupedContacts).length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-          <Phone className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-          <p className="text-gray-500 text-sm mb-1">No contact information found</p>
+        <div className="bg-white border border-[#e8eaed] rounded-[24px] p-12 text-center shadow-sm">
+          <Phone className="w-12 h-12 text-[#dadce0] mx-auto mb-4" />
+          <p className="text-[#5f6368] font-medium mb-1">No contact information found</p>
           {searchTerm || typeFilter
-            ? <p className="text-xs text-gray-400">Try adjusting your filters</p>
-            : <p className="text-xs text-gray-400">Get started by adding your first contact</p>}
+            ? <p className="text-[14px] text-[#5f6368]">Try adjusting your filters</p>
+            : <p className="text-[14px] text-[#5f6368]">Get started by adding your first contact</p>}
         </div>
       ) : (
         <div className="space-y-4">
           {Object.entries(groupedContacts).map(([type, typeContacts]) => {
             const Icon = getIcon(type);
             return (
-              <div key={type} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="bg-slate-50 border-b border-gray-200 px-4 py-3 flex items-center gap-2">
-                  <div className="w-7 h-7 bg-white border border-gray-200 rounded-lg flex items-center justify-center">
-                    <Icon className="h-3.5 w-3.5 text-slate-600" />
-                  </div>
-                  <h2 className="text-sm font-semibold text-gray-900 capitalize">{type}</h2>
-                  <span className="ml-auto text-xs text-gray-400">{typeContacts.length} {typeContacts.length === 1 ? 'entry' : 'entries'}</span>
+              <div key={type} className="bg-white border border-[#e8eaed] rounded-[24px] overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-[#e8eaed] bg-[#f8f9fa] flex flex-row items-center justify-between">
+                  <h3 className="font-medium text-[#202124] capitalize flex items-center gap-2 text-[16px]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>
+                    <Icon className="w-5 h-5 text-[#5f6368]" /> {type}
+                  </h3>
+                  <span className="bg-[#e8eaed] text-[#5f6368] text-[12px] font-medium px-2.5 py-0.5 rounded-full">{typeContacts.length}</span>
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-[#e8eaed]">
                   {typeContacts.sort((a, b) => a.display_order - b.display_order).map((contact) => (
-                    <div key={contact.id} className={`px-4 py-3 hover:bg-gray-50 transition-colors ${!contact.is_active ? 'opacity-60' : ''} ${selectionMode && selectedIds.has(contact.id) ? 'bg-slate-50' : ''}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          {selectionMode && (
-                            <button onClick={() => toggleSelect(contact.id)} className="mt-0.5 flex-shrink-0">
-                              {selectedIds.has(contact.id)
-                                ? <CheckSquare className="h-4 w-4 text-slate-700" />
-                                : <Square className="h-4 w-4 text-gray-400" />}
+                    <div key={contact.id} className={`p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between transition-colors ${!contact.is_active ? 'opacity-60' : ''} ${selectionMode && selectedIds.has(contact.id) ? 'bg-[#e8f0fe]' : 'hover:bg-[#f8f9fa]'}`}>
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        {selectionMode && (
+                          <button onClick={() => toggleSelect(contact.id)} className="mt-1 flex-shrink-0 text-[#5f6368] hover:text-[#1a73e8] transition-colors">
+                            {selectedIds.has(contact.id)
+                              ? <CheckSquare className="w-5 h-5 text-[#1a73e8]" />
+                              : <Square className="w-5 h-5" />}
+                          </button>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="font-medium text-[#202124] text-[15px]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{contact.label}</span>
+                            {contact.is_primary && (
+                              <span className="px-2 py-0.5 text-[11px] font-medium bg-[#e8f0fe] text-[#1a73e8] border border-[#d2e3fc] rounded-full flex items-center gap-1">
+                                <Star className="h-3 w-3 fill-current" />Primary
+                              </span>
+                            )}
+                            {!contact.is_active && (
+                              <span className="px-2 py-0.5 text-[11px] font-medium rounded-full border bg-[#f8f9fa] text-[#5f6368] border-[#e8eaed]">
+                                Inactive
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[14px] text-[#5f6368] break-all">{contact.value}</p>
+                        </div>
+                      </div>
+                      {!selectionMode && (
+                        <div className="flex items-center gap-3 sm:ml-auto border-t border-[#e8eaed] sm:border-t-0 pt-3 sm:pt-0 flex-shrink-0">
+                          <button onClick={() => toggleActive(contact.id, contact.is_active)} title={contact.is_active ? 'Deactivate' : 'Activate'}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors ${contact.is_active ? 'bg-[#f8f9fa] text-[#5f6368] hover:bg-[#e8eaed]' : 'bg-[#e6f4ea] text-[#137333] hover:bg-[#ceead6]'}`}>
+                            {contact.is_active ? <><EyeOff className="h-4 w-4" /><span className="hidden xl:inline">Deactivate</span></> : <><Eye className="h-4 w-4" /><span className="hidden xl:inline">Activate</span></>}
+                          </button>
+                          {!contact.is_primary && contact.is_active && (
+                            <button onClick={() => setPrimary(contact.id)} title="Set as primary"
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f8f9fa] text-[#5f6368] rounded-full text-[13px] font-medium hover:bg-[#e8eaed] transition-colors">
+                              <Star className="h-4 w-4" /><span className="hidden xl:inline">Set Primary</span>
                             </button>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="text-sm font-medium text-gray-900">{contact.label}</span>
-                              {contact.is_primary && (
-                                <span className="px-1.5 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded-full flex items-center gap-1">
-                                  <Star className="h-2.5 w-2.5 fill-current" />Primary
-                                </span>
-                              )}
-                              <span className={`px-1.5 py-0.5 text-xs font-medium rounded-full border ${contact.is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
-                                {contact.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 font-mono bg-gray-50 px-2.5 py-1.5 rounded-md break-all border border-gray-100">{contact.value}</p>
-                          </div>
-                        </div>
-                        {!selectionMode && (
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            {!contact.is_primary && contact.is_active && (
-                              <button onClick={() => setPrimary(contact.id)} title="Set as primary"
-                                className="p-1.5 bg-amber-50 text-amber-600 rounded-md hover:bg-amber-100 transition-colors border border-amber-200">
-                                <Star className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                            <button onClick={() => toggleActive(contact.id, contact.is_active)} title={contact.is_active ? 'Deactivate' : 'Activate'}
-                              className={`p-1.5 rounded-md transition-colors ${contact.is_active ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border border-gray-200'}`}>
-                              {contact.is_active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                            </button>
+                          <div className="flex items-center gap-1 ml-2">
                             <button onClick={() => openModal(contact)}
-                              className="p-1.5 bg-slate-50 text-slate-600 rounded-md hover:bg-slate-100 transition-colors border border-slate-200">
-                              <Edit2 className="h-3.5 w-3.5" />
+                              className="p-2 text-[#5f6368] hover:text-[#1a73e8] hover:bg-[#e8f0fe] rounded-full transition-colors">
+                              <Edit2 className="h-4 w-4" />
                             </button>
                             <button onClick={() => handleDelete(contact.id)} title="Delete"
-                              className="p-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors border border-red-200">
-                              <Trash2 className="h-3.5 w-3.5" />
+                              className="p-2 text-[#5f6368] hover:text-[#ea4335] hover:bg-[#fce8e6] rounded-full transition-colors">
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -355,51 +353,51 @@ export const ContactInfoSettings: React.FC = () => {
       )}
 
       {contacts.length === 0 && !loading && (
-        <div className="text-center py-10 bg-white border-2 border-dashed border-gray-200 rounded-xl">
-          <Phone className="h-10 w-10 text-gray-200 mx-auto mb-3" />
-          <p className="text-gray-500 text-sm mb-3">No contact information added yet</p>
-          <button onClick={() => openModal()} className="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-colors">
-            <Plus className="h-4 w-4" />Add Your First Contact
+        <div className="text-center py-16 bg-[#f8f9fa] border-2 border-dashed border-[#dadce0] rounded-[24px]">
+          <Phone className="h-12 w-12 text-[#dadce0] mx-auto mb-4" />
+          <p className="text-[#5f6368] font-medium mb-5">No contact information added yet</p>
+          <button onClick={() => openModal()} className="px-6 py-3 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-full text-[14px] font-medium inline-flex items-center gap-2 transition-colors">
+            <Plus className="h-5 w-5" />Add Your First Contact
           </button>
         </div>
       )}
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-200">
-            <div className="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between rounded-t-xl">
-              <h2 className="text-base font-bold text-gray-900">{editingContact ? 'Edit' : 'Add'} Contact Information</h2>
-              <button onClick={closeModal} className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors text-gray-500">
-                <X className="h-4 w-4" />
+        <div className="fixed inset-0 bg-[#202124]/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[24px] shadow-lg max-w-md w-full border border-[#e8eaed] overflow-hidden">
+            <div className="bg-white border-b border-[#e8eaed] px-6 py-5 flex items-center justify-between">
+              <h2 className="text-[18px] font-medium text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{editingContact ? 'Edit' : 'Add'} Contact Information</h2>
+              <button onClick={closeModal} className="p-2 hover:bg-[#f1f3f4] rounded-full transition-colors text-[#5f6368]">
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-6 space-y-5">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Contact Type *</label>
-                <select value={formData.contact_type} onChange={(e) => handleTypeChange(e.target.value)} className={inputCls} required>
+                <label className="block text-[13px] font-medium text-[#5f6368] mb-2">Contact Type *</label>
+                <select value={formData.contact_type} onChange={(e) => handleTypeChange(e.target.value)} className="w-full px-4 py-3 bg-white border border-[#e8eaed] rounded-[24px] focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] transition-all hover:bg-[#f8f9fa] focus:bg-white appearance-none pr-10" style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }} required>
                   <option value="">Select a type</option>
                   {contactTypes.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Label *</label>
+                <label className="block text-[13px] font-medium text-[#5f6368] mb-2">Label *</label>
                 <input type="text" value={formData.label} onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
-                  className={inputCls} placeholder="e.g., Customer Support, Main Office" required />
+                  className="w-full px-4 py-3 bg-white border border-[#e8eaed] rounded-[24px] focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] placeholder-[#5f6368] transition-all hover:bg-[#f8f9fa] focus:bg-white" placeholder="e.g., Customer Support, Main Office" required />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Value *</label>
+                <label className="block text-[13px] font-medium text-[#5f6368] mb-2">Value *</label>
                 <input type="text" value={formData.value} onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
-                  className={inputCls}
+                  className="w-full px-4 py-3 bg-white border border-[#e8eaed] rounded-[24px] focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] placeholder-[#5f6368] transition-all hover:bg-[#f8f9fa] focus:bg-white"
                   placeholder={formData.contact_type === 'email' ? 'email@example.com' : formData.contact_type === 'phone' ? '+1 234 567 8900' : formData.contact_type === 'address' ? '123 Main St, City' : 'Contact value'}
                   required />
               </div>
             </div>
-            <div className="bg-gray-50 px-5 py-3.5 flex items-center justify-end gap-2 border-t border-gray-200 rounded-b-xl">
-              <button onClick={closeModal} className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm">Cancel</button>
+            <div className="bg-[#f8f9fa] px-6 py-4 flex items-center justify-end gap-3 border-t border-[#e8eaed]">
+              <button onClick={closeModal} className="px-6 py-2.5 bg-white border border-[#e8eaed] text-[#5f6368] rounded-full hover:bg-[#f8f9fa] transition-colors text-[14px] font-medium">Cancel</button>
               <button onClick={handleSave} disabled={!formData.contact_type || !formData.label || !formData.value}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors text-sm font-medium">
-                <Save className="h-3.5 w-3.5" />{editingContact ? 'Update' : 'Add'} Contact
+                className="px-6 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors text-[14px] font-medium">
+                <Save className="h-4 w-4" />{editingContact ? 'Update' : 'Add'} Contact
               </button>
             </div>
           </div>

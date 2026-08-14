@@ -7,10 +7,7 @@ import { AdminProductsPage } from './AdminProductsPage';
 import { AdminCategoriesPage } from './AdminCategoriesPage';
 import { AdminOrdersPage } from './AdminOrdersPage';
 import { AdminUsersPage } from './AdminUsersPage';
-import { AdminAnalyticsPage } from './AdminAnalyticsPage';
 import { AdminSettingsPage } from './AdminSettingsPage';
-import { AdminContactSubmissionsPage } from './AdminContactSubmissionsPage';
-import { AdminPOSPage } from './AdminPOSPage';
 
 export const AdminDashboard: React.FC = () => {
   const { user, loading } = useAuth();
@@ -36,9 +33,6 @@ export const AdminDashboard: React.FC = () => {
       <Route path="categories/*" element={<AdminCategoriesPage />} />
       <Route path="orders/*" element={<AdminOrdersPage />} />
       <Route path="users/*" element={<AdminUsersPage />} />
-      <Route path="analytics" element={<AdminAnalyticsPage />} />
-      <Route path="pos" element={<AdminPOSPage />} />
-      <Route path="contact-submissions/*" element={<AdminContactSubmissionsPage />} />
       <Route path="settings/*" element={<AdminSettingsPage />} />
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>

@@ -223,41 +223,41 @@ export const SocialMediaSettings: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
-            <Share2 className="w-5 h-5 text-slate-600" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-[#e8f0fe] rounded-2xl flex items-center justify-center">
+            <Share2 className="w-6 h-6 text-[#1a73e8]" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Social Media</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Manage your social media accounts and links</p>
+            <h2 className="text-2xl font-semibold text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>Social Media</h2>
+            <p className="text-[13px] text-[#5f6368] font-medium mt-1">Manage your social media accounts and links</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           {selectionMode && selectedIds.size > 0 && (
             <button
               onClick={handleBulkDelete}
-              className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#ea4335] text-white rounded-full font-medium hover:bg-[#d93025] transition-colors text-[14px] shadow-sm min-h-[44px]"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-5 w-5" />
               <span>Delete ({selectedIds.size})</span>
             </button>
           )}
           <button
             onClick={toggleSelectionMode}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-[14px] transition-colors min-h-[44px] ${
               selectionMode
-                ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                ? 'bg-[#e8eaed] text-[#202124] hover:bg-[#dadce0]'
+                : 'bg-white border border-[#e8eaed] text-[#5f6368] hover:bg-[#f8f9fa] shadow-sm'
             }`}
           >
-            {selectionMode ? <><X className="h-4 w-4" /><span>Cancel</span></> : <><CheckSquare className="h-4 w-4" /><span className="hidden sm:inline">Select</span></>}
+            {selectionMode ? <><X className="h-5 w-5" /><span>Cancel</span></> : <><CheckSquare className="h-5 w-5" /><span className="hidden sm:inline">Select</span></>}
           </button>
           {!selectionMode && (
             <button
               onClick={() => openModal()}
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg font-medium text-sm transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-full font-medium text-[14px] transition-colors shadow-sm min-h-[44px]"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-5 w-5" />
               <span>Add Account</span>
             </button>
           )}
@@ -265,35 +265,36 @@ export const SocialMediaSettings: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
+      <div className="bg-white border border-[#e8eaed] rounded-[24px] p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-4 h-4 text-gray-400" />
-          <h3 className="text-sm font-semibold text-gray-700">Filters</h3>
+          <Filter className="w-4 h-4 text-[#5f6368]" />
+          <h3 className="text-[14px] font-medium text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>Filters</h3>
           {(searchTerm || platformFilter) && (
             <button
               onClick={() => { setSearchTerm(''); setPlatformFilter(''); }}
-              className="ml-auto flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="ml-auto flex items-center gap-1 px-3 py-1.5 text-[13px] font-medium text-[#1a73e8] hover:bg-[#e8f0fe] rounded-full transition-colors"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
               Clear
             </button>
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#5f6368]" />
             <input
               type="text"
               placeholder="Search accounts..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300 text-sm text-gray-900 placeholder-gray-400"
+              className="w-full pl-11 pr-4 py-3 bg-white border border-[#e8eaed] rounded-[24px] focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] placeholder-[#5f6368] transition-all hover:bg-[#f8f9fa] focus:bg-white"
             />
           </div>
           <select
             value={platformFilter}
             onChange={(e) => setPlatformFilter(e.target.value)}
-            className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300 text-sm text-gray-900"
+            className="px-4 py-3 bg-white border border-[#e8eaed] rounded-[24px] focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] transition-all hover:bg-[#f8f9fa] focus:bg-white appearance-none pr-10"
+            style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}
           >
             <option value="">All Platforms</option>
             {platforms.map((platform) => (
@@ -305,23 +306,23 @@ export const SocialMediaSettings: React.FC = () => {
 
       {/* Selection Mode Controls */}
       {selectionMode && (
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <span className="text-sm font-medium text-gray-700">{selectedIds.size} of {accounts.length} selected</span>
-          <div className="flex items-center gap-2">
-            <button onClick={selectAll} className="px-3 py-1.5 text-sm bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Select All</button>
-            <button onClick={deselectAll} className="px-3 py-1.5 text-sm bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Deselect All</button>
+        <div className="bg-[#e8f0fe] border border-[#d2e3fc] rounded-[24px] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <span className="text-[14px] font-medium text-[#1a73e8]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{selectedIds.size} of {accounts.length} selected</span>
+          <div className="flex items-center gap-3">
+            <button onClick={selectAll} className="px-4 py-2 text-[14px] font-medium bg-white text-[#1a73e8] border border-[#d2e3fc] rounded-full hover:bg-[#f8f9fa] transition-colors">Select All</button>
+            <button onClick={deselectAll} className="px-4 py-2 text-[14px] font-medium bg-white text-[#1a73e8] border border-[#d2e3fc] rounded-full hover:bg-[#f8f9fa] transition-colors">Deselect All</button>
           </div>
         </div>
       )}
 
       {/* Accounts Grid */}
       {filteredAccounts.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-10 text-center">
-          <Share2 className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 mb-1">No social media accounts found</p>
+        <div className="bg-white border border-[#e8eaed] rounded-[24px] p-12 text-center shadow-sm">
+          <Share2 className="w-12 h-12 text-[#dadce0] mx-auto mb-4" />
+          <p className="text-[#5f6368] font-medium mb-1">No social media accounts found</p>
           {searchTerm || platformFilter
-            ? <p className="text-sm text-gray-400">Try adjusting your filters</p>
-            : <p className="text-sm text-gray-400">Get started by adding your first account</p>}
+            ? <p className="text-[14px] text-[#5f6368]">Try adjusting your filters</p>
+            : <p className="text-[14px] text-[#5f6368]">Get started by adding your first account</p>}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -344,14 +345,14 @@ export const SocialMediaSettings: React.FC = () => {
       )}
 
       {accounts.length === 0 && !loading && (
-        <div className="text-center py-12 bg-white border-2 border-dashed border-gray-200 rounded-lg">
-          <Share2 className="h-10 w-10 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 mb-4">No social media accounts added yet</p>
+        <div className="text-center py-16 bg-[#f8f9fa] border-2 border-dashed border-[#dadce0] rounded-[24px]">
+          <Share2 className="h-12 w-12 text-[#dadce0] mx-auto mb-4" />
+          <p className="text-[#5f6368] font-medium mb-5">No social media accounts added yet</p>
           <button
             onClick={() => openModal()}
-            className="px-5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg inline-flex items-center gap-2 font-medium transition-colors text-sm"
+            className="px-6 py-3 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-full inline-flex items-center gap-2 font-medium transition-colors text-[14px]"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
             Add Your First Account
           </button>
         </div>
