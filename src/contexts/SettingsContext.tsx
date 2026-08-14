@@ -215,7 +215,18 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, []);
 
   useEffect(() => {
-    fetchSettings();
+    // Only fetch store settings when we are on a store subdomain, not the platform root domain.
+    const host = typeof window !== 'undefined' ? window.location.hostname : '';
+    const baseDomain = import.meta.env.VITE_SITE_URL
+      ? new URL(import.meta.env.VITE_SITE_URL).hostname
+      : 'get-oru.com';
+    const isStorefront = host !== baseDomain && host !== 'localhost' && host !== '127.0.0.1';
+    
+    if (isStorefront) {
+      fetchSettings();
+    } else {
+      setLoading(false);
+    }
   }, [fetchSettings]);
 
   const publicSettings: PublicSettings = {
