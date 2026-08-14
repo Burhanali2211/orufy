@@ -362,6 +362,14 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     if (!initFetched.current) {
       initFetched.current = true;
+      // Only fetch store data when we are on a store subdomain, not the platform root domain.
+      const host = typeof window !== 'undefined' ? window.location.hostname : '';
+      const baseDomain = import.meta.env.VITE_SITE_URL
+        ? new URL(import.meta.env.VITE_SITE_URL).hostname
+        : 'get-oru.com';
+      const isStorefront = host !== baseDomain && host !== 'localhost' && host !== '127.0.0.1';
+      if (!isStorefront) return; // On platform home — nothing to fetch
+
       fetchCategories(true);
       fetchProducts(1, 20);
       fetchFeaturedProducts();
@@ -369,6 +377,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       fetchLatestProducts();
     }
   }, [fetchCategories, fetchProducts, fetchFeaturedProducts, fetchBestSellers, fetchLatestProducts]);
+
 
   return (
     <ProductContext.Provider

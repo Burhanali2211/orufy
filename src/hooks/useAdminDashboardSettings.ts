@@ -5,7 +5,7 @@ import {
   applyDashboardStyles,
   initializeDashboardStyles 
 } from '@/utils/adminDashboardStyles';
-import api from '@/config/api';
+import { apiClient } from '@/lib/apiClient';
 
 export interface DashboardSettings {
   dashboard_name: string;
@@ -51,7 +51,7 @@ export const useAdminDashboardSettings = () => {
     const fetchSettings = async () => {
       try {
         // Try to fetch dashboard settings from admin/settings/dashboard endpoint
-        const res = await api.get('/admin/settings/dashboard');
+        const res = await apiClient.get('/admin/settings/dashboard');
         const data = res.data;
         
         if (data && data.length > 0) {
