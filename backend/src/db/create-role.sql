@@ -1,0 +1,10 @@
+DO $$ 
+BEGIN 
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'platform_app') THEN 
+    CREATE ROLE platform_app WITH LOGIN PASSWORD 'app_password' NOSUPERUSER NOBYPASSRLS; 
+  END IF; 
+END $$; 
+
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO platform_app; 
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO platform_app; 
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO platform_app;
