@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, Store, AuthContextType } from '../types';
+import { apiClient } from '../lib/apiClient';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -37,14 +38,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             role: data.user.role || 'customer'
           });
           setStore(data.store || null);
+          if (data.store?.hostname) {
+            apiClient.setStoreHostname(data.store.hostname);
+          }
         } else {
           setUser(null);
           setStore(null);
+          apiClient.setStoreHostname(null);
         }
       } catch (error) {
         console.error('Session check failed:', error);
         setUser(null);
         setStore(null);
+        apiClient.setStoreHostname(null);
       } finally {
         setLoading(false);
       }
@@ -78,6 +84,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         role: data.user.role || 'customer'
       });
       setStore(data.store || null);
+      if (data.store?.hostname) {
+        apiClient.setStoreHostname(data.store.hostname);
+      }
     }
   };
 
@@ -117,6 +126,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         role: data.user.role || 'customer'
       });
       setStore(data.store || null);
+      if (data.store?.hostname) {
+        apiClient.setStoreHostname(data.store.hostname);
+      }
     }
   };
 
@@ -126,6 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await fetch('/api/auth/logout', { method: 'POST' });
       setUser(null);
       setStore(null);
+      apiClient.setStoreHostname(null);
       localStorage.removeItem('user_preferences');
       localStorage.removeItem('cart_items');
     } catch (error: any) {

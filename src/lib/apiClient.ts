@@ -41,10 +41,12 @@ export interface PaginatedResponse<T> {
 
 class ApiClient {
   private token: string | null = null;
+  private storeHostname: string | null = null;
 
   constructor() {
     // Initialize token from localStorage on startup
     this.token = localStorage.getItem('auth_token');
+    this.storeHostname = localStorage.getItem('store_hostname');
   }
 
   /**
@@ -72,6 +74,29 @@ class ApiClient {
   }
 
   /**
+   * Set store hostname
+   */
+  setStoreHostname(hostname: string | null) {
+    this.storeHostname = hostname;
+    if (hostname) {
+      localStorage.setItem('store_hostname', hostname);
+    } else {
+      localStorage.removeItem('store_hostname');
+    }
+  }
+
+  /**
+   * Get store hostname
+   */
+  getStoreHostname(): string | null {
+    const stored = localStorage.getItem('store_hostname');
+    if (stored) {
+      this.storeHostname = stored;
+    }
+    return this.storeHostname;
+  }
+
+  /**
    * Make API request
    */
   private async request<T = any>(
@@ -88,6 +113,12 @@ class ApiClient {
     const token = this.getToken();
     if (token) {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Add store hostname if available for platform admin requests
+    const storeHostname = this.getStoreHostname();
+    if (storeHostname) {
+      (headers as Record<string, string>)['x-store-hostname'] = storeHostname;
     }
 
     try {
