@@ -32,9 +32,19 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
     ) || host === PLATFORM_DOMAIN;
 
     if (isPlatformReserved) {
-      res.locals.isPlatform = true;
-      res.locals.storeId = null;
-      return next();
+      const explicitStoreHost = req.headers['x-store-hostname'];
+      if (explicitStoreHost && typeof explicitStoreHost === 'string') {
+        try {
+          host = normalizeHostname(explicitStoreHost);
+          // Proceed to resolve this explicit host below
+        } catch {
+          return res.status(400).json({ error: "INVALID_STORE_HOSTNAME" });
+        }
+      } else {
+        res.locals.isPlatform = true;
+        res.locals.storeId = null;
+        return next();
+      }
     }
 
     // Check Cache
