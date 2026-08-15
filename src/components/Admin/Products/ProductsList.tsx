@@ -19,22 +19,22 @@ interface Product {
 }
 
 const StockBadge: React.FC<{ stock: number }> = ({ stock }) => (
-  <span className={`px-2.5 py-1 text-[12px] font-medium rounded-full border ${
+  <span className={`px-2.5 py-1 text-[12px] font-medium rounded-md border ${
     stock === 0
-      ? 'bg-[#fce8e6] text-[#d93025] border-[#fad2cf]'
+      ? 'bg-red-50 text-red-700 border-red-200'
       : stock < 10
-        ? 'bg-[#fef7e0] text-[#f29900] border-[#fce4ec]'
-        : 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]'
+        ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+        : 'bg-green-50 text-green-700 border-green-200'
   }`}>
     {stock === 0 ? 'Out of stock' : `Stock: ${stock}`}
   </span>
 );
 
 const StatusBadge: React.FC<{ active: boolean }> = ({ active }) => (
-  <span className={`px-2.5 py-1 text-[12px] font-medium rounded-full border ${
+  <span className={`px-2.5 py-1 text-[12px] font-medium rounded-md border ${
     active
-      ? 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]'
-      : 'bg-[#f8f9fa] text-[#5f6368] border-[#e8eaed]'
+      ? 'bg-green-50 text-green-700 border-green-200'
+      : 'bg-gray-50 text-gray-600 border-gray-200'
   }`}>
     {active ? 'Active' : 'Inactive'}
   </span>
@@ -253,17 +253,17 @@ export const ProductsList: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-[#e8f0fe] rounded-2xl flex items-center justify-center flex-shrink-0">
-            <Package className="w-6 h-6 text-[#1a73e8]" />
+          <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Package className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>Products</h1>
-            <p className="text-[13px] font-medium text-[#5f6368]">Manage your product catalog</p>
+            <h1 className="text-2xl font-semibold text-gray-900" >Products</h1>
+            <p className="text-[13px] font-medium text-gray-600">Manage your product catalog</p>
           </div>
         </div>
         <button
           onClick={() => navigate('/admin/products/add')}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-full font-medium transition-colors shadow-sm flex-shrink-0 text-[14px]"
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors shadow-sm flex-shrink-0 text-[14px]"
         >
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">Add Product</span>
@@ -273,53 +273,53 @@ export const ProductsList: React.FC = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white border border-[#e8eaed] rounded-[24px] p-5 hover:shadow-sm transition-shadow">
-          <div className="w-10 h-10 bg-[#f8f9fa] rounded-full flex items-center justify-center mb-3">
-            <Package className="w-5 h-5 text-[#5f6368]" />
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hover:shadow-sm transition-shadow">
+          <div className="w-10 h-10 bg-gray-50 rounded-md flex items-center justify-center mb-3">
+            <Package className="w-5 h-5 text-gray-600" />
           </div>
-          <p className="text-[13px] text-[#5f6368] font-medium">All Products</p>
-          <p className="text-[28px] font-normal text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{totalItems}</p>
+          <p className="text-[13px] text-gray-600 font-medium">All Products</p>
+          <p className="text-[28px] font-normal text-gray-900" >{totalItems}</p>
         </div>
-        <div className="bg-white border border-[#e8eaed] rounded-[24px] p-5 hover:shadow-sm transition-shadow">
-          <div className="w-10 h-10 bg-[#e6f4ea] rounded-full flex items-center justify-center mb-3">
-            <CheckCircle className="w-5 h-5 text-[#137333]" />
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hover:shadow-sm transition-shadow">
+          <div className="w-10 h-10 bg-green-50 rounded-md flex items-center justify-center mb-3">
+            <CheckCircle className="w-5 h-5 text-green-700" />
           </div>
-          <p className="text-[13px] text-[#5f6368] font-medium">Active</p>
-          <p className="text-[28px] font-normal text-[#137333]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{activeProducts}</p>
+          <p className="text-[13px] text-gray-600 font-medium">Active</p>
+          <p className="text-[28px] font-normal text-green-700" >{activeProducts}</p>
         </div>
-        <div className="bg-white border border-[#e8eaed] rounded-[24px] p-5 hover:shadow-sm transition-shadow">
-          <div className="w-10 h-10 bg-[#fef7e0] rounded-full flex items-center justify-center mb-3">
-            <AlertTriangle className="w-5 h-5 text-[#f29900]" />
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hover:shadow-sm transition-shadow">
+          <div className="w-10 h-10 bg-yellow-50 rounded-md flex items-center justify-center mb-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-700" />
           </div>
-          <p className="text-[13px] text-[#5f6368] font-medium">Low Stock</p>
-          <p className="text-[28px] font-normal text-[#f29900]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{lowStockProducts}</p>
+          <p className="text-[13px] text-gray-600 font-medium">Low Stock</p>
+          <p className="text-[28px] font-normal text-yellow-700" >{lowStockProducts}</p>
         </div>
-        <div className="bg-white border border-[#e8eaed] rounded-[24px] p-5 hover:shadow-sm transition-shadow">
-          <div className="w-10 h-10 bg-[#fce8e6] rounded-full flex items-center justify-center mb-3">
-            <XCircle className="w-5 h-5 text-[#d93025]" />
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hover:shadow-sm transition-shadow">
+          <div className="w-10 h-10 bg-red-50 rounded-md flex items-center justify-center mb-3">
+            <XCircle className="w-5 h-5 text-red-700" />
           </div>
-          <p className="text-[13px] text-[#5f6368] font-medium">Out of Stock</p>
-          <p className="text-[28px] font-normal text-[#d93025]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{outOfStockProducts}</p>
+          <p className="text-[13px] text-gray-600 font-medium">Out of Stock</p>
+          <p className="text-[28px] font-normal text-red-700" >{outOfStockProducts}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white border border-[#e8eaed] rounded-[24px] p-4">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
         <div className="flex gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#5f6368]" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-600" />
             <input
               type="text"
               placeholder="Search products..."
               value={searchInput}
               onChange={(e) => { setSearchInput(e.target.value); handleSearchChange(e.target.value); }}
-              className="w-full pl-11 pr-4 py-3 border border-[#e8eaed] rounded-full focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] placeholder-[#5f6368] transition-all bg-[#f8f9fa] hover:bg-[#f1f3f4] focus:bg-white"
+              className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-[14px] text-gray-900 placeholder-[#5f6368] transition-all bg-gray-50 hover:bg-gray-100 focus:bg-white"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-            className="px-4 py-3 border border-[#e8eaed] rounded-full focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] text-[14px] text-[#202124] bg-[#f8f9fa] hover:bg-[#f1f3f4] focus:bg-white transition-all appearance-none pr-10"
+            className="px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-[14px] text-gray-900 bg-gray-50 hover:bg-gray-100 focus:bg-white transition-all appearance-none pr-10"
             style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}
           >
             <option value="">All Statuses</option>
@@ -329,7 +329,7 @@ export const ProductsList: React.FC = () => {
           {(searchInput || statusFilter) && (
             <button
               onClick={() => { setSearchInput(''); setSearchTerm(''); setStatusFilter(''); setCurrentPage(1); }}
-              className="px-5 py-3 text-[14px] font-medium text-[#1a73e8] hover:bg-[#e8f0fe] rounded-full transition-colors"
+              className="px-5 py-3 text-[14px] font-medium text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
             >
               Clear
             </button>
@@ -340,31 +340,31 @@ export const ProductsList: React.FC = () => {
       {/* Mobile card list — hidden on md+ */}
       <div className="md:hidden space-y-3">
         {loading ? (
-          <div className="bg-white border border-[#e8eaed] rounded-[24px] p-8 text-center">
-            <div className="w-6 h-6 border-2 border-[#1a73e8] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-[14px] text-[#5f6368]">Loading...</p>
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-center">
+            <div className="w-6 h-6 border-2 border-[#1a73e8] border-t-transparent rounded-md animate-spin mx-auto mb-3" />
+            <p className="text-[14px] text-gray-600">Loading...</p>
           </div>
         ) : products.length === 0 ? (
-          <div className="bg-white border border-[#e8eaed] rounded-[24px] p-8 text-center">
-            <Package className="w-10 h-10 text-[#dadce0] mx-auto mb-3" />
-            <p className="text-[14px] text-[#5f6368]">No products found</p>
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-center">
+            <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-[14px] text-gray-600">No products found</p>
           </div>
         ) : (
           <>
             {products.map((product) => (
-              <div key={product.id} className="bg-white border border-[#e8eaed] rounded-[24px] p-4 shadow-sm">
+              <div key={product.id} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 shadow-sm">
                 <div className="flex items-start gap-4">
                   <ProductImage product={product} size="w-14 h-14" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-[15px] text-[#202124] truncate" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{product.name}</p>
-                    <p className="text-[13px] text-[#5f6368] truncate mb-2.5">{product.category_name}</p>
+                    <p className="font-medium text-[15px] text-gray-900 truncate" >{product.name}</p>
+                    <p className="text-[13px] text-gray-600 truncate mb-2.5">{product.category_name}</p>
                     <div className="flex flex-wrap gap-2">
                       <StatusBadge active={product.is_active} />
                       <StockBadge stock={product.stock} />
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <p className="font-semibold text-[15px] text-[#202124]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>
+                    <p className="font-semibold text-[15px] text-gray-900" >
                       ₹{Number(product.price).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </p>
                     {product.original_price && (
@@ -375,14 +375,14 @@ export const ProductsList: React.FC = () => {
                     <div className="flex gap-1 mt-2">
                       <button
                         onClick={() => navigate(`/admin/products/edit/${product.id}`)}
-                        className="p-2 text-[#1a73e8] hover:bg-[#e8f0fe] rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
                         aria-label="Edit product"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => { setSelectedProduct(product); setShowDeleteModal(true); }}
-                        className="p-2 text-[#d93025] hover:bg-[#fce8e6] rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                        className="p-2 text-red-700 hover:bg-red-50 rounded-md transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
                         aria-label="Delete product"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -392,7 +392,7 @@ export const ProductsList: React.FC = () => {
                 </div>
               </div>
             ))}
-            <div className="bg-white border border-[#e8eaed] rounded-[24px]">
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -406,69 +406,69 @@ export const ProductsList: React.FC = () => {
       </div>
 
       {/* Desktop table — hidden on mobile */}
-      <div className="hidden md:block bg-white border border-[#e8eaed] rounded-[24px] overflow-hidden">
+      <div className="hidden md:block bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[#e8eaed] bg-[#f8f9fa]">
-                <th className="px-6 py-4 text-[13px] font-semibold text-[#5f6368] w-14">Image</th>
-                <th className="px-6 py-4 text-[13px] font-semibold text-[#5f6368]">Name</th>
-                <th className="px-6 py-4 text-[13px] font-semibold text-[#5f6368]">Price</th>
-                <th className="px-6 py-4 text-[13px] font-semibold text-[#5f6368]">Stock</th>
-                <th className="px-6 py-4 text-[13px] font-semibold text-[#5f6368]">Status</th>
-                <th className="px-6 py-4 text-[13px] font-semibold text-[#5f6368] text-right w-24">Actions</th>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-4 py-3 text-[13px] font-semibold text-gray-600 w-14">Image</th>
+                <th className="px-4 py-3 text-[13px] font-semibold text-gray-600">Name</th>
+                <th className="px-4 py-3 text-[13px] font-semibold text-gray-600">Price</th>
+                <th className="px-4 py-3 text-[13px] font-semibold text-gray-600">Stock</th>
+                <th className="px-4 py-3 text-[13px] font-semibold text-gray-600">Status</th>
+                <th className="px-4 py-3 text-[13px] font-semibold text-gray-600 text-right w-24">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e8eaed]">
               {loading ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="w-6 h-6 border-2 border-[#1a73e8] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-[14px] text-[#5f6368]">Loading...</p>
+                    <div className="w-6 h-6 border-2 border-[#1a73e8] border-t-transparent rounded-md animate-spin mx-auto mb-3" />
+                    <p className="text-[14px] text-gray-600">Loading...</p>
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
-                    <Package className="w-10 h-10 text-[#dadce0] mx-auto mb-3" />
-                    <p className="text-[14px] text-[#5f6368]">No products found</p>
+                    <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                    <p className="text-[14px] text-gray-600">No products found</p>
                   </td>
                 </tr>
               ) : (
                 products.map((product) => (
-                  <tr key={product.id} className="hover:bg-[#f8f9fa] transition-colors">
-                    <td className="px-6 py-4">
+                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
                       <ProductImage product={product} size="w-12 h-12" />
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-[14px] text-[#202124] truncate max-w-[200px]" style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}>{product.name}</p>
-                      <p className="text-[12px] text-[#5f6368] truncate max-w-[200px]">{product.category_name}</p>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-[14px] text-gray-900 truncate max-w-[200px]" >{product.name}</p>
+                      <p className="text-[12px] text-gray-600 truncate max-w-[200px]">{product.category_name}</p>
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-[14px] text-[#202124]">₹{Number(product.price).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-[14px] text-gray-900">₹{Number(product.price).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
                       {product.original_price && (
                         <p className="text-[12px] text-[#80868b] line-through">₹{Number(product.original_price).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 text-[12px] font-medium rounded-full border ${
+                    <td className="px-4 py-3">
+                      <span className={`px-2.5 py-1 text-[12px] font-medium rounded-md border ${
                         product.stock === 0
-                          ? 'bg-[#fce8e6] text-[#d93025] border-[#fad2cf]'
+                          ? 'bg-red-50 text-red-700 border-red-200'
                           : product.stock < 10
-                            ? 'bg-[#fef7e0] text-[#f29900] border-[#fce4ec]'
-                            : 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]'
+                            ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                            : 'bg-green-50 text-green-700 border-green-200'
                       }`}>
                         {product.stock}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <StatusBadge active={product.is_active} />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => navigate(`/admin/products/edit/${product.id}`)}
-                          className="p-2 text-[#1a73e8] hover:bg-[#e8f0fe] rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
                           title="Edit"
                           aria-label="Edit product"
                         >
@@ -476,7 +476,7 @@ export const ProductsList: React.FC = () => {
                         </button>
                         <button
                           onClick={() => { setSelectedProduct(product); setShowDeleteModal(true); }}
-                          className="p-2 text-[#d93025] hover:bg-[#fce8e6] rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                          className="p-2 text-red-700 hover:bg-red-50 rounded-md transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
                           title="Delete"
                           aria-label="Delete product"
                         >

@@ -175,7 +175,7 @@ export const CategoryFormPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Basic Information */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
               <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
                 <Tag className="w-4 h-4 text-amber-600" />
@@ -228,7 +228,7 @@ export const CategoryFormPage: React.FC = () => {
           </div>
 
           {/* Category Image */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
               <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
                 <Image className="w-4 h-4 text-blue-600" />
@@ -260,7 +260,7 @@ export const CategoryFormPage: React.FC = () => {
           </div>
 
           {/* Hierarchy & Settings */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
             <h2 className="text-base font-bold text-gray-900 pb-3 border-b border-gray-100">
               Hierarchy & Settings
             </h2>
