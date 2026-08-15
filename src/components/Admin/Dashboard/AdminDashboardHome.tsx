@@ -7,7 +7,6 @@ import {
   RefreshCw, Plus, ExternalLink, CheckCircle2,
   BarChart2, Inbox
 } from 'lucide-react';
-import { supabase } from '../../../lib/legacyDb';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
 import { getAdminStatusClasses, getOrderStatusConfig } from '../../../utils/orderStatusUtils';
@@ -193,70 +192,81 @@ export const AdminDashboardHome: React.FC = () => {
       todayStart.setHours(0, 0, 0, 0);
       const todayIso = todayStart.toISOString();
 
-      const [
-        { count: totalUsers }, { count: newUsersToday },
-        { count: totalProducts }, { count: totalOrders },
-        { count: pendingOrders },
-        ordersRes, profilesRes, productsAllRes, lowStockRes,
-      ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', todayIso),
-        supabase.from('products').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('orders').select('id, order_number, total_amount, status, created_at, user_id').order('created_at', { ascending: false }).limit(10),
-        supabase.from('profiles').select('id, full_name, email'),
-        supabase.from('products').select('id, name, price, images, stock, min_stock_level'),
-        supabase.from('products').select('id, name, price, images, stock, min_stock_level').lte('stock', 20).limit(8),
+      const [ordersRes, productsRes, customersRes] = await Promise.all([
+        apiClient.get('/merchant/orders'),
+        apiClient.get('/products'),
+        apiClient.get('/merchant/orders/customers/list'),
       ]);
 
-      const orders = ordersRes.data || [];
-      const profiles = profilesRes.data || [];
-      const profileMap = Object.fromEntries(profiles.map((p: any) => [p.id, p]));
-      const ordersToday = orders.filter((o: any) => o.created_at >= todayIso).length;
-      const revenueToday = orders
-        .filter((o: any) => o.created_at >= todayIso && ['delivered', 'shipped'].includes(o.status))
+      const storeOrders = ordersRes.data?.orders || [];
+      const productsList = productsRes.data || [];
+      const customersList = customersRes.data || [];
+
+      // Customers stats
+      const totalUsers = customersList.length;
+      const newUsersToday = customersList.filter((c: any) => c.created_at >= todayIso).length;
+
+      // Products stats
+      const totalProducts = productsList.length;
+      const lowStockProductsList = productsList.filter((p: any) => 
+        (p.min_stock_level != null ? p.stock <= p.min_stock_level : p.stock <= 20) && p.is_active
+      );
+      const lowStockCount = lowStockProductsList.length;
+
+      // Orders stats
+      const totalOrders = storeOrders.length;
+      const pendingOrders = storeOrders.filter((o: any) => o.status === 'pending' || o.fulfillment_status === 'UNFULFILLED').length;
+      const ordersToday = storeOrders.filter((o: any) => o.created_at >= todayIso).length;
+      
+      const revenueToday = storeOrders
+        .filter((o: any) => o.created_at >= todayIso && o.status !== 'CANCELLED')
+        .reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || '0'), 0);
+        
+      const totalRevenue = storeOrders
+        .filter((o: any) => o.status !== 'CANCELLED')
         .reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || '0'), 0);
 
-      const allOrdersRes = await apiClient.get('/orders');
-      const totalRevenue = (allOrdersRes.data || []).reduce((s: number, o: any) => s + parseFloat(o.total_amount || '0'), 0);
-
-      const lowStockCount = (productsAllRes.data || []).filter((p: any) =>
-        p.min_stock_level != null ? p.stock <= p.min_stock_level : p.stock <= 20
-      ).length;
-
       const m: DashboardMetrics = {
-        totalUsers: totalUsers ?? 0, totalProducts: totalProducts ?? 0,
-        totalOrders: totalOrders ?? 0, totalRevenue,
-        pendingOrders: pendingOrders ?? 0, lowStockProducts: lowStockCount,
-        newUsersToday: newUsersToday ?? 0, ordersToday, revenueToday,
+        totalUsers, totalProducts,
+        totalOrders, totalRevenue,
+        pendingOrders, lowStockProducts: lowStockCount,
+        newUsersToday, ordersToday, revenueToday,
       };
       setMetrics(m);
 
-      const ro = orders.slice(0, 5).map((o: any) => ({
+      const ro = storeOrders.slice(0, 5).map((o: any) => ({
         id: o.id, order_number: o.order_number || o.id,
         total_amount: o.total_amount, status: o.status,
-        created_at: o.created_at, customer_name: profileMap[o.user_id]?.full_name || 'Guest',
+        created_at: o.created_at, 
+        customer_name: o.guest_email || (o.shipping_address as any)?.full_name || 'Guest',
       }));
       setRecentOrders(ro);
 
-      const ls = (lowStockRes.data || []).map((p: any) => ({
+      const ls = lowStockProductsList.slice(0, 8).map((p: any) => ({
         id: p.id, name: p.name, stock: p.stock, min_stock_level: p.min_stock_level ?? 20, images: p.images || [],
       }));
       setLowStockProducts(ls);
 
-      const oiRes = await apiClient.get('/order-items');
+      // Top Products (compute sold quantities from storeOrders)
       const soldMap: Record<string, number> = {};
-      (oiRes.data || []).forEach((oi: any) => { soldMap[oi.product_id] = (soldMap[oi.product_id] || 0) + (oi.quantity || 0); });
+      storeOrders.forEach((ord: any) => {
+        if (ord.status !== 'CANCELLED' && ord.items) {
+          ord.items.forEach((oi: any) => {
+            soldMap[oi.product_id] = (soldMap[oi.product_id] || 0) + (oi.quantity || 0);
+          });
+        }
+      });
+      
       let tp: TopProduct[];
       if (Object.keys(soldMap).length > 0) {
-        const tr = await apiClient.get('/products');
-        tp = (tr.data || []).map((p: any) => ({ ...p, total_sold: String(soldMap[p.id] || 0) }))
-          .sort((a: any, b: any) => parseInt(b.total_sold) - parseInt(a.total_sold));
+        tp = productsList.map((p: any) => ({ ...p, total_sold: String(soldMap[p.id] || 0) }))
+          .sort((a: any, b: any) => parseInt(b.total_sold) - parseInt(a.total_sold))
+          .slice(0, 5);
       } else {
-        tp = (productsAllRes.data || []).slice(0, 5).map((p: any) => ({ ...p, total_sold: '0' }));
+        tp = productsList.slice(0, 5).map((p: any) => ({ ...p, total_sold: '0' }));
       }
       setTopProducts(tp);
+      
       _dashboardCache = { metrics: m, topProducts: tp, recentOrders: ro, lowStockProducts: ls };
     } catch (error: any) {
       if (!background) showError('Error', error.message || 'Failed to load dashboard');

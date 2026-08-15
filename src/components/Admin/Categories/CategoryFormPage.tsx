@@ -50,11 +50,11 @@ export const CategoryFormPage: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const data = await apiClient.get('/categories');
+      const res = await apiClient.get('/categories');
       
       const available = isEditMode && id
-        ? (data || []).filter((cat: any) => cat.id !== id)
-        : (data || []);
+        ? (res.data || []).filter((cat: any) => cat.id !== id)
+        : (res.data || []);
       setCategories(available);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -64,7 +64,8 @@ export const CategoryFormPage: React.FC = () => {
   const fetchCategory = async (categoryId: string) => {
     try {
       setFetching(true);
-      const { data: category, error } = await apiClient.get('/categories');
+      const res = await apiClient.get(`/categories/${categoryId}`);
+      const category = res.data;
       
       if (category) {
         setFormData({

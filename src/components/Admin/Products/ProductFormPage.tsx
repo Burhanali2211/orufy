@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { FormInput, FormTextarea, FormSelect, FormCheckbox } from '../../Common/FormInput';
 import { ImageUpload } from '../../Common/ImageUpload';
-import { supabase } from '../../../lib/legacyDb';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
 

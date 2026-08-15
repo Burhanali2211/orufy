@@ -1,11 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, Store } from 'lucide-react';
-import { DashboardSettings } from '@/hooks/useAdminDashboardSettings';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface MobileHeaderProps {
-  settings: DashboardSettings;
   setSidebarOpen: (open: boolean) => void;
   title: string;
   subtitle?: string;

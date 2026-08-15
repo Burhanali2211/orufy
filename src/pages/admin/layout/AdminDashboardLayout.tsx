@@ -10,7 +10,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAdminDashboardSettings } from '@/hooks/useAdminDashboardSettings';
 import { AdminDashboardLayoutProps, NavItem } from './AdminDashboardLayout/types';
 import { Sidebar } from './AdminDashboardLayout/Sidebar';
 import { DesktopHeader } from './AdminDashboardLayout/DesktopHeader';
@@ -35,7 +34,6 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { settings } = useAdminDashboardSettings();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -64,7 +62,6 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
   return (
     <div className="min-h-screen font-sans antialiased" style={{ background: '#f8f9fa', color: '#202124' }}>
       <MobileHeader 
-        settings={settings} 
         setSidebarOpen={setSidebarOpen} 
         title={title} 
         subtitle={subtitle} 
@@ -87,7 +84,6 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
         style={{ background: '#fff', borderRight: '1px solid #e8eaed' }}
       >
         <Sidebar 
-          settings={settings}
           user={user}
           navItems={navItems}
           setSidebarOpen={setSidebarOpen}

@@ -539,3 +539,67 @@ merchantOrdersRouter.post('/:id/cancel', requireAuth, async (req: Request, res: 
     return res.status(400).json({ error: error.message || 'Failed to cancel order' });
   }
 });
+
+// 6. Get Store Customers (Users who placed orders)
+merchantOrdersRouter.get('/customers/list', requireAuth, async (req, res) => {
+  try {
+    const userId = res.locals.user.id;
+    let store = res.locals?.store;
+    if (!store && req.headers && req.headers['x-store-hostname']) {
+      // @ts-ignore
+      const [found] = await db.select().from(stores).where(eq(stores.hostname, req.headers['x-store-hostname']));
+      store = found;
+    }
+
+    if (!store) {
+      return res.status(404).json({ error: 'Store not found' });
+    }
+
+    const isAuthorized = await verifyMerchantAccess(userId, store.id);
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'Forbidden: Merchant access required' });
+    }
+
+    const customers = await withStoreContext(store.id, async (tx) => {
+      // Fetch all orders for this store to compute customers
+      const storeOrders = await tx.select().from(orders).where(eq(orders.store_id, store.id));
+      
+      const customerMap = new Map();
+      for (const ord of storeOrders) {
+        // Use guest email if no user_id, else user_id
+        const key = ord.user_id || ord.guest_email || 'anonymous';
+        if (key === 'anonymous') continue;
+        
+        if (!customerMap.has(key)) {
+          customerMap.set(key, {
+            id: key,
+            user_id: ord.user_id,
+            email: ord.guest_email || (ord.shipping_address as any)?.email || '',
+            full_name: (ord.shipping_address as any)?.full_name || (ord.shipping_address as any)?.name || 'Guest User',
+            order_count: 0,
+            total_spent: 0,
+            created_at: ord.created_at
+          });
+        }
+        
+        const customer = customerMap.get(key);
+        customer.order_count += 1;
+        customer.total_spent += parseFloat(ord.total_amount || '0');
+        // keep oldest created_at
+        if (new Date(ord.created_at) < new Date(customer.created_at)) {
+          customer.created_at = ord.created_at;
+        }
+      }
+      
+      return Array.from(customerMap.values()).map(c => ({
+        ...c,
+        total_spent: c.total_spent.toString()
+      }));
+    }, userId);
+
+    return res.status(200).json(customers);
+  } catch (error) {
+    console.error('Error fetching customers:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});

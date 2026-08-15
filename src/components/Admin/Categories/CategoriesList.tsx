@@ -14,7 +14,6 @@ import {
   ChevronDown as ChevronDownIcon,
 } from 'lucide-react';
 import { ConfirmModal } from '../../Common/Modal';
-import { supabase } from '../../../lib/legacyDb';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { getSafeImageUrl, isValidImageUrl } from '../../../utils/imageUrlUtils';
 
@@ -58,22 +57,25 @@ export const CategoriesList: React.FC = () => {
   const fetchCategories = async (background = false) => {
     try {
       if (!background) setLoading(true);
-      const [{ data: cats, error }, { data: products }] = await Promise.all([
-        supabase.from('categories').select('*').order('sort_order', { ascending: true }),
-        supabase.from('products').select('category_id'),
+      
+      const [catsRes, productsRes] = await Promise.all([
+        apiClient.get('/categories'),
+        apiClient.get('/products'),
       ]);
       
+      const cats = catsRes.data || [];
+      const products = productsRes.data || [];
 
       // Build product count map
-      const countMap = (products || []).reduce((acc: Record<string, number>, p: any) => {
+      const countMap = products.reduce((acc: Record<string, number>, p: any) => {
         if (p.category_id) acc[p.category_id] = (acc[p.category_id] || 0) + 1;
         return acc;
       }, {});
 
       // Resolve parent names client-side
-      const mapped = (cats || []).map((c: any) => ({
+      const mapped = cats.map((c: any) => ({
         ...c,
-        parent_name: (cats || []).find((p: any) => p.id === c.parent_id)?.name || null,
+        parent_name: cats.find((p: any) => p.id === c.parent_id)?.name || null,
         product_count: countMap[c.id] || 0,
       }));
       setCategories(mapped);

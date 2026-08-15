@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../../Common/Modal';
 import { FormInput, FormTextarea, FormSelect, FormCheckbox } from '../../Common/FormInput';
 import { ImageUpload } from '../../Common/ImageUpload';
-import { supabase } from '../../../lib/legacyDb';
 import { useNotification } from '../../../contexts/NotificationContext';
 import {} from 'lucide-react';
 
@@ -82,9 +81,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
 
   const fetchCategories = async () => {
     try {
-      const data = await apiClient.get('/categories');
-      
-      setCategories(data || []);
+      const res = await apiClient.get('/categories');
+      setCategories(res.data || []);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
     }

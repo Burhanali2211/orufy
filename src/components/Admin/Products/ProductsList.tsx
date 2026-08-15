@@ -3,7 +3,6 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, Package, CheckCircle, AlertTriangle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ConfirmModal } from '../../Common/Modal';
-import { supabase } from '../../../lib/legacyDb';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { isValidImageUrl, getFirstValidImage } from '../../../utils/imageUrlUtils';
 
@@ -116,18 +115,16 @@ export const ProductsList: React.FC = () => {
     fetchProducts(background);
   }, [currentPage, searchTerm, statusFilter]);
   useEffect(() => {
-    const background = _productStatsCache !== null;
-    fetchProductStats(background);
+    // product stats will be updated inside fetchProducts
   }, []);
 
-  const fetchProductStats = async (background = false) => {
+  const fetchProductStats = (productsData: any[] = []) => {
     try {
-      const [{ count: active }, { count: lowStock }, { count: outOfStock }] = await Promise.all([
-        supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true).gt('stock', 0).lt('stock', 10),
-        supabase.from('products').select('*', { count: 'exact', head: true }).eq('stock', 0),
-      ]);
-      const newStats = { active: active ?? 0, lowStock: lowStock ?? 0, outOfStock: outOfStock ?? 0 };
+      const active = productsData.filter(p => p.is_active).length;
+      const lowStock = productsData.filter(p => p.is_active && p.stock > 0 && p.stock < 10).length;
+      const outOfStock = productsData.filter(p => p.stock === 0).length;
+      
+      const newStats = { active, lowStock, outOfStock };
       setProductStats(newStats);
       _productStatsCache = newStats;
     } catch {
@@ -138,30 +135,53 @@ export const ProductsList: React.FC = () => {
   const fetchProducts = async (background = false) => {
     try {
       if (!background) setLoading(true);
-      const from = (currentPage - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      let query = supabase
-        .from('products')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
-
-      if (statusFilter === 'active') query = query.eq('is_active', true);
-      if (statusFilter === 'inactive') query = query.eq('is_active', false);
-      if (searchTerm) query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`);
-
-      const { data: productsData, error, count } = await query.range(from, to);
       
+      const { data: productsData, error } = await apiClient.get('/products');
+      if (error) throw new Error(error.message || 'Failed to fetch products');
 
       const rows = productsData || [];
-      const categoryIds = [...new Set(rows.map((p: any) => p.category_id).filter(Boolean))];
-      const categoryMap: Record<string, string> = {};
-      if (categoryIds.length > 0) {
-        const { data: cats } = await apiClient.get('/categories');
-        (cats || []).forEach((c: any) => { categoryMap[c.id] = c.name; });
+      
+      // Update stats based on all products
+      fetchProductStats(rows);
+
+      // Filter rows
+      let filteredRows = rows;
+      if (statusFilter === 'active') filteredRows = filteredRows.filter((p: any) => p.is_active);
+      if (statusFilter === 'inactive') filteredRows = filteredRows.filter((p: any) => !p.is_active);
+      if (searchTerm) {
+        const lowerTerm = searchTerm.toLowerCase();
+        filteredRows = filteredRows.filter((p: any) => 
+          (p.name && p.name.toLowerCase().includes(lowerTerm)) ||
+          (p.description && p.description.toLowerCase().includes(lowerTerm)) ||
+          (p.sku && p.sku.toLowerCase().includes(lowerTerm))
+        );
       }
 
-      const mappedProducts = rows.map((p: any) => ({
+      // Sort by created_at descending
+      filteredRows.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      // Pagination
+      const ti = filteredRows.length;
+      const tp = Math.max(1, Math.ceil(ti / pageSize));
+      
+      // Safety check if current page exceeds total pages
+      const safeCurrentPage = Math.min(currentPage, tp);
+      if (safeCurrentPage !== currentPage) {
+        setCurrentPage(safeCurrentPage);
+        return; // Will re-trigger fetch due to dependency
+      }
+      
+      const from = (safeCurrentPage - 1) * pageSize;
+      const paginatedRows = filteredRows.slice(from, from + pageSize);
+
+      const categoryIds = [...new Set(paginatedRows.map((p: any) => p.category_id).filter(Boolean))];
+      const categoryMap: Record<string, string> = {};
+      if (categoryIds.length > 0) {
+        const res = await apiClient.get('/categories');
+        (res.data || []).forEach((c: any) => { categoryMap[c.id] = c.name; });
+      }
+
+      const mappedProducts = paginatedRows.map((p: any) => ({
         id: p.id,
         name: p.name,
         price: String(p.price),
@@ -172,13 +192,12 @@ export const ProductsList: React.FC = () => {
         images: p.images || [],
         created_at: p.created_at,
       }));
-      const ti = count ?? 0;
-      const tp = Math.max(1, Math.ceil(ti / pageSize));
+      
       setProducts(mappedProducts);
       setTotalItems(ti);
       setTotalPages(tp);
       // Cache only the default (page 1, no filters) result
-      if (currentPage === 1 && !searchTerm && !statusFilter) {
+      if (safeCurrentPage === 1 && !searchTerm && !statusFilter) {
         _productsCache = { products: mappedProducts, totalItems: ti, totalPages: tp };
       }
     } catch (error: any) {
@@ -194,23 +213,13 @@ export const ProductsList: React.FC = () => {
       setDeleteLoading(true);
       const pid = selectedProduct.id;
 
-      // Remove FK references before deleting the product to avoid 409 conflicts
-      await Promise.allSettled([
-        supabase.from('cart_items').delete().eq('product_id', pid),
-        supabase.from('wishlist_items').delete().eq('product_id', pid),
-        supabase.from('order_items').delete().eq('product_id', pid),
-        supabase.from('reviews').delete().eq('product_id', pid),
-      ]);
-
       await apiClient.delete(`/products/${pid}`);
       
-
       _productsCache = null;
       showSuccess('Success', 'Product deleted successfully');
       setShowDeleteModal(false);
       setSelectedProduct(null);
       fetchProducts();
-      fetchProductStats();
     } catch (error: any) {
       showError('Error', error.message || 'Failed to delete product');
     } finally {

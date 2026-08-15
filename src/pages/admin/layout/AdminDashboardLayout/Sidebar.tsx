@@ -2,12 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { X, ExternalLink, LogOut, LayoutDashboard, Store, ChevronRight } from 'lucide-react';
 import { NavItem } from './types';
-import { DashboardSettings } from '@/hooks/useAdminDashboardSettings';
 import { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
-  settings: DashboardSettings;
   user: User | null;
   navItems: NavItem[];
   setSidebarOpen: (open: boolean) => void;

@@ -23,12 +23,6 @@ initServiceWorker().catch(error => {
   console.warn('[SW] Failed to initialize Service Worker management:', error);
 });
 
-// Initialize admin dashboard styles from cache immediately (prevents flash of old colors)
-if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
-  import('./utils/adminDashboardStyles').then(({ initializeDashboardStyles }) => {
-    initializeDashboardStyles();
-  });
-}
 
 // Global error handler to suppress browser extension errors
 if (typeof window !== 'undefined') {

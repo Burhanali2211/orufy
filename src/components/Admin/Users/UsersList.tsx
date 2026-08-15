@@ -2,7 +2,6 @@ import { apiClient } from '@/lib/apiClient';
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Search, Edit, Trash2, Power, Users as UsersIcon, Filter, X, ChevronLeft, ChevronRight, Shield, ShoppingBag } from 'lucide-react';
 import { ConfirmModal } from '../../Common/Modal';
-import { supabase } from '../../../lib/legacyDb';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { UserForm } from './UserForm';
 
@@ -60,30 +59,41 @@ export const UsersList: React.FC = () => {
   const fetchUsers = async (background = false) => {
     try {
       if (!background) setLoading(true);
-      const from = (currentPage - 1) * pageSize;
-      const to = from + pageSize - 1;
-      let query = supabase
-        .from('profiles')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
-      if (roleFilter) query = query.eq('role', roleFilter);
-      if (statusFilter === 'active') query = query.eq('is_active', true);
-      if (statusFilter === 'inactive') query = query.eq('is_active', false);
-      if (searchTerm) query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-      const { data, error, count } = await query.range(from, to);
       
-      const rows = (data || []).map((p: any) => ({
+      const response = await apiClient.get('/merchant/orders/customers/list');
+      let data = response.data || [];
+      
+      if (roleFilter) data = data.filter((u: any) => u.role === roleFilter);
+      if (statusFilter === 'active') data = data.filter((u: any) => u.is_active !== false);
+      if (statusFilter === 'inactive') data = data.filter((u: any) => u.is_active === false);
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        data = data.filter((u: any) => 
+          (u.full_name || '').toLowerCase().includes(term) || 
+          (u.email || '').toLowerCase().includes(term)
+        );
+      }
+      
+      const rows = data.map((p: any) => ({
         id: p.id, email: p.email || '', full_name: p.full_name || '',
         role: p.role || 'customer', is_active: p.is_active !== false,
-        email_verified: true, created_at: p.created_at, order_count: 0, total_spent: '0'
+        email_verified: true, created_at: p.created_at, 
+        order_count: p.order_count || 0, total_spent: p.total_spent || '0'
       }));
-      const ti = count ?? 0;
+      
+      const ti = rows.length;
       const tp = Math.max(1, Math.ceil(ti / pageSize));
-      setUsers(rows);
+      
+      // Client-side pagination
+      const from = (currentPage - 1) * pageSize;
+      const paginatedRows = rows.slice(from, from + pageSize);
+      
+      setUsers(paginatedRows);
       setTotalItems(ti);
       setTotalPages(tp);
+      
       if (currentPage === 1 && !searchTerm && !roleFilter && !statusFilter) {
-        _usersCache = { users: rows, totalItems: ti, totalPages: tp };
+        _usersCache = { users: paginatedRows, totalItems: ti, totalPages: tp };
       }
     } catch (error: any) {
       if (!background) showError('Error', error.message || 'Failed to load users');
