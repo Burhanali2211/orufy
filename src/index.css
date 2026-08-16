@@ -1,5 +1,5 @@
-@import './styles/design-system.css';
-@import './styles/unified-design-system.css';
+@import './shared/styles/design-system.css';
+@import './shared/styles/unified-design-system.css';
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 @config "../tailwind.config.js";

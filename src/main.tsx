@@ -8,8 +8,8 @@ import App from './App.tsx';
 import './index.css';
 
 // Initialize analytics and error tracking
-import { initGA } from './services/analytics';
-import { initSentry, ErrorBoundary } from './services/errorTracking';
+import { initGA } from './shared/services/analytics';
+import { initSentry, ErrorBoundary } from './shared/services/errorTracking';
 
 // Initialize Sentry (error tracking)
 initSentry();
@@ -18,7 +18,7 @@ initSentry();
 initGA();
 
 // Initialize Service Worker management (unregister existing workers to prevent caching issues)
-import { initServiceWorker } from './utils/serviceWorker';
+import { initServiceWorker } from './shared/utils/serviceWorker';
 initServiceWorker().catch(error => {
   console.warn('[SW] Failed to initialize Service Worker management:', error);
 });

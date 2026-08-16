@@ -29,7 +29,7 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
     // Check if it's a reserved platform administrative domain
     const isPlatformReserved = RESERVED_SUBDOMAINS.some(sub => 
       host === `${sub}.${PLATFORM_DOMAIN}`
-    ) || host === PLATFORM_DOMAIN;
+    ) || host === PLATFORM_DOMAIN || host === 'localhost' || host === '127.0.0.1';
 
     if (isPlatformReserved) {
       const explicitStoreHost = req.headers['x-store-hostname'];

@@ -30,6 +30,7 @@ authRouter.post("/signup", async (req, res) => {
         email,
         password_hash: hashedPassword,
         full_name: full_name || 'User',
+        phone: req.body.phone || null,
         role: userRole,
       }).returning();
       

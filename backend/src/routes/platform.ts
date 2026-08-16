@@ -188,6 +188,11 @@ platformRouter.post('/onboarding', requireAuth, async (req: Request, res: Respon
           role: 'owner'
         });
 
+        // C. Promote user to admin if they were a customer
+        await tx.update(profiles)
+          .set({ role: 'admin' })
+          .where(eq(profiles.id, userId));
+
         // C. Seed Verified Initial Products (if any)
         if (initialProducts && Array.isArray(initialProducts)) {
           for (const product of initialProducts) {

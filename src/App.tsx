@@ -1,58 +1,61 @@
 import React, { Suspense, useEffect, lazy, memo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import './styles/pwa-responsive.css';
-import { CombinedProvider } from '@/contexts/CombinedProvider';
-import { Layout } from '@/components/Layout/Layout';
-import { ErrorBoundary } from '@/components/Common/ErrorBoundary';
-import { ScrollToTop } from '@/components/Common/ScrollToTop';
+import './shared/styles/pwa-responsive.css';
+import { CombinedProvider } from '@/shared/contexts/CombinedProvider';
+import { Layout } from '@/shared/components/Layout/Layout';
+import { ErrorBoundary } from '@/shared/components/Common/ErrorBoundary';
+import { ScrollToTop } from '@/shared/components/Common/ScrollToTop';
 
-import { GlobalMediaErrorHandler } from '@/components/Common/MediaErrorHandler';
+import { GlobalMediaErrorHandler } from '@/shared/components/Common/MediaErrorHandler';
 
-import { usePageTracking } from '@/hooks/usePageTracking';
-import { ProtectedRoute } from '@/components/Common/ProtectedRoute';
-import { PublicRoute } from '@/components/Common/PublicRoute';
+import { usePageTracking } from '@/shared/hooks/usePageTracking';
+import { ProtectedRoute } from '@/shared/components/Common/ProtectedRoute';
+import { PublicRoute } from '@/shared/components/Common/PublicRoute';
 
 // Lazy-loaded pages for code splitting - optimized for performance
-const HomePage = React.lazy(() => import('@/pages/HomePage'));
-const ProductsPage = React.lazy(() => import('@/pages/ProductsPage'));
-const ProductDetailPage = React.lazy(() => import('@/pages/ProductDetailPage'));
-const SearchPage = React.lazy(() => import('@/pages/SearchPage'));
-const CartPage = React.lazy(() => import('@/pages/CartPage'));
-const WishlistPage = React.lazy(() => import('@/pages/WishlistPage'));
-const ComparePage = React.lazy(() => import('@/pages/ComparePage'));
-const NewArrivalsPage = React.lazy(() => import('@/pages/NewArrivalsPage'));
-const DealsPage = React.lazy(() => import('@/pages/DealsPage'));
-const AuthPage = React.lazy(() => import('@/pages/AuthPage'));
-const ResetPasswordPage = React.lazy(() => import('@/pages/ResetPasswordPage'));
-const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
-const CategoriesPage = React.lazy(() => import('@/pages/CategoriesPage'));
-const AuthCallbackPage = React.lazy(() => import('@/pages/AuthCallbackPage'));
-const AboutPage = React.lazy(() => import('@/pages/AboutPage')); // Added About page
-const ContactPage = React.lazy(() => import('@/pages/ContactPage')); // Added Contact page
-const OnboardingPage = React.lazy(() => import('@/pages/Onboarding/OnboardingPage'));
-const PlatformLandingPage = React.lazy(() => import('@/pages/PlatformLandingPage'));
+const HomePage = React.lazy(() => import('@/apps/storefront/pages/HomePage'));
+const ProductsPage = React.lazy(() => import('@/apps/storefront/pages/ProductsPage'));
+const ProductDetailPage = React.lazy(() => import('@/apps/storefront/pages/ProductDetailPage'));
+const SearchPage = React.lazy(() => import('@/apps/storefront/pages/SearchPage'));
+const CartPage = React.lazy(() => import('@/apps/storefront/pages/CartPage'));
+const WishlistPage = React.lazy(() => import('@/apps/storefront/pages/WishlistPage'));
+const ComparePage = React.lazy(() => import('@/apps/storefront/pages/ComparePage'));
+const NewArrivalsPage = React.lazy(() => import('@/apps/storefront/pages/NewArrivalsPage'));
+const DealsPage = React.lazy(() => import('@/apps/storefront/pages/DealsPage'));
+const AuthPage = React.lazy(() => import('@/apps/storefront/pages/AuthPage'));
+const ResetPasswordPage = React.lazy(() => import('@/apps/storefront/pages/ResetPasswordPage'));
+const NotFoundPage = React.lazy(() => import('@/apps/storefront/pages/NotFoundPage'));
+const CategoriesPage = React.lazy(() => import('@/apps/storefront/pages/CategoriesPage'));
+const AuthCallbackPage = React.lazy(() => import('@/apps/storefront/pages/AuthCallbackPage'));
+const AboutPage = React.lazy(() => import('@/apps/storefront/pages/AboutPage')); // Added About page
+const ContactPage = React.lazy(() => import('@/apps/storefront/pages/ContactPage')); // Added Contact page
+const OnboardingPage = React.lazy(() => import('@/apps/platform/pages/Onboarding/OnboardingPage'));
+const PlatformLandingPage = React.lazy(() => import('@/apps/platform/pages/PlatformLandingPage'));
 
 // Legal pages
-const PrivacyPolicyPage = React.lazy(() => import('@/pages/PrivacyPolicyPage'));
-const TermsOfServicePage = React.lazy(() => import('@/pages/TermsOfServicePage'));
-const RefundPolicyPage = React.lazy(() => import('@/pages/RefundPolicyPage'));
-const ShippingPolicyPage = React.lazy(() => import('@/pages/ShippingPolicyPage'));
+const PrivacyPolicyPage = React.lazy(() => import('@/apps/storefront/pages/PrivacyPolicyPage'));
+const TermsOfServicePage = React.lazy(() => import('@/apps/storefront/pages/TermsOfServicePage'));
+const RefundPolicyPage = React.lazy(() => import('@/apps/storefront/pages/RefundPolicyPage'));
+const ShippingPolicyPage = React.lazy(() => import('@/apps/storefront/pages/ShippingPolicyPage'));
 
 // Heavy admin/dashboard pages - loaded only when needed
-const DashboardPage = React.lazy(() =>
-  import('@/pages/DashboardPage').then(module => ({ default: module.default }))
+const AdminDashboard = React.lazy(() =>
+  import('@/apps/admin/pages/AdminDashboard').then(module => ({ default: module.AdminDashboard }))
+);
+const CustomerDashboard = React.lazy(() =>
+  import('@/apps/customer/pages/customer/CustomerDashboard').then(module => ({ default: module.default }))
 );
 const CheckoutPage = React.lazy(() =>
-  import('./pages/ImprovedCheckoutPage.tsx').then(module => ({ default: module.default }))
+  import('./apps/storefront/pages/ImprovedCheckoutPage.tsx').then(module => ({ default: module.default }))
 );
 const OrderTrackingPage = React.lazy(() =>
-  import('@/pages/OrderTrackingPage').then(module => ({ default: module.default }))
+  import('@/apps/storefront/pages/OrderTrackingPage').then(module => ({ default: module.default }))
 );
 const OrderConfirmationPage = React.lazy(() =>
-  import('@/pages/OrderConfirmationPage').then(module => ({ default: module.default }))
+  import('@/apps/storefront/pages/OrderConfirmationPage').then(module => ({ default: module.default }))
 );
 const ProfileRedirect = React.lazy(() =>
-  import('@/components/Common/ProfileRedirect').then(module => ({ default: module.ProfileRedirect }))
+  import('@/shared/components/Common/ProfileRedirect').then(module => ({ default: module.ProfileRedirect }))
 );
 
 
@@ -158,7 +161,7 @@ function App() {
                 path="/admin/*" 
                 element={
                   <ProtectedRoute requiredRole="admin">
-                    <DashboardPage />
+                    <AdminDashboard />
                   </ProtectedRoute>
                 } 
               />
@@ -231,7 +234,7 @@ function App() {
                         path="/dashboard/*" 
                         element={
                           <ProtectedRoute>
-                            <DashboardPage />
+                            <CustomerDashboard />
                           </ProtectedRoute>
                         } 
                       />

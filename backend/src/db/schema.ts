@@ -6,6 +6,7 @@ export const profiles = pgTable('profiles', {
   email: text('email').notNull().unique(),
   password_hash: text('password_hash'),
   full_name: text('full_name'),
+  phone: text('phone'),
   avatar_url: text('avatar_url'),
   role: text('role').default('customer').notNull(), // customer, merchant, admin
   is_super_admin: boolean('is_super_admin').default(false).notNull(),
@@ -81,7 +82,6 @@ export const products = pgTable('products', {
   reserved_stock: integer('reserved_stock').default(0).notNull(), // Phase 12B: atomic checkout reservations
   min_stock_level: integer('min_stock_level').default(5).notNull(),
   sku: text('sku').unique(),
-  weight: numeric('weight', { precision: 8, scale: 3 }),
   dimensions: jsonb('dimensions'),
   tags: text('tags').array(),
   specifications: jsonb('specifications'),
