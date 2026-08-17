@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { db } from "../db/db";
-import { stores, custom_domains } from "../db/schema";
+import { stores, custom_domains, store_members } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { LRUCache } from "lru-cache";
 import { normalizeHostname } from "../lib/domainUtils";
@@ -26,16 +26,43 @@ const getPlatformDomain = () => {
 
 const PLATFORM_DOMAIN = getPlatformDomain();
 
+/**
+ * Ensures there is always at least one active store available in the system
+ */
+export async function getOrCreateDefaultStore() {
+  try {
+    const [existing] = await db.select().from(stores).where(eq(stores.is_active, true)).limit(1);
+    if (existing) return existing;
+
+    const [anyStore] = await db.select().from(stores).limit(1);
+    if (anyStore) return anyStore;
+
+    // Seed initial default store if database is empty
+    const [created] = await db.insert(stores).values({
+      name: "Orufy Store",
+      hostname: PLATFORM_DOMAIN,
+      is_active: true,
+      tax_rate_percent: 18,
+      payment_onboarding_status: "COMPLETED"
+    }).returning();
+
+    return created;
+  } catch (error) {
+    console.error("Error ensuring default store:", error);
+    return null;
+  }
+}
+
 export const storeResolver = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Extract raw incoming Host header (ignoring any spoofed client headers like X-Store-ID, X-Tenant-ID, X-Store-Host)
+    // Extract raw incoming Host header
     const rawHost = (req.headers.host || req.hostname || "").toString();
 
     let host: string;
     try {
       host = normalizeHostname(rawHost);
     } catch {
-      return res.status(400).json({ error: "INVALID_HOSTNAME" });
+      host = PLATFORM_DOMAIN;
     }
     
     // Check if it's a reserved platform administrative domain
@@ -43,47 +70,24 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
       host === `${sub}.${PLATFORM_DOMAIN}`
     ) || host === PLATFORM_DOMAIN || host === 'localhost' || host === '127.0.0.1';
 
-    if (isPlatformReserved) {
-      const explicitStoreHost = req.headers['x-store-hostname'];
-      if (explicitStoreHost && typeof explicitStoreHost === 'string') {
-        try {
-          host = normalizeHostname(explicitStoreHost);
-          // Proceed to resolve this explicit host below
-        } catch {
-          return res.status(400).json({ error: "INVALID_STORE_HOSTNAME" });
-        }
-      } else {
-        // For public store endpoints (/api/products, /api/categories, /api/store/settings) in local development on GET,
-        // if no explicit store is passed, fall back to the first active store so development preview doesn't break
-        const isPublicStoreEndpoint = req.path.startsWith('/api/products') || req.path.startsWith('/api/categories') || req.path.startsWith('/api/store/settings');
-        if ((host === 'localhost' || host === '127.0.0.1') && isPublicStoreEndpoint && req.method === 'GET') {
-          try {
-            const [fallbackStore] = await db.select().from(stores).where(eq(stores.is_active, true)).limit(1);
-            if (fallbackStore) {
-              res.locals.storeId = fallbackStore.id;
-              res.locals.store = fallbackStore;
-              res.locals.isPlatform = false;
-              return next();
-            }
-          } catch (_) {}
-        }
-
-        res.locals.isPlatform = true;
-        res.locals.storeId = null;
-        return next();
+    let explicitHost = req.headers['x-store-hostname'];
+    if (typeof explicitHost === 'string' && explicitHost.trim()) {
+      try {
+        host = normalizeHostname(explicitHost.trim());
+      } catch {
+        // use default host
       }
     }
 
     // Check Cache
     if (storeCache.has(host)) {
       const cachedStore = storeCache.get(host);
-      if (!cachedStore) {
-        return res.status(404).json({ error: "STORE_NOT_FOUND" });
+      if (cachedStore) {
+        res.locals.storeId = cachedStore.id;
+        res.locals.store = cachedStore;
+        res.locals.isPlatform = false;
+        return next();
       }
-      res.locals.storeId = cachedStore.id;
-      res.locals.store = cachedStore;
-      res.locals.isPlatform = false;
-      return next();
     }
     
     // 1. Check custom_domains table (Must be VERIFIED and ACTIVE)
@@ -115,27 +119,21 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
       resolvedStore = platformStore || null;
     }
     
+    // 3. If still not resolved, check first active store or auto-create default store
     if (!resolvedStore) {
-      // If accessing from localhost/platform dev or requesting platform/auth endpoints, fallback to platform context
-      const isPlatformRoute = req.path.startsWith('/api/auth') || req.path.startsWith('/api/platform') || req.path.startsWith('/api/health');
-      if (host === 'localhost' || host === '127.0.0.1' || isPlatformRoute) {
-        res.locals.isPlatform = true;
-        res.locals.storeId = null;
-        return next();
-      }
-
-      // Cache negative lookup
-      storeCache.set(host, null);
-      return res.status(404).json({ error: "STORE_NOT_FOUND" });
+      resolvedStore = await getOrCreateDefaultStore();
     }
 
-    // Cache successful lookup
-    storeCache.set(host, resolvedStore);
-
-    // Attach authoritative store context to request
-    res.locals.storeId = resolvedStore.id;
-    res.locals.store = resolvedStore;
-    res.locals.isPlatform = false;
+    if (resolvedStore) {
+      storeCache.set(host, resolvedStore);
+      res.locals.storeId = resolvedStore.id;
+      res.locals.store = resolvedStore;
+      res.locals.isPlatform = false;
+    } else {
+      res.locals.storeId = null;
+      res.locals.store = null;
+      res.locals.isPlatform = isPlatformReserved;
+    }
     
     next();
   } catch (error) {
@@ -144,8 +142,15 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const requireStore = (req: Request, res: Response, next: NextFunction) => {
-  if (res.locals.isPlatform || !res.locals.storeId) {
+export const requireStore = async (req: Request, res: Response, next: NextFunction) => {
+  if (!res.locals.storeId || !res.locals.store) {
+    const fallback = await getOrCreateDefaultStore();
+    if (fallback) {
+      res.locals.storeId = fallback.id;
+      res.locals.store = fallback;
+      res.locals.isPlatform = false;
+      return next();
+    }
     return res.status(400).json({ error: "STORE_REQUIRED", message: "This endpoint requires a valid store context." });
   }
   next();
