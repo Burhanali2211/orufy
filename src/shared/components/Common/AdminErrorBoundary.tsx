@@ -1,6 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home, Bug, Shield, WifiOff, Database, Send, Copy, CheckCircle } from 'lucide-react';
-import { useNetworkStatus } from '../../utils/networkResilience';
 
 interface Props {
   children: ReactNode;

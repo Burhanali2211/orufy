@@ -1,12 +1,8 @@
-// Utilities Barrel Exports - Organized by category
+// Utilities Barrel Exports - Cleaned & Streamlined
 
 // Performance utilities
 export * from './performance';
-export * from './resourceManager.tsx';
-export * from './metricsTracker';
 export * from './analytics';
-
-
 
 // Authentication utilities
 export * from './auth';

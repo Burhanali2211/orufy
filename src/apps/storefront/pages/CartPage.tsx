@@ -1,5 +1,5 @@
 import React from 'react';
-import { CustomerCartPage } from '@/apps/customer/components/Customer/Cart/CustomerCartPage';
+import { CustomerCartPage } from '@/apps/customer/pages/CustomerCartPage';
 import { ShoppingBag, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

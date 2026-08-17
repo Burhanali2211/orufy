@@ -1,3 +1,9 @@
-import { useNetwork, useNetworkAdaptation } from '../components/Common/NetworkStatusProvider';
+import { useNetwork } from '../components/Common/NetworkStatusProvider';
 
-export { useNetwork, useNetworkAdaptation };
+export const useNetworkAdaptation = () => ({
+  shouldLoadImages: true,
+  shouldLoadAnimations: true,
+  shouldUseOptimizedQueries: false,
+});
+
+export { useNetwork };
