@@ -1,9 +1,10 @@
 import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import {
-  Globe, Share2, Phone, Link2, Shield, ChevronRight, Sparkles, Palette
+  Globe, Share2, Phone, Link2, Shield, ChevronRight, Sparkles, Palette, Sliders
 } from 'lucide-react';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
+import { ThemeStudio } from './ThemeStudio';
 import { HeroSettings } from './HeroSettings';
 import { BrandingSettings } from './BrandingSettings';
 import { SiteSettings } from './SiteSettings';
@@ -13,7 +14,8 @@ import { FooterLinksList } from './FooterLinksList';
 import { PolicyPagesManager } from './PolicyPagesManager';
 
 const settingsNav = [
-  { name: 'Hero Section', path: '/admin/settings/hero', icon: Sparkles, description: 'Layout designs, headline text & banner slides' },
+  { name: 'Theme Studio', path: '/admin/settings/theme-studio', icon: Sliders, description: 'Drag-and-drop block reorder, palettes & live visual editor' },
+  { name: 'Hero Customizer', path: '/admin/settings/hero', icon: Sparkles, description: 'Layout designs, headline text & banner slides' },
   { name: 'Branding & Logo', path: '/admin/settings/branding', icon: Palette, description: 'Store logo, store name, colors & announcement' },
   { name: 'Site Settings', path: '/admin/settings/site', icon: Globe, description: 'Store configuration, parameters & SEO' },
   { name: 'Social Media', path: '/admin/settings/social-media', icon: Share2, description: 'Social media profile links' },
@@ -50,10 +52,11 @@ export const AdminSettingsPage: React.FC = () => {
   return (
     <AdminDashboardLayout
       title="Settings"
-      subtitle={isOverview ? 'Configure your store settings, hero presentation, and branding' : undefined}
+      subtitle={isOverview ? 'Configure your store visual theme, blocks, hero presentation, and branding' : undefined}
     >
       <Routes>
         <Route index element={<SettingsOverview />} />
+        <Route path="theme-studio" element={<ThemeStudio />} />
         <Route path="hero" element={<HeroSettings />} />
         <Route path="branding" element={<BrandingSettings />} />
         <Route path="site" element={<SiteSettings />} />

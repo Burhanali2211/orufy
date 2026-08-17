@@ -491,3 +491,159 @@ adminSettingsRouter.delete('/logo', requireAuth, requireStore, async (req: Reque
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// --- Full Visual Theme Studio Settings ---
+adminSettingsRouter.get('/theme-studio', requireAuth, requireStore, async (req: Request, res: Response) => {
+  try {
+    const storeId = getStoreId(req, res);
+    const [store] = await withStoreContext(storeId, () =>
+      db.select().from(stores).where(eq(stores.id, storeId))
+    );
+    const siteSettingsRows = await withStoreContext(storeId, () =>
+      db.select().from(site_settings).where(eq(site_settings.store_id, storeId))
+    );
+
+    const settingsMap: Record<string, string> = {};
+    siteSettingsRows.forEach(r => { settingsMap[r.setting_key] = r.setting_value || ''; });
+
+    let studioConfig = null;
+    if (settingsMap['theme_studio_settings']) {
+      try {
+        studioConfig = JSON.parse(settingsMap['theme_studio_settings']);
+      } catch (_) {}
+    }
+
+    let heroConfig = null;
+    if (settingsMap['hero_settings']) {
+      try {
+        heroConfig = JSON.parse(settingsMap['hero_settings']);
+      } catch (_) {}
+    }
+
+    res.json({
+      store: {
+        name: store?.name || '',
+        logo_url: store?.logo_url || settingsMap['site_logo'] || '',
+        hostname: store?.hostname || '',
+      },
+      hero: heroConfig || studioConfig?.hero || null,
+      theme: studioConfig || {
+        sections: [
+          { id: 'hero', name: 'Hero Banner', enabled: true, icon: 'Sparkles' },
+          { id: 'category_chips', name: 'Category Avatar Chips', enabled: true, icon: 'LayoutGrid' },
+          { id: 'featured_products', name: 'Featured Collection', enabled: true, icon: 'Star' },
+          { id: 'bento_grid', name: 'Shop by Category Grid', enabled: true, icon: 'Layers' },
+          { id: 'latest_arrivals', name: 'Fresh Releases', enabled: true, icon: 'Clock' },
+          { id: 'promo_banner', name: 'Why Shop With Us Badges', enabled: true, icon: 'ShieldCheck' },
+        ],
+        palette: {
+          id: 'classic_luxury',
+          name: 'Classic Luxury',
+          primary: settingsMap['brand_primary'] || '#1c1917',
+          accent: settingsMap['brand_accent'] || '#8c7e5a',
+          background: '#fafaf9',
+          surface: '#ffffff',
+          text: '#1c1917',
+          mutedText: '#78716c',
+        },
+        typography: {
+          headingFont: 'Inter',
+          bodyFont: 'Inter',
+          headingWeight: '800',
+        },
+        header: {
+          layout: 'standard',
+          logoHeight: 38,
+          sticky: true,
+          showAnnouncement: true,
+          announcementText: settingsMap['announcement_bar'] || 'Complimentary shipping on orders above ₹499',
+          announcementBg: '#1c1917',
+          announcementTextCol: '#ffffff',
+        },
+        footer: {
+          aboutText: 'Discover curated luxury essentials and artisanal collections.',
+          showNewsletter: true,
+          showTrustBadges: true,
+          copyrightText: `© ${new Date().getFullYear()} ${store?.name || 'Store'}. All rights reserved.`,
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching theme studio settings:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+adminSettingsRouter.post('/theme-studio', requireAuth, requireStore, async (req: Request, res: Response) => {
+  try {
+    const storeId = getStoreId(req, res);
+    const userId = res.locals.user?.id || (req as any).user?.id;
+    const { store: storeData, hero: heroData, theme: themeData } = req.body;
+
+    // 1. Update store name & logo if provided
+    if (storeData) {
+      await withStoreContext(storeId, () =>
+        // @ts-ignore
+        db.update(stores).set({
+          ...(storeData.name ? { name: storeData.name.trim() } : {}),
+          logo_url: storeData.logo_url !== undefined ? (storeData.logo_url || null) : null,
+          updated_at: new Date(),
+        }).where(eq(stores.id, storeId))
+      );
+    }
+
+    // 2. Persist Hero settings if included
+    if (heroData) {
+      const heroStr = JSON.stringify(heroData);
+      await withStoreContext(storeId, () =>
+        // @ts-ignore
+        db.insert(site_settings).values({
+          store_id: storeId,
+          setting_key: 'hero_settings',
+          setting_value: heroStr,
+          category: 'hero',
+          description: 'Theme Studio Hero Configuration',
+          updated_by: userId,
+        }).onConflictDoUpdate({
+          target: [site_settings.store_id, site_settings.setting_key],
+          set: { setting_value: heroStr, updated_by: userId, updated_at: new Date() }
+        })
+      );
+    }
+
+    // 3. Persist Full Theme Studio Config & Quick Keys
+    const studioStr = JSON.stringify(themeData);
+    const quickUpdates = [
+      { key: 'theme_studio_settings', value: studioStr },
+      { key: 'site_name', value: storeData?.name || '' },
+      { key: 'site_logo', value: storeData?.logo_url || '' },
+      { key: 'announcement_bar', value: themeData?.header?.announcementText || '' },
+      { key: 'brand_primary', value: themeData?.palette?.primary || '#1c1917' },
+      { key: 'brand_accent', value: themeData?.palette?.accent || '#8c7e5a' },
+      { key: 'brand_typography', value: themeData?.typography?.headingFont || 'Inter' },
+    ];
+
+    for (const item of quickUpdates) {
+      if (item.value !== undefined) {
+        await withStoreContext(storeId, () =>
+          // @ts-ignore
+          db.insert(site_settings).values({
+            store_id: storeId,
+            setting_key: item.key,
+            setting_value: item.value,
+            category: 'theme_studio',
+            updated_by: userId,
+          }).onConflictDoUpdate({
+            target: [site_settings.store_id, site_settings.setting_key],
+            set: { setting_value: item.value, updated_by: userId, updated_at: new Date() }
+          })
+        );
+      }
+    }
+
+    res.json({ success: true, message: 'Theme settings published successfully!' });
+  } catch (error) {
+    console.error('Error publishing theme studio settings:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});

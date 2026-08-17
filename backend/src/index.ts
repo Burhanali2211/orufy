@@ -84,6 +84,13 @@ app.get('/api/store/settings', requireStore, async (req, res) => {
       } catch (_) {}
     }
 
+    let themeStudioConfig = null;
+    if (settingsMap['theme_studio_settings']) {
+      try {
+        themeStudioConfig = JSON.parse(settingsMap['theme_studio_settings']);
+      } catch (_) {}
+    }
+
     res.json({
       identity: {
         id: store.id,
@@ -98,7 +105,8 @@ app.get('/api/store/settings', requireStore, async (req, res) => {
         accent: settingsMap['brand_accent'] || '#bfa760',
         typography: settingsMap['brand_typography'] || 'Inter',
       },
-      hero: heroConfig || {
+      theme: themeStudioConfig,
+      hero: heroConfig || themeStudioConfig?.hero || {
         layout: 'carousel',
         topTitle: 'New Collection',
         titleMain: `${store.name} Curated Essentials`,

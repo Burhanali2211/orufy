@@ -3,7 +3,7 @@ import { Hero } from '@/shared/components/Home/Hero';
 import { CategoryChips } from '@/shared/components/Home/CategoryChips';
 import { BentoGrid } from '@/shared/components/Home/BentoGrid';
 import { useProducts } from '@/shared/contexts/ProductContext';
-import { Link } from 'react-router-dom';
+import { useSettings } from '@/shared/contexts/SettingsContext';
 import { ShieldCheck, Truck, Headphones } from 'lucide-react';
 
 const FeaturedProducts = lazy(() => import('@/shared/components/Home/FeaturedProducts'));
@@ -54,33 +54,42 @@ const PromoBanner: React.FC = memo(() => (
 ));
 PromoBanner.displayName = 'PromoBanner';
 
-/* ─── Main Storefront Homepage ─── */
+/* ─── Main Dynamic Storefront Homepage ─── */
 export default function HomePage() {
   const { categories, loading: categoriesLoading } = useProducts();
+  const { config } = useSettings();
+
+  const configuredSections = config?.theme?.sections || [
+    { id: 'hero', name: 'Hero Banner', enabled: true },
+    { id: 'category_chips', name: 'Category Avatar Chips', enabled: true },
+    { id: 'featured_products', name: 'Featured Collection', enabled: true },
+    { id: 'bento_grid', name: 'Shop by Category Grid', enabled: true },
+    { id: 'latest_arrivals', name: 'Fresh Releases', enabled: true },
+    { id: 'promo_banner', name: 'Why Shop With Us Badges', enabled: true },
+  ];
+
+  const sectionRenderers: Record<string, React.ReactNode> = {
+    hero: <Hero key="hero" />,
+    category_chips: <CategoryChips key="category_chips" categories={categories} loading={categoriesLoading} />,
+    featured_products: (
+      <Suspense key="featured_products" fallback={<SectionLoader />}>
+        <FeaturedProducts />
+      </Suspense>
+    ),
+    bento_grid: <BentoGrid key="bento_grid" categories={categories} loading={categoriesLoading} />,
+    latest_arrivals: (
+      <Suspense key="latest_arrivals" fallback={<SectionLoader />}>
+        <LatestArrivals />
+      </Suspense>
+    ),
+    promo_banner: <PromoBanner key="promo_banner" />,
+  };
+
+  const activeSections = configuredSections.filter((s) => s.enabled !== false);
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* 1. Banner Carousel */}
-      <Hero />
-
-      {/* 2. Avatar / Circle Category Chips Carousel */}
-      <CategoryChips categories={categories} loading={categoriesLoading} />
-
-      {/* 3. Featured Products Collection */}
-      <Suspense fallback={<SectionLoader />}>
-        <FeaturedProducts />
-      </Suspense>
-
-      {/* 4. Shop by Category Bento Grid */}
-      <BentoGrid categories={categories} loading={categoriesLoading} />
-
-      {/* 5. Fresh Releases / Latest Arrivals */}
-      <Suspense fallback={<SectionLoader />}>
-        <LatestArrivals />
-      </Suspense>
-
-      {/* 6. Trust Signals & Benefits */}
-      <PromoBanner />
+      {activeSections.map((sec) => sectionRenderers[sec.id] || null)}
     </div>
   );
 }

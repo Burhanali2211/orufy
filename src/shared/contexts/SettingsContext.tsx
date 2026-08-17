@@ -25,6 +25,55 @@ export interface StorefrontHero {
   slides?: HeroSlide[];
 }
 
+export interface ThemeSection {
+  id: string;
+  name: string;
+  enabled: boolean;
+  icon?: string;
+}
+
+export interface ThemePalette {
+  id: string;
+  name: string;
+  primary: string;
+  accent: string;
+  background: string;
+  surface: string;
+  text: string;
+  mutedText: string;
+}
+
+export interface ThemeTypography {
+  headingFont: string;
+  bodyFont: string;
+  headingWeight: string;
+}
+
+export interface ThemeHeaderConfig {
+  layout: 'standard' | 'centered' | 'minimal';
+  logoHeight: number;
+  sticky: boolean;
+  showAnnouncement: boolean;
+  announcementText: string;
+  announcementBg: string;
+  announcementTextCol: string;
+}
+
+export interface ThemeFooterConfig {
+  aboutText: string;
+  showNewsletter: boolean;
+  showTrustBadges: boolean;
+  copyrightText: string;
+}
+
+export interface StorefrontThemeStudio {
+  sections: ThemeSection[];
+  palette: ThemePalette;
+  typography: ThemeTypography;
+  header: ThemeHeaderConfig;
+  footer: ThemeFooterConfig;
+}
+
 export interface StorefrontIdentity {
   id?: string;
   name: string;
@@ -63,6 +112,7 @@ export interface StorefrontConfig {
   identity: StorefrontIdentity;
   branding: StorefrontBranding;
   hero?: StorefrontHero;
+  theme?: StorefrontThemeStudio;
   commerce: StorefrontCommerce;
   contact: StorefrontContact;
   domain: StorefrontDomain;
@@ -92,6 +142,47 @@ interface SettingsContextType {
   getSiteSettingsByCategory: (category: string) => SiteSetting[];
   refetch: () => Promise<void>;
 }
+
+export const DEFAULT_THEME_STUDIO: StorefrontThemeStudio = {
+  sections: [
+    { id: 'hero', name: 'Hero Banner', enabled: true, icon: 'Sparkles' },
+    { id: 'category_chips', name: 'Category Avatar Chips', enabled: true, icon: 'LayoutGrid' },
+    { id: 'featured_products', name: 'Featured Collection', enabled: true, icon: 'Star' },
+    { id: 'bento_grid', name: 'Shop by Category Grid', enabled: true, icon: 'Layers' },
+    { id: 'latest_arrivals', name: 'Fresh Releases', enabled: true, icon: 'Clock' },
+    { id: 'promo_banner', name: 'Why Shop With Us Badges', enabled: true, icon: 'ShieldCheck' },
+  ],
+  palette: {
+    id: 'classic_luxury',
+    name: 'Classic Luxury',
+    primary: '#1c1917',
+    accent: '#8c7e5a',
+    background: '#fafaf9',
+    surface: '#ffffff',
+    text: '#1c1917',
+    mutedText: '#78716c',
+  },
+  typography: {
+    headingFont: 'Inter',
+    bodyFont: 'Inter',
+    headingWeight: '800',
+  },
+  header: {
+    layout: 'standard',
+    logoHeight: 38,
+    sticky: true,
+    showAnnouncement: true,
+    announcementText: 'Complimentary shipping on orders above ₹499',
+    announcementBg: '#1c1917',
+    announcementTextCol: '#ffffff',
+  },
+  footer: {
+    aboutText: 'Discover curated luxury essentials and artisanal collections.',
+    showNewsletter: true,
+    showTrustBadges: true,
+    copyrightText: `© ${new Date().getFullYear()} Store. All rights reserved.`,
+  }
+};
 
 const DEFAULT_CONFIG: StorefrontConfig = {
   identity: {
@@ -132,6 +223,7 @@ const DEFAULT_CONFIG: StorefrontConfig = {
       }
     ]
   },
+  theme: DEFAULT_THEME_STUDIO,
   commerce: {
     currency: 'INR',
     taxRatePct: 18,
@@ -158,6 +250,18 @@ export function clearStorefrontSettingsCache() {
       .filter(k => k.startsWith('storefront_config_'))
       .forEach(k => sessionStorage.removeItem(k));
   } catch (_) {}
+}
+
+export function injectGoogleFont(fontName: string) {
+  if (typeof document === 'undefined' || !fontName || fontName === 'Inter') return;
+  const linkId = `google-font-${fontName.replace(/\s+/g, '-').toLowerCase()}`;
+  if (!document.getElementById(linkId)) {
+    const link = document.createElement('link');
+    link.id = linkId;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@300;400;500;600;700;800;900&display=swap`;
+    document.head.appendChild(link);
+  }
 }
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -192,10 +296,19 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
-  const applyBrandTheme = (primaryColor: string, accentColor: string) => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.style.setProperty('--brand-primary', primaryColor || '#8c7e5a');
-      document.documentElement.style.setProperty('--brand-accent', accentColor || '#bfa760');
+  const applyBrandTheme = (themeConfig?: StorefrontThemeStudio, fallbackPrimary?: string, fallbackAccent?: string) => {
+    if (typeof document === 'undefined') return;
+    const primary = themeConfig?.palette?.primary || fallbackPrimary || '#8c7e5a';
+    const accent = themeConfig?.palette?.accent || fallbackAccent || '#bfa760';
+    const headingFont = themeConfig?.typography?.headingFont || 'Inter';
+
+    document.documentElement.style.setProperty('--brand-primary', primary);
+    document.documentElement.style.setProperty('--brand-accent', accent);
+    document.documentElement.style.setProperty('--brand-font-heading', headingFont);
+
+    if (headingFont && headingFont !== 'Inter') {
+      injectGoogleFont(headingFont);
+      document.body.style.fontFamily = `'${headingFont}', Inter, sans-serif`;
     }
   };
 
@@ -204,7 +317,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       const cached = readCache();
       if (cached) {
         setConfig(cached);
-        applyBrandTheme(cached.branding.primary, cached.branding.accent);
+        applyBrandTheme(cached.theme, cached.branding.primary, cached.branding.accent);
         setLoading(false);
         return;
       }
@@ -240,6 +353,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             typography: data.branding?.typography || 'Inter',
           },
           hero: data.hero || DEFAULT_CONFIG.hero,
+          theme: data.theme || DEFAULT_THEME_STUDIO,
           commerce: {
             currency: data.commerce?.currency || 'INR',
             taxRatePct: data.commerce?.taxRatePct ?? 18,
@@ -260,7 +374,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
         setConfig(resolved);
         writeCache(resolved);
-        applyBrandTheme(resolved.branding.primary, resolved.branding.accent);
+        applyBrandTheme(resolved.theme, resolved.branding.primary, resolved.branding.accent);
 
         if (typeof document !== 'undefined' && resolved.identity.siteName) {
           document.title = resolved.identity.siteName;
