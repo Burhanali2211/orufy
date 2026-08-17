@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/shared/lib/apiClient';
 import { useNotification } from '@/shared/contexts/NotificationContext';
-import { AdminLayout } from '../Layout/AdminLayout';
+import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
 
 interface InventoryItem {
   id: string;
@@ -106,7 +106,7 @@ export const AdminInventoryPage: React.FC = () => {
   };
 
   return (
-    <AdminLayout title="Inventory Management">
+    <AdminDashboardLayout title="Inventory Management">
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -362,6 +362,6 @@ export const AdminInventoryPage: React.FC = () => {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </AdminDashboardLayout>
   );
 };

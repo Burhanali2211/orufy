@@ -88,22 +88,27 @@ class ApiClient {
    * Get store hostname
    */
   getStoreHostname(): string | null {
+    // If in the browser, always check window.location.hostname first
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname.toLowerCase();
+      const isPlatformHost =
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host === 'get-oru.com' ||
+        host === 'www.get-oru.com';
+
+      // For any actual store subdomain or custom domain, current window host is canonical
+      if (!isPlatformHost) {
+        return host;
+      }
+    }
+
+    // On localhost or platform domain, allow dev override from localStorage
     const stored = localStorage.getItem('store_hostname');
     if (stored) {
       this.storeHostname = stored;
     }
-    
-    // If we still don't have a store hostname, and we're in the browser, 
-    // infer it from the URL if we are NOT on a platform apex domain (localhost/get-oru.com)
-    if (!this.storeHostname && typeof window !== 'undefined') {
-      const host = window.location.hostname;
-      const isPlatformHost = host === 'localhost' || host === '127.0.0.1' || host === 'get-oru.com' || host === 'www.get-oru.com';
-      
-      if (!isPlatformHost) {
-        this.storeHostname = host;
-      }
-    }
-    
+
     return this.storeHostname;
   }
 

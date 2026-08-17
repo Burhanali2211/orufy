@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
-import { AdminLayout } from '../Layout/AdminLayout';
+import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
 
 interface Product {
   id: string;
@@ -152,7 +152,7 @@ export const AdminPOSPage: React.FC = () => {
 
   if (successOrder) {
     return (
-      <AdminLayout title="POS Order Placed">
+      <AdminDashboardLayout title="POS Order Placed">
         <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
           <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full text-center border border-green-100">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -174,18 +174,18 @@ export const AdminPOSPage: React.FC = () => {
 
             <button 
               onClick={() => setSuccessOrder(null)}
-              className="w-full py-4 bg-amber-600 text-white font-bold rounded-2xl hover:bg-amber-700 transition-colors shadow-lg shadow-amber-200"
+              className="w-full py-4 bg-stone-900 text-white font-bold rounded-2xl hover:bg-stone-800 transition-colors shadow-lg"
             >
               Create New Order
             </button>
           </div>
         </div>
-      </AdminLayout>
+      </AdminDashboardLayout>
     );
   }
 
   return (
-    <AdminLayout title="Point of Sale (POS)">
+    <AdminDashboardLayout title="Point of Sale (POS)">
       <div className="h-[calc(100vh-64px)] flex flex-col lg:flex-row overflow-hidden">
         {/* Left Side: Product Search & Selection */}
         <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
@@ -377,6 +377,6 @@ export const AdminPOSPage: React.FC = () => {
           </button>
         </div>
       </div>
-    </AdminLayout>
+    </AdminDashboardLayout>
   );
 };

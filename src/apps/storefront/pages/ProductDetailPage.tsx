@@ -179,24 +179,22 @@ export const ProductDetailPage: React.FC = () => {
         {/* Product Info Section */}
         <div className="px-4 py-6 md:py-0 md:px-0 space-y-4 md:space-y-6">
 
-          {/* Rating Row */}
-          <div className="flex items-center gap-3 md:gap-4">
-            <div className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5].map(s => (
-                <Star key={s} className={`h-3.5 w-3.5 md:h-4 md:w-4 ${s <= Math.round(product.rating) ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'}`} />
-              ))}
+          {/* Rating & Reviews Row */}
+          {product.rating > 0 && (
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map(s => (
+                  <Star key={s} className={`h-3.5 w-3.5 md:h-4 md:w-4 ${s <= Math.round(product.rating) ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'}`} />
+                ))}
+              </div>
+              <span className="text-sm md:text-base font-semibold text-gray-900">{product.rating.toFixed(1)}</span>
+              {reviews.length > 0 && (
+                <button onClick={() => setActiveTab('reviews')} className="text-sm md:text-base text-gray-500 hover:text-gray-900 transition-colors underline-offset-4 hover:underline">
+                  ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                </button>
+              )}
             </div>
-            <span className="text-sm md:text-base font-semibold text-gray-900">{product.rating.toFixed(1)}</span>
-            <div className="flex items-center gap-1 text-sm md:text-base text-gray-600">
-              <ThumbsUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
-              <span className="font-semibold">3.8</span>
-            </div>
-            {reviews.length > 0 && (
-              <button onClick={() => setActiveTab('reviews')} className="text-sm md:text-base text-gray-500 hover:text-gray-700 transition-colors">
-                {reviews.length} Reviews
-              </button>
-            )}
-          </div>
+          )}
 
           {/* Product Name */}
           <div>

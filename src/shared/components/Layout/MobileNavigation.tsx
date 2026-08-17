@@ -7,7 +7,7 @@ import {
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useCart } from '@/shared/contexts/CartContext';
 import { useWishlist } from '@/shared/contexts/WishlistContext';
-import { useSwipeGesture } from '@/shared/hooks/useMobileGestures';
+import { useSwipeGesture } from '@/shared/hooks/useMobile';
 import { useProducts } from '@/shared/contexts/ProductContext';
 
 interface MobileNavigationProps {
@@ -87,7 +87,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
     },
   ];
 
-  const { bindGestures } = useSwipeGesture({
+  const swipeHandlers = useSwipeGesture({
     onSwipeLeft: () => onClose(),
   });
 
@@ -95,12 +95,6 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
     onClose();
     setActiveDropdown(null);
   }, [location.pathname]);
-
-  useEffect(() => {
-    if (navRef.current && isOpen) {
-      bindGestures(navRef.current);
-    }
-  }, [isOpen, bindGestures]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -146,6 +140,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       {/* Drawer */}
       <div
         ref={navRef}
+        {...swipeHandlers}
         className={`fixed top-0 left-0 h-full w-[85vw] max-w-[320px] bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-out lg:hidden flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
