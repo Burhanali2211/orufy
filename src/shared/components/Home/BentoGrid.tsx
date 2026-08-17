@@ -43,20 +43,14 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ categories, loading }) => 
     );
   }
 
-  const validCategories = categories.filter(cat => {
-    const rawUrl = cat.imageUrl || (cat as any).image_url;
-    return !!rawUrl;
-  });
-
-  const displayCats = validCategories.slice(0, 4);
+  const activeCategories = categories.filter(cat => cat.isActive !== false);
+  const displayCats = activeCategories.slice(0, 4);
   
-  // If there are no categories to display, do not render the section at all.
-  // This removes the "empty section" issue.
   if (displayCats.length === 0) return null;
 
   const getCatImage = (cat: Category) => {
     const rawUrl = cat.imageUrl || (cat as any).image_url;
-    return getSafeImageUrl(rawUrl, '/images/collection.png');
+    return getSafeImageUrl(rawUrl, 'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&q=80');
   };
 
   return (
