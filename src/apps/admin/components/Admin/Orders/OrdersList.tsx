@@ -62,27 +62,28 @@ export const OrdersList: React.FC = () => {
 
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery<OrderStats>({
     queryKey: ['admin-orders-stats'],
-    queryFn: () => apiClient.get('/admin/orders/stats').then(res => res || {
-      totalOrders: 0,
-      totalRevenue: 0,
-      pendingOrders: 0,
-      ordersToday: 0,
-      revenueToday: 0,
-      avgOrderValue: 0,
-      statusBreakdown: {}
+    queryFn: () => apiClient.get('/merchant/orders').then((res: any) => {
+      const q = res?.attentionQueue || {};
+      return {
+        totalOrders: q.totalActiveOrders || 0,
+        totalRevenue: 0,
+        pendingOrders: q.toPackCount || 0,
+        ordersToday: q.newOrdersCount || 0,
+        revenueToday: 0,
+        avgOrderValue: 0,
+        statusBreakdown: {}
+      };
     }),
   });
 
   const { data: ordersData, isLoading, refetch: refetchOrders } = useQuery({
     queryKey: ['admin-orders', currentPage, searchTerm, statusFilter, paymentStatusFilter],
     queryFn: () => {
-      const params = new URLSearchParams();
-      params.append('page', currentPage.toString());
-      params.append('limit', pageSize.toString());
-      if (searchTerm) params.append('search', searchTerm);
-      if (statusFilter) params.append('status', statusFilter);
-      if (paymentStatusFilter) params.append('payment_status', paymentStatusFilter);
-      return apiClient.get(`/admin/orders?${params.toString()}`);
+      return apiClient.get(`/merchant/orders`).then((res: any) => {
+        // Backend currently returns all orders under 'orders', so we map it here
+        const allOrders = res?.orders || [];
+        return { data: allOrders, total: allOrders.length };
+      });
     },
   });
 

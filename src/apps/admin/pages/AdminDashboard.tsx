@@ -22,7 +22,7 @@ export const AdminDashboard: React.FC = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (user.role !== 'admin') {
+  if (user.role !== 'admin' && user.role !== 'merchant') {
     return <Navigate to="/dashboard" replace />;
   }
 

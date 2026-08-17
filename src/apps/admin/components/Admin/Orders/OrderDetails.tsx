@@ -91,7 +91,7 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
 
   const { data: order, isLoading } = useQuery<OrderData>({
     queryKey: ['admin-order', orderId],
-    queryFn: () => apiClient.get(`/admin/orders/${orderId}`).then(res => {
+    queryFn: () => apiClient.get(`/merchant/orders/${orderId}`).then(res => {
         // Initialize local states once data is loaded
         setNewStatus(res.status);
         setNewPaymentStatus(res.payment_status);
@@ -101,7 +101,7 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
   });
 
   const updateMutation = useMutation({
-    mutationFn: (updates: Record<string, unknown>) => apiClient.put(`/admin/orders/${orderId}`, updates),
+    mutationFn: (updates: Record<string, unknown>) => apiClient.put(`/merchant/orders/${orderId}`, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-order', orderId] });
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
@@ -113,7 +113,7 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
 
   const trackingMutation = useMutation({
     mutationFn: (data: { order_id: string; status: string; message: string }) => 
-      apiClient.post('/admin/orders/tracking', data),
+      apiClient.post('/merchant/orders/tracking', data),
     onError: (error: Error) => {
       console.error('Failed to insert tracking event', error);
       // Non-critical, so we don't necessarily show an error popup for just tracking log failure

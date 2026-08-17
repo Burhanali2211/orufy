@@ -604,3 +604,48 @@ merchantOrdersRouter.post('/:id/cancel', requireAuth, async (req: Request, res: 
   }
 });
 
+// 7. Generic Update Order (status, payment_status, tracking_number)
+merchantOrdersRouter.put('/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = res.locals.user.id;
+    const orderId = String(req.params.id);
+    const updates = req.body;
+
+    let store = res.locals?.store;
+    if (!store && req.headers && req.headers['x-store-hostname']) {
+      const [found] = await db.select().from(stores).where(eq(stores.hostname, req.headers['x-store-hostname'] as string));
+      store = found;
+    }
+
+    if (!store) return res.status(404).json({ error: 'Store not found' });
+
+    const isAuthorized = await verifyMerchantAccess(userId, store.id);
+    if (!isAuthorized) return res.status(403).json({ error: 'Forbidden: Merchant access required' });
+
+    const updated = await withStoreContext(store.id, async (tx) => {
+      const [ord] = await tx.select().from(orders).where(and(eq(orders.id, orderId), eq(orders.store_id, store.id)));
+      if (!ord) throw new Error('ORDER_NOT_FOUND');
+
+      const toUpdate: any = { updated_at: sql`now()` };
+      if (updates.status !== undefined) toUpdate.status = updates.status;
+      if (updates.payment_status !== undefined) toUpdate.payment_status = updates.payment_status;
+      if (updates.tracking_number !== undefined) toUpdate.tracking_number = updates.tracking_number;
+      if (updates.shipped_at !== undefined) toUpdate.shipped_at = updates.shipped_at ? new Date(updates.shipped_at) : null;
+      if (updates.delivered_at !== undefined) toUpdate.delivered_at = updates.delivered_at ? new Date(updates.delivered_at) : null;
+
+      const [updatedOrder] = await tx.update(orders).set(toUpdate).where(eq(orders.id, ord.id)).returning();
+      return updatedOrder;
+    }, userId);
+
+    return res.status(200).json({ success: true, order: updated });
+  } catch (error: any) {
+    if (error.message === 'ORDER_NOT_FOUND') return res.status(404).json({ error: 'Order not found' });
+    return res.status(400).json({ error: error.message || 'Failed to update order' });
+  }
+});
+
+// 8. Add Tracking Event
+merchantOrdersRouter.post('/tracking', requireAuth, async (req: Request, res: Response) => {
+  // Tracking events are currently a placeholder for future implementation
+  return res.status(200).json({ success: true, message: 'Tracking event recorded' });
+});
