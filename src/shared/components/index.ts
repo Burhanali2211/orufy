@@ -15,9 +15,6 @@ export * from './Product';
 // Home Components
 export * from './Home';
 
-// Trust Components
-export * from './Trust';
-
 // Category Components
 export { CategoryDisplayCard } from './Category/CategoryDisplayCard';
 
@@ -41,8 +38,3 @@ export { PaymentSettings } from './Settings/PaymentSettings';
 export { ProfileSettings } from './Settings/ProfileSettings';
 export { SecuritySettings } from './Settings/SecuritySettings';
 export { SettingsSection } from './Settings/SettingsSection';
-
-// Mobile Components
-export { MobileProductCard } from './Mobile/MobileProductCard';
-export { MobileProductCarousel } from './Mobile/MobileProductCarousel';
-export { MobileTouchButton } from './Mobile/MobileTouchButton';

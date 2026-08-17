@@ -1,6 +1,6 @@
 // Common Components Barrel Exports
 export { ProfessionalLoader } from './ProfessionalLoader';
-export { SkeletonLoader, TableSkeleton, CardSkeleton, AdminLoadingState, EmptyState } from './EnhancedLoadingStates';
+export { SkeletonLoader, TableSkeleton, CardSkeleton, AdminLoadingState, EmptyState } from './LoadingStates';
 export { ErrorBoundary } from './ErrorBoundary';
 export { AdminErrorBoundary } from './AdminErrorBoundary';
 export { ErrorFallback } from './ErrorFallback';

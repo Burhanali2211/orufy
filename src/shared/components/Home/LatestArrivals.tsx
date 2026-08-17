@@ -3,7 +3,7 @@ import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useProducts } from '@/shared/contexts/ProductContext';
 import { ProductGridSkeleton } from '../Common/ProductCardSkeleton';
-import { LatestArrivalProductCard } from '../Product/LatestArrivalProductCard';
+import { ProductCard } from '../Product/ProductCard';
 import { Link } from 'react-router-dom';
 
 export const LatestArrivals: React.FC = memo(() => {
@@ -93,9 +93,9 @@ export const LatestArrivals: React.FC = memo(() => {
             ref={scrollRef}
             className="flex gap-4 sm:gap-6 overflow-x-auto overflow-y-hidden scrollbar-hide pb-4 -mx-4 px-4 md:mx-0 md:px-0 snap-x"
           >
-            {latestProducts.map((product, idx) => (
-              <div key={product.id} className="flex-shrink-0 w-[165px] sm:w-[200px] md:w-[240px] snap-start">
-                <LatestArrivalProductCard product={product} index={idx} />
+            {latestProducts.map((product) => (
+              <div key={product.id} className="flex-shrink-0 w-[180px] sm:w-[220px] md:w-[260px] snap-start">
+                <ProductCard product={product} />
               </div>
             ))}
           </div>

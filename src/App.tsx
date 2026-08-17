@@ -45,7 +45,7 @@ const ShippingPolicyPage = React.lazy(() => import('@/apps/storefront/pages/Ship
 // Heavy admin/dashboard pages - loaded only when needed
 const AdminDashboard = React.lazy(() => import('@/apps/admin/pages/AdminDashboard'));
 const CustomerDashboard = React.lazy(() => import('@/apps/customer/pages/CustomerDashboard'));
-const CheckoutPage = React.lazy(() => import('@/apps/storefront/pages/ImprovedCheckoutPage'));
+const CheckoutPage = React.lazy(() => import('@/apps/storefront/pages/CheckoutPage'));
 const OrderTrackingPage = React.lazy(() => import('@/apps/storefront/pages/OrderTrackingPage'));
 const OrderConfirmationPage = React.lazy(() => import('@/apps/storefront/pages/OrderConfirmationPage'));
 const ProfileRedirect = React.lazy(() =>

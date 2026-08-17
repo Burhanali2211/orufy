@@ -2,13 +2,13 @@ import React, { useEffect, memo } from 'react';
 import { Star, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useProducts } from '@/shared/contexts/ProductContext';
+import { ProductCard } from '../Product/ProductCard';
 import { ProductGridSkeleton } from '../Common/ProductCardSkeleton';
-import { HomepageProductCard } from '../Product/HomepageProductCard';
 import { Link } from 'react-router-dom';
 
 /**
  * FeaturedProducts Component
- * Modernized with luxury editorial header and staggered entrance
+ * Modernized with luxury editorial header and clean typography
  */
 export const FeaturedProducts: React.FC = memo(() => {
     const { featuredProducts, featuredLoading, fetchFeaturedProducts } = useProducts();
@@ -30,7 +30,7 @@ export const FeaturedProducts: React.FC = memo(() => {
                         <p className="text-[#5f6368] text-[16px] font-normal">Handpicked premium products curated just for you.</p>
                     </div>
                     
-                    <Link to="/products?featured=true" className="group flex items-center gap-1.5 text-[14px] font-medium text-[#1A73E8] hover:text-[#1557B0] transition-colors">
+                    <Link to="/products?featured=true" className="group flex items-center gap-1.5 text-[14px] font-medium text-stone-900 hover:text-stone-700 transition-colors">
                         Discover More <ArrowRight className="h-4 w-4" />
                     </Link>
                 </div>
@@ -40,8 +40,8 @@ export const FeaturedProducts: React.FC = memo(() => {
                     <ProductGridSkeleton count={8} variant="featured" />
                 ) : featuredProducts.length > 0 ? (
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 items-start">
-                        {featuredProducts.map((product, index) => (
-                            <HomepageProductCard key={product.id} product={product} index={index} />
+                        {featuredProducts.map((product) => (
+                            <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                 ) : (

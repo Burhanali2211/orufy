@@ -20,7 +20,6 @@ import { Modal } from '@/shared/components/Common/Modal';
 import { Review, Product } from '@/shared/types';
 import { useCartButtonState } from '@/shared/hooks/useCartButtonState';
 import { LuxuryGallery } from '@/shared/components/Product/LuxuryGallery';
-import { StockUrgency } from '@/shared/components/Trust';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -374,7 +373,6 @@ export const ProductDetailPage: React.FC = () => {
             currentProduct={product}
             type="related"
             maxItems={4}
-            layout="grid"
             className="curated-grid"
           />
         </div>
