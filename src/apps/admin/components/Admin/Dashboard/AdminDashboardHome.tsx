@@ -92,9 +92,15 @@ const BentoInvertedCard = ({ children, className = '' }: { children: React.React
 export const AdminDashboardHome: React.FC = () => {
   const { user, store } = useAuth();
   
-  // Fallback to generating a domain from the store name if hostname is null
-  const fallbackHostname = store?.name ? `${store.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.get-oru.com` : null;
-  const storeUrl = store?.hostname ? `https://${store.hostname}` : fallbackHostname ? `https://${fallbackHostname}` : null;
+  // Ensure store subdomain is always displayed (e.g. easyio.get-oru.com) rather than the platform apex domain
+  const computedHostname = (() => {
+    if (store?.hostname && store.hostname !== 'get-oru.com' && store.hostname !== 'www.get-oru.com') {
+      return store.hostname;
+    }
+    const sub = store?.slug || (store?.name ? store.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'easyio');
+    return `${sub}.get-oru.com`;
+  })();
+  const storeUrl = `https://${computedHostname}`;
   
   const [copied, setCopied] = useState(false);
 

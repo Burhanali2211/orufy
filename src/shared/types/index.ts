@@ -26,6 +26,7 @@ export interface User {
 export interface Store {
   id: string;
   name: string;
+  slug?: string | null;
   hostname: string; // e.g. 'seriqueavenue.get-oru.com'
   logo_url?: string | null;
   is_active?: boolean;

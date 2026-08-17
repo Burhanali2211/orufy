@@ -47,8 +47,8 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           </span>
         </div>
 
-        <Link
-          to={store ? `https://${store.hostname}` : '/'}
+        <a
+          href={store?.hostname && store.hostname !== 'get-oru.com' ? `https://${store.hostname}` : `https://${store?.slug || 'easyio'}.get-oru.com`}
           target="_blank"
           rel="noopener noreferrer"
           className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
@@ -56,7 +56,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           aria-label="View store"
         >
           <Store className="w-5 h-5" />
-        </Link>
+        </a>
       </div>
     </header>
   );

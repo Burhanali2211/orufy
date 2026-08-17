@@ -144,7 +144,7 @@ authRouter.post("/login", async (req, res) => {
 
       if (membership) {
         const [storeRow] = await db
-          .select({ id: stores.id, name: stores.name, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
+          .select({ id: stores.id, name: stores.name, slug: stores.slug, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
           .from(stores)
           .where(eq(stores.id, membership.store_id))
           .limit(1);
@@ -239,7 +239,7 @@ authRouter.get("/me", async (req, res) => {
 
       if (membership) {
         const [storeRow] = await db
-          .select({ id: stores.id, name: stores.name, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
+          .select({ id: stores.id, name: stores.name, slug: stores.slug, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
           .from(stores)
           .where(eq(stores.id, membership.store_id))
           .limit(1);

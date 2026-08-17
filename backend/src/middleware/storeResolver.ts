@@ -39,8 +39,9 @@ export async function getOrCreateDefaultStore() {
 
     // Seed initial default store if database is empty
     const [created] = await db.insert(stores).values({
-      name: "Orufy Store",
-      hostname: PLATFORM_DOMAIN,
+      name: "EasyIO",
+      slug: "easyio",
+      hostname: `easyio.${PLATFORM_DOMAIN}`,
       is_active: true,
       tax_rate_percent: 18,
       payment_onboarding_status: "COMPLETED"

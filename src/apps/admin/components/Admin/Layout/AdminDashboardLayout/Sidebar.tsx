@@ -26,7 +26,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   getInitials,
 }) => {
   const { store } = useAuth();
-  const storeUrl = store ? `https://${store.hostname}` : null;
+  const computedHostname = (() => {
+    if (store?.hostname && store.hostname !== 'get-oru.com' && store.hostname !== 'www.get-oru.com') {
+      return store.hostname;
+    }
+    const sub = store?.slug || (store?.name ? store.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'easyio');
+    return `${sub}.get-oru.com`;
+  })();
+  const storeUrl = `https://${computedHostname}`;
 
   return (
     <aside className="flex flex-col h-full select-none" style={{ background: '#fff', borderRight: '1px solid #e8eaed' }}>
@@ -40,7 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <div>
             <p className="text-[13px] font-semibold leading-tight" style={{ color: '#202124', fontFamily: "'Google Sans', Inter, sans-serif" }}>
-              {store?.name || 'Orufy'}
+              {store?.name || 'EasyIO'}
             </p>
             <p className="text-[10px] leading-tight" style={{ color: '#5f6368' }}>Admin Console</p>
           </div>
@@ -70,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onMouseLeave={e => (e.currentTarget.style.background = '#e8f0fe')}
           >
             <Store className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="truncate flex-1">{store?.hostname}</span>
+            <span className="truncate flex-1">{computedHostname}</span>
             <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-60" />
           </a>
         </div>
