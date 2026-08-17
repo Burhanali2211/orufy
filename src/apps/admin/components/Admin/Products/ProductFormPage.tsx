@@ -222,8 +222,8 @@ export const ProductFormPage: React.FC = () => {
       }
 
       navigate('/admin/products');
-    } catch (error: Error) {
-      showError('Error', error.message || 'Failed to save product');
+    } catch (error: any) {
+      showError('Error', error?.message || 'Failed to save product');
     } finally {
       setLoading(false);
     }

@@ -14,7 +14,7 @@ export const FeaturedProducts: React.FC = memo(() => {
     const { featuredProducts, featuredLoading, fetchFeaturedProducts } = useProducts();
 
     useEffect(() => {
-        fetchFeaturedProducts(8, true);
+        fetchFeaturedProducts(8);
     }, [fetchFeaturedProducts]);
 
     return (

@@ -47,7 +47,8 @@ export const ProductDetailPage: React.FC = () => {
   const dummyProduct: Product = {
     id: '', name: '', price: 0, stock: 0, images: [], rating: 0,
     description: '', reviews: [], sellerId: '', sellerName: '',
-    tags: [], featured: false, showOnHomepage: true, createdAt: new Date()
+    tags: [], featured: false, showOnHomepage: true, createdAt: new Date(),
+    categoryId: ''
   };
 
   const cartButtonState = useCartButtonState(product || dummyProduct);

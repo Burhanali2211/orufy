@@ -52,7 +52,11 @@ export const ShippingForm: React.FC<ShippingFormProps> = ({ formData, onChange }
         <Field label="Phone Number" required>
           <input
             type="tel" name="phone" value={formData.phone}
-            onChange={onChange} className={inputClass}
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^\d+ ]/g, '').slice(0, 15);
+              e.target.value = val;
+              onChange(e);
+            }} className={inputClass}
             placeholder="+91 98765 43210"
           />
         </Field>
@@ -85,8 +89,13 @@ export const ShippingForm: React.FC<ShippingFormProps> = ({ formData, onChange }
         <Field label="PIN Code" required>
           <input
             type="text" name="zipCode" value={formData.zipCode}
-            onChange={onChange} className={inputClass}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+              e.target.value = val;
+              onChange(e);
+            }} className={inputClass}
             placeholder="400001"
+            maxLength={6}
           />
         </Field>
 

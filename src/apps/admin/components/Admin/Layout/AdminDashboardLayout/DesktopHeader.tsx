@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, HelpCircle, Settings, Bell, LogOut, User as UserIcon } from 'lucide-react';
-import { User } from '@/types';
+import { User } from '@/shared/types';
 import { useAuth } from '@/shared/contexts/AuthContext';
 
 interface DesktopHeaderProps {

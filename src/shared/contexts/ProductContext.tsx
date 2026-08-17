@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from 'react';
 import { Product, ProductContextType, Category, Review } from '../types';
 import { useNotification } from './NotificationContext';
+import { apiClient } from '@/shared/lib/apiClient';
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
@@ -159,19 +160,27 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (cached && background && !force) return;
 
     try {
-      const res = await (Promise.reject(new Error("Mock fallback")) as any);
+      const storeHost = apiClient.getStoreHostname();
+      const headers: Record<string, string> = {};
+      if (storeHost) headers['x-store-hostname'] = storeHost;
+
+      const res = await fetch('/api/categories', { credentials: 'include', headers });
       if (res.ok) {
         const data = await res.json();
-        const mapped = data.map(mapDbCategoryToAppCategory);
-        setCategories(mapped);
-        cacheSet(keys.categories, mapped);
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(mapDbCategoryToAppCategory);
+          setCategories(mapped);
+          cacheSet(keys.categories, mapped);
+          return;
+        }
       }
+      throw new Error("No categories returned");
     } catch (error) {
       if (!cached) {
         setCategories([
-          { id: '1', name: 'Category 1', slug: 'category-1', productCount: 4, sortOrder: 1, isActive: true, imageUrl: '' },
-          { id: '2', name: 'Category 2', slug: 'category-2', productCount: 2, sortOrder: 2, isActive: true, imageUrl: '' },
-          { id: '3', name: 'Category 3', slug: 'category-3', productCount: 3, sortOrder: 3, isActive: true, imageUrl: '' },
+          { id: '1', name: 'Perfumes & Attars', slug: 'perfumes-attars', productCount: 4, sortOrder: 1, isActive: true, imageUrl: '' },
+          { id: '2', name: 'Oud & Woods', slug: 'oud-woods', productCount: 2, sortOrder: 2, isActive: true, imageUrl: '' },
+          { id: '3', name: 'Signature Blends', slug: 'signature-blends', productCount: 3, sortOrder: 3, isActive: true, imageUrl: '' },
         ]);
       }
     }
@@ -193,15 +202,23 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (force || !cached) {
       if (!cached) setLoading(true);
       try {
-        const res = await fetch('/api/products');
+        const storeHost = apiClient.getStoreHostname();
+        const headers: Record<string, string> = {};
+        if (storeHost) headers['x-store-hostname'] = storeHost;
+
+        const res = await fetch('/api/products', { credentials: 'include', headers });
         if (res.ok) {
           const data = await res.json();
-          const mapped = data.map(mapDbProductToAppProduct);
-          setProducts(mapped);
-          const pag = { page, limit, total: mapped.length, pages: 1 };
-          setPagination(pag);
-          if (isDefault) cacheSet(cacheKey, { products: mapped, pagination: pag });
+          if (Array.isArray(data) && data.length > 0) {
+            const mapped = data.map(mapDbProductToAppProduct);
+            setProducts(mapped);
+            const pag = { page, limit, total: mapped.length, pages: 1 };
+            setPagination(pag);
+            if (isDefault) cacheSet(cacheKey, { products: mapped, pagination: pag });
+            return;
+          }
         }
+        throw new Error("No products returned");
       } catch (error) {
         if (!cached) {
           const fallback = MOCK_PRODUCTS.map(mapDbProductToAppProduct);
@@ -221,11 +238,15 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (force || !cached) {
       if (!cached) setFeaturedLoading(true);
       try {
-        const res = await fetch('/api/products?featured=true');
+        const storeHost = apiClient.getStoreHostname();
+        const headers: Record<string, string> = {};
+        if (storeHost) headers['x-store-hostname'] = storeHost;
+
+        const res = await fetch('/api/products?featured=true', { credentials: 'include', headers });
         if (res.ok) {
           const data = await res.json();
-          const mapped = data.map(mapDbProductToAppProduct).slice(0, limit);
-          if(mapped.length > 0) {
+          if (Array.isArray(data) && data.length > 0) {
+            const mapped = data.map(mapDbProductToAppProduct).slice(0, limit);
             setFeaturedProducts(mapped);
             cacheSet(keys.featured, mapped);
             return;
@@ -250,11 +271,15 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (force || !cached) {
       if (!cached) setBestSellersLoading(true);
       try {
-        const res = await fetch('/api/products?bestsellers=true');
+        const storeHost = apiClient.getStoreHostname();
+        const headers: Record<string, string> = {};
+        if (storeHost) headers['x-store-hostname'] = storeHost;
+
+        const res = await fetch('/api/products?bestsellers=true', { credentials: 'include', headers });
         if (res.ok) {
           const data = await res.json();
-          const mapped = data.map(mapDbProductToAppProduct).slice(0, limit);
-          if(mapped.length > 0) {
+          if (Array.isArray(data) && data.length > 0) {
+            const mapped = data.map(mapDbProductToAppProduct).slice(0, limit);
             setBestSellers(mapped);
             cacheSet(keys.bestSellers, mapped);
             return;
@@ -279,11 +304,15 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (force || !cached) {
       if (!cached) setLatestLoading(true);
       try {
-        const res = await fetch('/api/products?latest=true');
+        const storeHost = apiClient.getStoreHostname();
+        const headers: Record<string, string> = {};
+        if (storeHost) headers['x-store-hostname'] = storeHost;
+
+        const res = await fetch('/api/products?latest=true', { credentials: 'include', headers });
         if (res.ok) {
           const data = await res.json();
-          const mapped = data.map(mapDbProductToAppProduct).slice(0, limit);
-          if(mapped.length > 0) {
+          if (Array.isArray(data) && data.length > 0) {
+            const mapped = data.map(mapDbProductToAppProduct).slice(0, limit);
             setLatestProducts(mapped);
             cacheSet(keys.latest, mapped);
             return;
@@ -305,7 +334,11 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (local) return local;
 
     try {
-      const res = await fetch(`/api/products/${id}`);
+      const storeHost = apiClient.getStoreHostname();
+      const headers: Record<string, string> = {};
+      if (storeHost) headers['x-store-hostname'] = storeHost;
+
+      const res = await fetch(`/api/products/${id}`, { credentials: 'include', headers });
       if (res.ok) {
         const data = await res.json();
         return mapDbProductToAppProduct(data);
@@ -344,7 +377,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       id: `rev_${Date.now()}`,
       productId: review.productId,
       userId: review.userId,
-      userName: review.userName,
+      userName: review.userName || 'Customer',
       rating: review.rating,
       comment: review.comment,
       createdAt: new Date(),
@@ -355,6 +388,14 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     return [];
   }, []);
 
+  const fetchReviewsForProduct = useCallback(async (productId: string): Promise<Review[]> => {
+    return getProductReviews(productId);
+  }, [getProductReviews]);
+
+  const submitReview = useCallback(async (review: any): Promise<void> => {
+    await addReview(review);
+  }, [addReview]);
+
   const getProductRatingStats = useCallback(async (productId: string) => {
     return { averageRating: 5.0, totalReviews: 12, ratingBreakdown: { 5: 12, 4: 0, 3: 0, 2: 0, 1: 0 } };
   }, []);
@@ -362,14 +403,6 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     if (!initFetched.current) {
       initFetched.current = true;
-      // Only fetch store data when we are on a store subdomain, not the platform root domain.
-      const host = typeof window !== 'undefined' ? window.location.hostname : '';
-      const baseDomain = import.meta.env.VITE_SITE_URL
-        ? new URL(import.meta.env.VITE_SITE_URL).hostname
-        : 'get-oru.com';
-      const isStorefront = host !== baseDomain && host !== 'localhost' && host !== '127.0.0.1';
-      if (!isStorefront) return; // On platform home — nothing to fetch
-
       fetchCategories(true);
       fetchProducts(1, 20);
       fetchFeaturedProducts();
@@ -404,7 +437,9 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         filterProducts,
         getRelatedProducts,
         addReview,
+        submitReview,
         getProductReviews,
+        fetchReviewsForProduct,
         getProductRatingStats,
       } as any)}
     >

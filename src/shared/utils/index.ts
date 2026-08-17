@@ -12,7 +12,6 @@ export * from './analytics';
 export * from './auth';
 
 // Core utilities
-export { cacheManager } from './cache';
 export {
   detectRLSRecursionError,
   generateRLSFixSuggestion,

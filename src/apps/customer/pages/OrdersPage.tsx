@@ -8,7 +8,7 @@ import { OrderHistorySkeleton } from '@/shared/components/Common/SkeletonScreens
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
 import { useCustomerOrders } from '@/shared/hooks/customer/useCustomerOrders';
 
-import { Order, OrderItem } from '@/types';
+import { Order, OrderItem } from '@/shared/types';
 
 const STATUS_CONFIG: Record<string, { label: string; classes: string; icon: React.ReactNode }> = {
   pending:    { label: 'Pending',    classes: 'bg-amber-50 text-amber-700 border-amber-200',   icon: <Clock className="w-3.5 h-3.5" /> },
@@ -36,17 +36,17 @@ export const OrdersPage: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filtered = (orders || []).filter(o => {
+  const filtered = (orders || []).filter((o: any) => {
     const matchStatus = activeFilter === 'all' || o.status === activeFilter;
     const matchSearch = searchQuery === '' ||
-      o.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.items.some(item => item.product?.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+      (o.orderNumber && o.orderNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (o.items && o.items.some((item: any) => item.product?.name?.toLowerCase().includes(searchQuery.toLowerCase())));
     return matchStatus && matchSearch;
   });
 
   const filterCount = (id: string) => {
-    const orderList = orders || [];
-    return id === 'all' ? orderList.length : orderList.filter(o => o.status === id).length;
+    const orderList: any[] = orders || [];
+    return id === 'all' ? orderList.length : orderList.filter((o: any) => o.status === id).length;
   };
 
   if (loading) {
@@ -135,7 +135,7 @@ export const OrdersPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered.map((order) => {
+            {filtered.map((order: any) => {
               const cfg = getStatusConfig(order.status);
               const isCOD = order.paymentMethod?.toLowerCase().includes('cash') ||
                 order.paymentMethod?.toLowerCase() === 'cod';
@@ -148,16 +148,16 @@ export const OrdersPage: React.FC = () => {
                     <div className="flex items-start gap-4">
                       {/* Product thumbnails */}
                       <div className="flex -space-x-2 flex-shrink-0">
-                        {order.items.length === 0 && (
+                        {(!order.items || order.items.length === 0) && (
                           <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center border-2 border-white">
                             <Package className="w-5 h-5 text-purple-400" />
                           </div>
                         )}
-                        {order.items.slice(0, 3).map((item, idx) => (
+                        {(order.items || []).slice(0, 3).map((item: any, idx: number) => (
                           <div
                             key={item.id}
                             className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white bg-gray-100 flex-shrink-0"
-                            style={{ zIndex: order.items.length - idx }}
+                            style={{ zIndex: (order.items?.length || 0) - idx }}
                           >
                             {item.product?.images?.[0] ? (
                               <img
@@ -196,7 +196,7 @@ export const OrdersPage: React.FC = () => {
                             day: 'numeric', month: 'short', year: 'numeric'
                           })}
                           {' · '}
-                          {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                          {order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'items'}
                         </p>
                         {order.shippingAddress && (
                           <div className="text-xs text-gray-500 mt-1 space-y-0.5">
@@ -208,9 +208,9 @@ export const OrdersPage: React.FC = () => {
                             )}
                           </div>
                         )}
-                        {order.items.length > 0 && (
+                        {order.items?.length > 0 && (
                           <p className="text-xs text-gray-400 mt-0.5 truncate">
-                            {order.items.map(i => i.product?.name).filter(Boolean).join(', ')}
+                            {order.items.map((i: any) => i.product?.name).filter(Boolean).join(', ')}
                           </p>
                         )}
                       </div>

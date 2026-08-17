@@ -18,18 +18,18 @@ export const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({
   showWhatsApp = false,
 }) => {
   const { settings } = useSettings();
-  const { contactInfo } = settings;
+  const contactInfo: any[] = (settings as any)?.contactInfo || [];
 
   // Get primary contact information
-  const emailContact = contactInfo.find(c => c.contact_type === 'email' && c.is_primary);
-  const phoneContact = contactInfo.find(c => c.contact_type === 'phone' && c.is_primary);
-  const addressContact = contactInfo.find(c => c.contact_type === 'address' && c.is_primary);
-  const whatsappContact = contactInfo.find(c => (c.contact_type === 'whatsapp' || c.contact_type === 'phone') && c.is_primary);
+  const emailContact = contactInfo.find((c: any) => c.contact_type === 'email' && c.is_primary);
+  const phoneContact = contactInfo.find((c: any) => c.contact_type === 'phone' && c.is_primary);
+  const addressContact = contactInfo.find((c: any) => c.contact_type === 'address' && c.is_primary);
+  const whatsappContact = contactInfo.find((c: any) => (c.contact_type === 'whatsapp' || c.contact_type === 'phone') && c.is_primary);
 
   // Fallback to any contact if primary not found
-  const email = emailContact?.value || contactInfo.find(c => c.contact_type === 'email')?.value;
-  const phone = phoneContact?.value || contactInfo.find(c => c.contact_type === 'phone')?.value;
-  const address = addressContact?.value || contactInfo.find(c => c.contact_type === 'address')?.value;
+  const email = emailContact?.value || contactInfo.find((c: any) => c.contact_type === 'email')?.value;
+  const phone = phoneContact?.value || contactInfo.find((c: any) => c.contact_type === 'phone')?.value;
+  const address = addressContact?.value || contactInfo.find((c: any) => c.contact_type === 'address')?.value;
   const whatsapp = whatsappContact?.value || phone;
 
   // Format phone number for tel: and WhatsApp links

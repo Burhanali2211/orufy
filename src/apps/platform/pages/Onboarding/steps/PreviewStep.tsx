@@ -1,7 +1,7 @@
 import React from 'react';
 import { useOnboarding } from '../OnboardingContext';
 import { SettingsProvider, PublicSettings } from '@/shared/contexts/SettingsContext';
-import HomePage from '../../HomePage';
+import HomePage from '@/apps/storefront/pages/HomePage';
 import { Layout } from '@/shared/components/Layout/Layout';
 
 // Mock Provider to intercept getSiteSetting

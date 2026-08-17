@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag } from 'lucide-react';
-import { useCart } from '@/shared/contexts/ShoppingContext';
+import { useCart } from '@/shared/contexts/CartContext';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useOrders } from '@/shared/contexts/ShoppingContext';
+import { useOrders } from '@/shared/contexts/OrderContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { RazorpayPayment } from '@/shared/components/Payment/RazorpayPayment';
 
@@ -85,11 +85,6 @@ export const CheckoutPage: React.FC = () => {
     setIsProcessing(true);
     try {
       if (orderId) {
-        await supabase.from('orders').update({
-          payment_status: 'paid', status: 'confirmed',
-          razorpay_payment_id: paymentId, updated_at: new Date().toISOString()
-        }).eq('id', orderId);
-
         setShowPaymentModal(false);
         await clearCart();
         localStorage.removeItem(SHIPPING_INFO_KEY);

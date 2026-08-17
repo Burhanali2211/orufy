@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useOnboarding } from '../OnboardingContext';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Rocket, Globe, CreditCard, Store, ExternalLink, ArrowRight, Copy, CheckCircle2, ShieldCheck, Mail, User, Lock, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/shared/lib/apiClient';
@@ -74,19 +74,24 @@ export const LaunchStep: React.FC = () => {
       }
 
       const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const authorizedRes = await fetch('/api/platform/onboarding', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include',
+        headers,
         body: JSON.stringify(payload),
       });
 
       const result = await authorizedRes.json();
       clearInterval(interval);
 
-      if (authorizedRes.ok || result.success) {
+      if (authorizedRes.ok && (result.success || result.store_id)) {
         const finalHostname = result.hostname || displayDomain;
         setFinalStoreUrl(`https://${finalHostname}`);
         
@@ -95,13 +100,15 @@ export const LaunchStep: React.FC = () => {
 
         setLaunchStatus('live');
       } else {
-        setFinalStoreUrl(`https://${displayDomain}`);
-        setLaunchStatus('live');
+        clearInterval(interval);
+        const errMsg = result.error || 'Failed to provision store. Please try again.';
+        setAuthError(errMsg);
+        setLaunchStatus(user ? 'ready' : 'claim');
       }
-    } catch {
+    } catch (err: any) {
       clearInterval(interval);
-      setFinalStoreUrl(`https://${displayDomain}`);
-      setLaunchStatus('live');
+      setAuthError(err.message || 'An error occurred during launch.');
+      setLaunchStatus(user ? 'ready' : 'claim');
     }
   };
 
@@ -427,15 +434,13 @@ export const LaunchStep: React.FC = () => {
               Go to Admin
               <ArrowRight className="w-4 h-4" />
             </button>
-            <a
-              href="/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/store"
               className="w-full sm:w-auto flex-1 py-4 bg-white border border-stone-200 hover:bg-stone-50 text-stone-900 rounded-full font-bold text-base transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               View Store
               <ExternalLink className="w-4 h-4" />
-            </a>
+            </Link>
           </div>
         </motion.div>
       )}

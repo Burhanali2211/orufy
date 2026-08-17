@@ -1,1 +1,1 @@
-export { Sidebar as AdminSidebar, Sidebar as default } from '../../../pages/admin/layout/AdminDashboardLayout/Sidebar';
+export { Sidebar as AdminSidebar, Sidebar as default } from './AdminDashboardLayout/Sidebar';

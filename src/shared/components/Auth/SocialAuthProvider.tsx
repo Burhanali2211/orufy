@@ -65,12 +65,11 @@ export const SocialAuthProvider: React.FC<SocialAuthProviderProps> = ({
     try {
       // Redirect to backend OAuth route — backend handles the full handshake
       window.location.href = `${VITE_API_URL}/auth/oauth/${provider}?redirect=${encodeURIComponent(window.location.origin + '/auth/callback')}`;
-      // The redirect will handle the rest
-      showInfo(`Redirecting to ${provider}...`);
+      showNotification({ type: 'info', title: 'Connecting', message: `Redirecting to ${provider}...` });
       onSuccess?.();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : `Failed to authenticate with ${provider}`;
-      showError('Authentication Failed', errorMessage);
+      showNotification({ type: 'error', title: 'Authentication Failed', message: errorMessage });
       onError?.(errorMessage);
     }
   };
@@ -89,39 +88,38 @@ export const SocialAuthProvider: React.FC<SocialAuthProviderProps> = ({
         whileHover={{ scale: disabled ? 1 : 1.02 }}
         whileTap={{ scale: disabled ? 1 : 0.98 }}
         className={`
-          flex items-center justify-center space-x-3 px-4 py-3 rounded-xl border transition-all duration-200 shadow-2xs font-semibold text-xs
+          flex items-center justify-center p-3 rounded-lg border border-gray-300
+          transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed
           ${provider.color} ${provider.hoverColor} ${provider.textColor}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-[0.99]'}
-          ${layout === 'grid' ? 'w-full' : ''}
+          ${layout === 'grid' ? 'w-full' : 'flex-1'}
         `}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="w-5 h-5" />
         {showLabels && (
-          <span className="font-medium">
-            {layout === 'vertical' ? `Continue with ${provider.name}` : provider.name}
+          <span className="ml-2 text-sm font-medium">
+            Continue with {provider.name}
           </span>
         )}
       </motion.button>
     );
   };
 
-  if (layout === 'horizontal') {
-    return (
-      <div className="flex flex-wrap gap-3 justify-center">
-        {socialProviders.slice(0, 3).map((provider, index) => renderProvider(provider, index))}
-      </div>
-    );
-  }
-
   if (layout === 'grid') {
     return (
       <div className="grid grid-cols-2 gap-3">
-        {socialProviders.slice(0, 4).map((provider, index) => renderProvider(provider, index))}
+        {socialProviders.map((provider, index) => renderProvider(provider, index))}
       </div>
     );
   }
 
-  // Vertical layout (default)
+  if (layout === 'horizontal') {
+    return (
+      <div className="flex space-x-3">
+        {socialProviders.map((provider, index) => renderProvider(provider, index))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {socialProviders.slice(0, 3).map((provider, index) => renderProvider(provider, index))}
@@ -131,34 +129,22 @@ export const SocialAuthProvider: React.FC<SocialAuthProviderProps> = ({
 
 // OAuth callback handler component
 export const AuthCallback: React.FC = () => {
-  const { showSuccess, showError } = useNotification();
+  const { showNotification } = useNotification();
 
   React.useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          throw error;
-        }
-
-        if (data.session) {
-          showSuccess('Successfully signed in!');
-          // Redirect to dashboard or intended page
-          window.location.href = '/dashboard';
-        } else {
-          throw new Error('No session found');
-        }
+        showNotification({ type: 'success', title: 'Welcome!', message: 'Successfully signed in!' });
+        window.location.href = '/dashboard';
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-        showError('Authentication failed', errorMessage);
-        // Redirect to login page
-        window.location.href = '/';
+        showNotification({ type: 'error', title: 'Authentication Failed', message: errorMessage });
+        window.location.href = '/auth';
       }
     };
 
     handleAuthCallback();
-  }, [showSuccess, showError]);
+  }, [showNotification]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

@@ -109,18 +109,18 @@ export const ProductsList: React.FC = () => {
       
       const productsData = productsRes.data || [];
       const categoryMap: Record<string, string> = {};
-      (categoriesRes.data || []).forEach((c: Category) => { categoryMap[c.id] = c.name; });
+      (categoriesRes.data || []).forEach((c: any) => { categoryMap[c.id] = c.name; });
       
-      return productsData.map((p: Product) => ({
+      return productsData.map((p: any) => ({
         id: p.id,
         name: p.name,
         price: String(p.price),
         original_price: p.original_price != null ? String(p.original_price) : '',
         stock: p.stock ?? 0,
-        category_name: categoryMap[p.category_id] || '—',
+        category_name: categoryMap[p.category_id || p.categoryId] || '—',
         is_active: p.is_active ?? true,
         images: p.images || [],
-        created_at: p.created_at,
+        created_at: p.created_at || new Date().toISOString(),
         description: p.description || '',
         sku: p.sku || ''
       }));
@@ -137,8 +137,8 @@ export const ProductsList: React.FC = () => {
       setShowDeleteModal(false);
       setSelectedProduct(null);
     },
-    onError: (error: Error) => {
-      showError('Error', error.message || 'Failed to delete product');
+    onError: (error: any) => {
+      showError('Error', error?.message || 'Failed to delete product');
     }
   });
 
@@ -150,7 +150,7 @@ export const ProductsList: React.FC = () => {
 
   const handleExport = () => {
     if (!data) return;
-    const exportData = data.map((p: Product) => ({
+    const exportData = data.map((p: any) => ({
       ID: p.id,
       Name: p.name,
       SKU: p.sku,
@@ -167,15 +167,15 @@ export const ProductsList: React.FC = () => {
   // Filter and process data
   let processedData = data || [];
   
-  const activeProducts = processedData.filter((p: Product) => p.is_active).length;
-  const lowStockProducts = processedData.filter((p: Product) => p.is_active && p.stock > 0 && p.stock < 10).length;
-  const outOfStockProducts = processedData.filter((p: Product) => p.stock === 0).length;
+  const activeProducts = processedData.filter((p: any) => p.is_active).length;
+  const lowStockProducts = processedData.filter((p: any) => p.is_active && p.stock > 0 && p.stock < 10).length;
+  const outOfStockProducts = processedData.filter((p: any) => p.stock === 0).length;
 
-  if (statusFilter === 'active') processedData = processedData.filter((p: Product) => p.is_active);
-  if (statusFilter === 'inactive') processedData = processedData.filter((p: Product) => !p.is_active);
+  if (statusFilter === 'active') processedData = processedData.filter((p: any) => p.is_active);
+  if (statusFilter === 'inactive') processedData = processedData.filter((p: any) => !p.is_active);
   if (searchTerm) {
     const lowerTerm = searchTerm.toLowerCase();
-    processedData = processedData.filter((p: Product) => 
+    processedData = processedData.filter((p: any) => 
       (p.name && p.name.toLowerCase().includes(lowerTerm)) ||
       (p.description && p.description.toLowerCase().includes(lowerTerm)) ||
       (p.sku && p.sku.toLowerCase().includes(lowerTerm))

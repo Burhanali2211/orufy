@@ -94,10 +94,10 @@ class ApiClient {
     }
     
     // If we still don't have a store hostname, and we're in the browser, 
-    // infer it from the URL if we are NOT on a platform domain (localhost/get-oru)
+    // infer it from the URL if we are NOT on a platform apex domain (localhost/get-oru.com)
     if (!this.storeHostname && typeof window !== 'undefined') {
       const host = window.location.hostname;
-      const isPlatformHost = host === 'localhost' || host === '127.0.0.1' || host.includes('get-oru.com');
+      const isPlatformHost = host === 'localhost' || host === '127.0.0.1' || host === 'get-oru.com' || host === 'www.get-oru.com';
       
       if (!isPlatformHost) {
         this.storeHostname = host;
@@ -133,19 +133,8 @@ class ApiClient {
     }
 
     try {
-      // Log request details for debugging auth endpoints
-      if (endpoint.includes('/auth')) {
-        console.log('Fetch Request:', {
-          url,
-          method: options.method || 'GET',
-          headers: Object.keys(headers),
-          hasBody: !!options.body,
-          bodyLength: options.body ? String(options.body).length : 0,
-          bodyPreview: options.body ? String(options.body).substring(0, 100) : null
-        });
-      }
-
       const response = await fetch(url, {
+        credentials: 'include',
         ...options,
         headers,
       });
@@ -278,6 +267,7 @@ class ApiClient {
     // Notice we do NOT set Content-Type so the browser sets it to multipart/form-data with boundaries
 
     const response = await fetch(url, {
+      credentials: 'include',
       method: 'POST',
       headers,
       body: formData,

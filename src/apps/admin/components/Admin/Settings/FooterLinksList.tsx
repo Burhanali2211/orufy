@@ -33,8 +33,8 @@ export const FooterLinksList: React.FC = () => {
       const data = await apiClient.get('/admin/settings/footer');
       
       setLinks(data || []);
-    } catch (error: Error) {
-      showError(error.message || 'Failed to fetch footer links');
+    } catch (error: any) {
+      showError(error?.message || 'Failed to fetch footer links');
     } finally {
       setLoading(false);
     }
@@ -50,8 +50,8 @@ export const FooterLinksList: React.FC = () => {
       
       showSuccess('Footer link deleted successfully');
       fetchLinks();
-    } catch (error: Error) {
-      showError(error.message || 'Failed to delete footer link');
+    } catch (error: any) {
+      showError(error?.message || 'Failed to delete footer link');
     }
   };
 
@@ -72,8 +72,8 @@ export const FooterLinksList: React.FC = () => {
       
       showSuccess(`Footer link ${!link.is_active ? 'activated' : 'deactivated'}`);
       fetchLinks();
-    } catch (error: Error) {
-      showError(error.message || 'Failed to update footer link');
+    } catch (error: any) {
+      showError(error?.message || 'Failed to update footer link');
     }
   };
 

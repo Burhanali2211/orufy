@@ -22,6 +22,7 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
   product,
   variant = 'default'
 }) => {
+  const { addItem } = useCart();
   const { addItem: addToWishlist, isInWishlist } = useWishlist();
   const { showNotification } = useNotification();
   const { cartButtonText } = useCartButtonStyles();

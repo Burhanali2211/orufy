@@ -140,7 +140,7 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
               </div>
             )}
             <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              {settings?.site_name || 'My Account'}
+              {(settings as any)?.site_name || 'My Account'}
             </span>
           </Link>
           <button

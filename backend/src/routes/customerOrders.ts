@@ -25,6 +25,50 @@ async function resolveStoreContext(req: Request, res: Response) {
 }
 
 /**
+ * 0. GET /api/customer/orders/
+ * Returns all orders placed by the currently authenticated user.
+ */
+customerOrdersRouter.get('/', optionalAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = res.locals.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized. Please login to view orders.' });
+    }
+
+    const store = await resolveStoreContext(req, res);
+
+    const whereClause = store?.id
+      ? and(eq(orders.user_id, userId), eq(orders.store_id, store.id))
+      : eq(orders.user_id, userId);
+
+    const userOrders = await db
+      .select()
+      .from(orders)
+      .where(whereClause)
+      .orderBy(sql`${orders.created_at} DESC`);
+
+    // Fetch items for each order
+    const ordersWithItems = await Promise.all(
+      userOrders.map(async (ord) => {
+        const items = await db
+          .select()
+          .from(order_items)
+          .where(eq(order_items.order_id, ord.id));
+        return {
+          ...ord,
+          items,
+        };
+      })
+    );
+
+    return res.status(200).json({ orders: ordersWithItems });
+  } catch (error) {
+    console.error('Fetch customer orders error:', error);
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+/**
  * 1. GET /api/customer/orders/:id
  * Fetches order details with strict multi-tenant and customer authorization checks.
  * Requires either matching customer session or valid tracking_token query parameter.

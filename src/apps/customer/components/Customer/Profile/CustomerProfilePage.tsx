@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { CustomerDashboardLayout } from '../Layout/CustomerDashboardLayout';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { apiClient } from '@/shared/lib/apiClient';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 
 export const CustomerProfilePage: React.FC = () => {

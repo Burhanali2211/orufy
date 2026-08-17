@@ -26,16 +26,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch('/api/auth/me');
+        const response = await fetch('/api/auth/me', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
+          if (data.token) {
+            apiClient.setToken(data.token);
+          }
           setUser({
             ...data.user,
             id: data.user.id,
             email: data.user.email,
             name: data.user.full_name || 'User',
             fullName: data.user.full_name || 'User',
-            role: data.user.role || 'customer'
+            role: data.user.role || 'customer',
+            avatar: data.user.avatar_url || data.user.avatar,
+            phone: data.user.phone,
           });
           setStore(data.store || null);
           if (data.store?.hostname) {
@@ -45,12 +50,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);
           setStore(null);
           apiClient.setStoreHostname(null);
+          apiClient.setToken(null);
         }
       } catch (error) {
         console.error('Session check failed:', error);
         setUser(null);
         setStore(null);
         apiClient.setStoreHostname(null);
+        apiClient.setToken(null);
       } finally {
         setLoading(false);
       }
@@ -62,6 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string): Promise<void> => {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
@@ -71,17 +79,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error(data.error || 'Failed to login');
     }
 
+    const loginData = await response.json();
+    if (loginData.token) {
+      apiClient.setToken(loginData.token);
+    }
+
     // Refresh user state after login
-    const meResponse = await fetch('/api/auth/me');
+    const meResponse = await fetch('/api/auth/me', { credentials: 'include' });
     if (meResponse.ok) {
       const data = await meResponse.json();
+      if (data.token) {
+        apiClient.setToken(data.token);
+      }
       setUser({
         ...data.user,
         id: data.user.id,
         email: data.user.email,
         name: data.user.full_name || 'User',
         fullName: data.user.full_name || 'User',
-        role: data.user.role || 'customer'
+        role: data.user.role || 'customer',
+        avatar: data.user.avatar_url || data.user.avatar,
+        phone: data.user.phone,
       });
       setStore(data.store || null);
       if (data.store?.hostname) {
@@ -104,8 +122,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const response = await fetch('/api/auth/signup', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, full_name: fullName, role: additionalData?.role }),
+      body: JSON.stringify({
+        email,
+        password,
+        full_name: fullName,
+        phone: additionalData?.phone,
+        role: additionalData?.role
+      }),
     });
 
     if (!response.ok) {
@@ -113,17 +138,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error(data.error || 'Failed to sign up');
     }
 
+    const signupData = await response.json();
+    if (signupData.token) {
+      apiClient.setToken(signupData.token);
+    }
+
     // Refresh user state after signup
-    const meResponse = await fetch('/api/auth/me');
+    const meResponse = await fetch('/api/auth/me', { credentials: 'include' });
     if (meResponse.ok) {
       const data = await meResponse.json();
+      if (data.token) {
+        apiClient.setToken(data.token);
+      }
       setUser({
         ...data.user,
         id: data.user.id,
         email: data.user.email,
         name: data.user.full_name || 'User',
         fullName: data.user.full_name || 'User',
-        role: data.user.role || 'customer'
+        role: data.user.role || 'customer',
+        avatar: data.user.avatar_url || data.user.avatar,
+        phone: data.user.phone,
       });
       setStore(data.store || null);
       if (data.store?.hostname) {
@@ -135,10 +170,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async (): Promise<void> => {
     try {
       setLoading(true);
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
       setUser(null);
       setStore(null);
       apiClient.setStoreHostname(null);
+      apiClient.setToken(null);
       localStorage.removeItem('user_preferences');
       localStorage.removeItem('cart_items');
     } catch (error: any) {
@@ -158,13 +194,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (email: string): Promise<void> => {
-    // Phase 4: Reset password needs backend implementation later.
-    console.warn("Reset password not yet implemented on local backend");
+    console.warn("Reset password requested for", email);
   };
 
   const updateProfile = async (updates: Partial<User>): Promise<void> => {
-    // Phase 4: Update profile needs backend implementation.
-    console.warn("Update profile not yet implemented on local backend");
+    try {
+      const res = await apiClient.put('/auth/profile', {
+        fullName: updates.fullName || updates.name,
+        phone: updates.phone,
+        avatar_url: updates.avatar,
+      });
+      if (res?.user) {
+        setUser((prev) => prev ? {
+          ...prev,
+          name: res.user.full_name || prev.name,
+          fullName: res.user.full_name || prev.fullName,
+          phone: res.user.phone ?? prev.phone,
+          avatar: res.user.avatar_url ?? prev.avatar,
+        } : null);
+      }
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      throw error;
+    }
   };
 
   const openMobileAuth = (mode: 'login' | 'signup' | 'profile' = 'login') => {

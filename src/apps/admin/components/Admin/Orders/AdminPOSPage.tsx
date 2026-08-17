@@ -40,7 +40,7 @@ export const AdminPOSPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [discount, setDiscount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [successOrder, setSuccessOrder] = useState<unknown>(null);
+  const [successOrder, setSuccessOrder] = useState<any>(null);
   const { showSuccess, showError } = useNotification();
   const { user } = useAuth();
 
@@ -53,72 +53,55 @@ export const AdminPOSPage: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const data = await apiClient.get('/products');
-      
-      setProducts((data || []).map((p: Product) => ({
-        id: p.id,
-        name: p.name,
-        price: Number(p.price),
-        stock: p.stock ?? 0,
-        images: p.images || [],
-        sku: p.sku || ''
-      })));
-    } catch (error) {
-      console.error('Failed to fetch products', error);
+      const res = await apiClient.get('/products');
+      setProducts(res.data || []);
+    } catch (error: any) {
+      console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const addToCart = (product: Product) => {
-    if (product.stock <= 0) {
-      showError('Product is out of stock');
-      return;
-    }
-
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
-        if (existing.quantity >= product.stock) {
-          showError('Cannot add more than available stock');
-          return prev;
-        }
-        return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        return prev.map(item =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
         );
       }
       return [...prev, { ...product, quantity: 1 }];
     });
-    setSearch('');
-    setProducts([]);
   };
 
   const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.id === id) {
-        const newQty = Math.max(1, item.quantity + delta);
-        if (newQty > item.stock) {
-          showError('Cannot exceed available stock');
-          return item;
-        }
-        return { ...item, quantity: newQty };
+        const newQty = item.quantity + delta;
+        return newQty > 0 ? { ...item, quantity: newQty } : null;
       }
       return item;
-    }));
+    }).filter(Boolean) as CartItem[]);
   };
 
   const removeFromCart = (id: string) => {
     setCart(prev => prev.filter(item => item.id !== id));
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const total = subtotal - discount;
+  const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+  const total = Math.max(0, subtotal - discount);
 
   const handleCheckout = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+      showError('Cart is empty');
+      return;
+    }
+
     const userId = user?.id;
     if (!userId) {
-      showError('Please log in to create orders');
+      showError('You must be logged in as an admin to create orders');
       return;
     }
 
@@ -131,23 +114,19 @@ export const AdminPOSPage: React.FC = () => {
         phone: customer.phone
       };
 
-      const { data: order, error: orderError } = await apiClient.post('/orders', [{
-          user_id: userId,
-          order_number: orderNumber,
-          total_amount: total,
-          subtotal,
-          tax_amount: 0,
-          shipping_amount: 0,
-          status: 'confirmed',
-          payment_status: 'paid',
-          payment_method: paymentMethod,
-          shipping_address: shippingAddress,
-          billing_address: shippingAddress
-        }])
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
+      const order = await apiClient.post('/orders', {
+        user_id: userId,
+        order_number: orderNumber,
+        total_amount: total,
+        subtotal,
+        tax_amount: 0,
+        shipping_amount: 0,
+        status: 'confirmed',
+        payment_status: 'paid',
+        payment_method: paymentMethod,
+        shipping_address: shippingAddress,
+        billing_address: shippingAddress
+      });
 
       const orderItems = cart.map(item => ({
         order_id: order.id,
@@ -157,16 +136,15 @@ export const AdminPOSPage: React.FC = () => {
         total_price: item.price * item.quantity
       }));
 
-      const { error: itemsError } = await apiClient.post('/order-items', orderItems);
-      if (itemsError) throw itemsError;
+      await apiClient.post('/order-items', orderItems);
 
       showSuccess('Order created successfully');
       setSuccessOrder({ id: order.id, order_number: orderNumber, total_amount: total, payment_method: paymentMethod });
       setCart([]);
       setCustomer({ name: '', email: '', phone: '' });
       setDiscount(0);
-    } catch (error: Error) {
-      showError(error.message || 'Failed to create order');
+    } catch (error: any) {
+      showError(error?.message || 'Failed to create order');
     } finally {
       setSubmitting(false);
     }
@@ -174,7 +152,7 @@ export const AdminPOSPage: React.FC = () => {
 
   if (successOrder) {
     return (
-      <AdminLayout>
+      <AdminLayout title="POS Order Placed">
         <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
           <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full text-center border border-green-100">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -207,7 +185,7 @@ export const AdminPOSPage: React.FC = () => {
   }
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Point of Sale (POS)">
       <div className="h-[calc(100vh-64px)] flex flex-col lg:flex-row overflow-hidden">
         {/* Left Side: Product Search & Selection */}
         <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">

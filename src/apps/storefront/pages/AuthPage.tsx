@@ -74,7 +74,7 @@ const AuthPage: React.FC = () => {
     reset,
     formState: { errors },
     setValue
-  } = useForm({
+  } = useForm<any>({
     resolver: zodResolver(currentSchema),
     mode: 'onTouched',
   });

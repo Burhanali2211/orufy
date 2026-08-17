@@ -12,7 +12,7 @@ import {
   ArrowUpDown,
   Tag
 } from 'lucide-react';
-import { Category } from '@/types';
+import { Category } from '@/shared/types';
 import { FilterSection, QuickFilterButton } from './FilterComponents';
 import { 
   concentrationOptions, 

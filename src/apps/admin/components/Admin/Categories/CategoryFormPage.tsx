@@ -29,8 +29,8 @@ export const CategoryFormPage: React.FC = () => {
   const isEditMode = !!id;
   const { showSuccess, showError } = useNotification();
 
-  const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<CategoryFormData>({
-    resolver: zodResolver(categorySchema),
+  const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<any>({
+    resolver: zodResolver(categorySchema) as any,
     defaultValues: {
       name: '',
       slug: '',
@@ -55,7 +55,7 @@ export const CategoryFormPage: React.FC = () => {
     queryKey: ['admin-categories-options'],
     queryFn: async () => {
       const res = await apiClient.get('/categories');
-      return (res.data || []).filter((cat: Category) => cat.is_active && cat.id !== id);
+      return (res.data || []).filter((cat: any) => cat.is_active && cat.id !== id);
     }
   });
 
@@ -72,7 +72,6 @@ export const CategoryFormPage: React.FC = () => {
   // Use useEffect to set form values after fetching to avoid infinite re-renders or missing form values
   useEffect(() => {
       const fetchCat = async () => {
-          if (!id) return;
           try {
               const res = await apiClient.get(`/categories/${id}`);
               const category = res.data;
@@ -85,8 +84,8 @@ export const CategoryFormPage: React.FC = () => {
                   setValue('sort_order', category.sort_order ?? 0);
                   setValue('is_active', category.is_active !== undefined ? category.is_active : true);
               }
-          } catch (error: Error) {
-              showError('Error', error.message || 'Failed to load category');
+          } catch (error: any) {
+              showError('Error', error?.message || 'Failed to load category');
               navigate('/admin/categories');
           }
       };
@@ -176,7 +175,7 @@ export const CategoryFormPage: React.FC = () => {
                         placeholder="e.g. Attars & Perfumes"
                         className={`w-full px-4 py-3 bg-stone-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 focus:bg-white transition-colors ${errors.name ? 'border-red-300' : 'border-stone-200'}`}
                       />
-                      {errors.name && <p className="text-xs font-medium text-red-500">{errors.name.message}</p>}
+                      {errors.name?.message && <p className="text-xs font-medium text-red-500">{String(errors.name.message)}</p>}
                     </div>
                   )}
                 />
@@ -195,7 +194,7 @@ export const CategoryFormPage: React.FC = () => {
                           className={`w-full px-4 py-3 bg-stone-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 focus:bg-white transition-colors ${errors.slug ? 'border-red-300' : 'border-stone-200'}`}
                         />
                         <p className="text-xs text-stone-400 font-medium">URL-friendly name</p>
-                        {errors.slug && <p className="text-xs font-medium text-red-500">{errors.slug.message}</p>}
+                        {errors.slug?.message && <p className="text-xs font-medium text-red-500">{String(errors.slug.message)}</p>}
                       </div>
                     )}
                   />
@@ -262,7 +261,7 @@ export const CategoryFormPage: React.FC = () => {
                         className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 focus:bg-white transition-colors appearance-none"
                       >
                         <option value="">None — Top Level</option>
-                        {categories.map((cat: Category) => (
+                        {categories.map((cat: any) => (
                           <option key={cat.id} value={cat.id}>{cat.name}</option>
                         ))}
                       </select>

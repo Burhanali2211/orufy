@@ -3,8 +3,8 @@ import { Heart, ShoppingCart, Trash2, Share2, TrendingUp } from 'lucide-react';
 import { useWishlist } from '@/shared/contexts/WishlistContext';
 import { useCart } from '@/shared/contexts/CartContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
-import { ProductCard } from '../../Product/ProductCard';
-import { ProductDetails } from '../../Product/ProductDetails';
+import { ProductCard } from '@/shared/components/Product/ProductCard';
+import { ProductDetails } from '@/shared/components/Product/ProductDetails';
 import { Product } from '@/shared/types';
 import { Link } from 'react-router-dom';
 

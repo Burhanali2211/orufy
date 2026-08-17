@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, Clock, TrendingUp, Filter, ChevronDown, ChevronRight, MoreHorizontal, Pulse } from 'lucide-react';
+import { Search, Star, Clock, TrendingUp, Filter, ChevronDown, ChevronRight, MoreHorizontal, Activity } from 'lucide-react';
 import {
   useEnhancedNavigation,
   useNavigationAnalytics,
@@ -402,7 +402,7 @@ export const AdvancedNavigationSidebar: React.FC<AdvancedNavigationSidebarProps>
           </h3>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex items-center space-x-1">
-              <Pulse className="w-3 h-3 text-blue-500" />
+              <Activity className="w-3 h-3 text-blue-500" />
               <span className="text-gray-600">
                 {Object.keys(analytics.routeVisits).length} routes
               </span>

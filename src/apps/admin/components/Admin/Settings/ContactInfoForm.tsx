@@ -56,8 +56,8 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({ contact, onClo
     watch,
     setValue,
     formState: { errors }
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  } = useForm<any>({
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       contact_type: contact?.contact_type || '',
       label: contact?.label || '',
@@ -65,8 +65,8 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({ contact, onClo
       is_primary: contact?.is_primary || false,
       is_active: contact?.is_active ?? true,
       display_order: contact?.display_order || 0,
-      department: contact?.additional_info?.department || '',
-      hours: contact?.additional_info?.hours || '',
+      department: (contact?.additional_info as any)?.department || '',
+      hours: (contact?.additional_info as any)?.hours || '',
     }
   });
 
@@ -140,7 +140,7 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({ contact, onClo
                     { value: '', label: 'Select a type' },
                     ...contactTypes
                   ]}
-                  error={errors.contact_type?.message}
+                  error={errors.contact_type?.message ? String(errors.contact_type.message) : undefined}
                 />
               )}
             />
@@ -154,7 +154,7 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({ contact, onClo
                   placeholder="e.g., Customer Support, Main Office"
                   value={field.value}
                   onChange={field.onChange}
-                  error={errors.label?.message}
+                  error={errors.label?.message ? String(errors.label.message) : undefined}
                 />
               )}
             />
@@ -179,6 +179,7 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({ contact, onClo
                     />
                   ) : (
                     <FormInput
+                      label="Value"
                       type={contactType === 'email' ? 'email' : 'text'}
                       placeholder={
                         contactType === 'email' ? 'support@example.com' :
@@ -187,10 +188,10 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({ contact, onClo
                       }
                       value={field.value}
                       onChange={field.onChange}
-                      error={errors.value?.message}
+                      error={errors.value?.message ? String(errors.value.message) : undefined}
                     />
                   )}
-                  {errors.value && !contactType && <p className="text-sm text-red-500">{errors.value.message}</p>}
+                  {errors.value?.message && !contactType && <p className="text-sm text-red-500">{String(errors.value.message)}</p>}
                 </div>
               )}
             />
@@ -232,7 +233,7 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({ contact, onClo
                     min="0"
                     value={field.value}
                     onChange={(e) => field.onChange(Number(e.target.value))}
-                    error={errors.display_order?.message}
+                    error={errors.display_order?.message ? String(errors.display_order.message) : undefined}
                   />
                   <p className="text-sm text-white/50 mt-1">Lower numbers appear first</p>
                 </div>

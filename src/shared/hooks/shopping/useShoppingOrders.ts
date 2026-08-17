@@ -3,7 +3,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { Order, CartItem, Address } from '../../types';
 import api from '@/shared/config/api';
 import { mapDbOrderToAppOrder } from '../../utils/shoppingMapper';
-import * as optimized from '../../lib/optimized-queries';
 
 export const useShoppingOrders = (user: any, showNotification: any) => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -13,8 +12,9 @@ export const useShoppingOrders = (user: any, showNotification: any) => {
     if (!user) { setOrders([]); return; }
     setLoading(true);
     try {
-      const data = await optimized.getUserActiveOrders(user.id);
-      setOrders(data.map(d => ({ ...d, items: [] } as unknown as Order)));
+      const res = await apiClient.get('/customer/orders');
+      const ordersList = Array.isArray(res) ? res : res?.orders || [];
+      setOrders(ordersList.map(mapDbOrderToAppOrder));
     } catch (error) {
       console.error('Error fetching orders:', error);
       showNotification({ type: 'error', title: 'Error', message: 'Failed to load orders. Please try again later.' });

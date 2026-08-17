@@ -111,13 +111,13 @@ export const ResponsiveTable = <T extends Record<string, unknown> = Record<strin
             ) : (
               data.map((record, index) => (
                 <tr
-                  key={record.id || index}
+                  key={((record as any)?.id || index) as React.Key}
                   onClick={() => onRowClick?.(record)}
                   className={`hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''}`}
                 >
                   {visibleColumns.map((column) => (
                     <td
-                      key={`${record.id || index}-${column.key}`}
+                      key={`${(record as any)?.id || index}-${column.key}`}
                       className={`px-6 py-4 text-sm ${column.className || ''}`}
                       style={{ 
                         width: column.width ? (typeof column.width === 'string' ? column.width : `${column.width}px`) : 'auto',
@@ -128,9 +128,9 @@ export const ResponsiveTable = <T extends Record<string, unknown> = Record<strin
                         textOverflow: 'ellipsis'
                       }}
                     >
-                      {column.render
-                        ? column.render(record[column.key], record)
-                        : record[column.key]}
+                      {(column.render
+                        ? column.render((record as any)[column.key], record)
+                        : (record as any)[column.key]) as React.ReactNode}
                     </td>
                   ))}
                 </tr>
@@ -157,18 +157,18 @@ export const ResponsiveTable = <T extends Record<string, unknown> = Record<strin
           <div className="divide-y divide-gray-200">
             {data.map((record, index) => (
               <div
-                key={record.id || index}
+                key={((record as any)?.id || index) as React.Key}
                 onClick={() => onRowClick?.(record)}
                 className={`p-4 ${onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
               >
                 <div className="space-y-3">
                   {visibleColumns.map((column) => (
-                    <div key={`${record.id || index}-${column.key}`} className="flex justify-between">
+                    <div key={`${(record as any)?.id || index}-${column.key}`} className="flex justify-between">
                       <dt className="text-sm font-medium text-gray-500">{column.title}</dt>
                       <dd className="text-sm text-gray-900 break-words max-w-[60%]">
-                        {column.render
-                          ? column.render(record[column.key], record)
-                          : record[column.key]}
+                        {(column.render
+                          ? column.render((record as any)[column.key], record)
+                          : (record as any)[column.key]) as React.ReactNode}
                       </dd>
                     </div>
                   ))}

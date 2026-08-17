@@ -199,7 +199,7 @@ export const PaymentsPage: React.FC = () => {
         </div>
 
         {/* Payment Methods List */}
-        {paymentMethods.length === 0 ? (
+        {(!paymentMethods || paymentMethods.length === 0) ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CreditCard className="w-8 h-8 text-purple-600" />
@@ -216,7 +216,7 @@ export const PaymentsPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {paymentMethods.map((method) => (
+            {(paymentMethods || []).map((method: any) => (
               <div
                 key={method.id}
                 className={`relative bg-white rounded-2xl shadow-sm border-2 p-5 transition-all hover:shadow-md ${

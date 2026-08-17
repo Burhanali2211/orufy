@@ -34,7 +34,6 @@ export const NewArrivalsPage: React.FC = () => {
             <div key={product.id}>
               <ProductCard 
                 product={product} 
-                imagePriority={index < 4 ? 'critical' : 'normal'}
               />
             </div>
           ))}

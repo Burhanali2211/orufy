@@ -42,17 +42,7 @@ export { ProfileSettings } from './Settings/ProfileSettings';
 export { SecuritySettings } from './Settings/SecuritySettings';
 export { SettingsSection } from './Settings/SettingsSection';
 
-// Dashboard Components
-export { AdminDashboard } from './Dashboard/AdminDashboard';
-export { CustomerDashboard } from './Customer/CustomerDashboard';
-export { SellerDashboard } from './Dashboard/SellerDashboard';
-
 // Mobile Components
-export { MobileCheckout } from './Mobile/MobileCheckout';
-export { MobileCheckoutForms } from './Mobile/MobileCheckoutForms';
 export { MobileProductCard } from './Mobile/MobileProductCard';
 export { MobileProductCarousel } from './Mobile/MobileProductCarousel';
 export { MobileTouchButton } from './Mobile/MobileTouchButton';
-
-// Performance Components
-// LCPOptimizer removed - file does not exist

@@ -235,9 +235,9 @@ export const MobileAuthView: React.FC<MobileAuthViewProps> = ({
               {/* User Profile Header */}
               <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-6 text-center">
                 <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-bold text-white">{user.name.charAt(0)}</span>
+                  <span className="text-2xl font-bold text-white">{(user.name || user.email || 'U').charAt(0)}</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">{user.name}</h3>
+                <h3 className="text-xl font-bold text-gray-900">{user.name || user.email}</h3>
                 <p className="text-gray-600">{user.email}</p>
                 <span className="inline-block mt-2 px-3 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full capitalize">
                   {user.role}

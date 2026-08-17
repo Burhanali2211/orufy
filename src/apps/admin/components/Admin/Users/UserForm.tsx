@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface UserFormProps {
-  user: User | null;
+  user: any | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -43,8 +43,8 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onClose, onSuccess }) 
     handleSubmit,
     watch,
     formState: { errors }
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  } = useForm<any>({
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       full_name: user?.full_name || '',
       email: user?.email || '',
@@ -117,7 +117,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onClose, onSuccess }) 
               <FormInput
                 label="Full Name *"
                 {...field}
-                error={errors.full_name?.message}
+                error={errors.full_name?.message ? String(errors.full_name.message) : undefined}
                 placeholder="Enter full name"
               />
             )}
@@ -131,7 +131,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onClose, onSuccess }) 
                 label="Email *"
                 type="email"
                 {...field}
-                error={errors.email?.message}
+                error={errors.email?.message ? String(errors.email.message) : undefined}
                 placeholder="user@example.com"
                 disabled={!!user} // Email usually shouldn't be changed here easily, but keeping UI same
               />
@@ -147,7 +147,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onClose, onSuccess }) 
                   label={user ? 'Password (leave blank to keep current)' : 'Password *'}
                   type={showPassword ? 'text' : 'password'}
                   {...field}
-                  error={errors.password?.message}
+                  error={errors.password?.message ? String(errors.password.message) : undefined}
                   placeholder="Enter password"
                 />
               )}
@@ -178,7 +178,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onClose, onSuccess }) 
               <FormSelect
                 label="Role *"
                 {...field}
-                error={errors.role?.message}
+                error={errors.role?.message ? String(errors.role.message) : undefined}
                 options={[
                   { value: 'customer', label: 'Customer' },
                   { value: 'admin', label: 'Admin' }

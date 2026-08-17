@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { useQuery, useMutation } from '@tanstack/react-query';
 
 interface ProductFormProps {
-  product: Product | null;
+  product: any | null;
   onClose: () => void;
   onSuccess: () => void;
   endpointPrefix?: string;
@@ -44,8 +44,8 @@ type ProductFormData = z.infer<typeof productSchema>;
 export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSuccess, endpointPrefix = '/admin' }) => {
   const { showSuccess, showError } = useNotification();
 
-  const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
+  const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<any>({
+    resolver: zodResolver(productSchema) as any,
     defaultValues: {
       name: product?.name || '',
       slug: product?.slug || '',
@@ -54,13 +54,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
       price: product?.price ? parseFloat(product.price) : 0,
       original_price: product?.original_price ? parseFloat(product.original_price) : undefined,
       category_id: product?.category_id || '',
-      stock: product?.stock || 0,
-      min_stock_level: product?.min_stock_level || 5,
+      stock: product?.stock !== undefined ? product.stock : 0,
+      min_stock_level: product?.min_stock_level !== undefined ? product.min_stock_level : 5,
       sku: product?.sku || '',
       is_featured: product?.is_featured || false,
       is_active: product?.is_active !== undefined ? product.is_active : true,
       images: product?.images || [],
-      attributes: product?.attributes ? JSON.stringify(product.attributes, null, 2) : '{}'
+      attributes: typeof product?.attributes === 'object' ? JSON.stringify(product.attributes, null, 2) : (product?.attributes || '{}')
     }
   });
 
@@ -77,7 +77,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
     queryKey: ['admin-categories-options'],
     queryFn: async () => {
       const res = await apiClient.get('/categories');
-      return (res.data || []).filter((cat: Category) => cat.is_active);
+      return (res.data || []).filter((cat: any) => cat.is_active);
     }
   });
 
@@ -144,7 +144,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
                   placeholder="Enter product name"
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-300' : 'border-gray-300'}`}
                 />
-                {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
+                {errors.name?.message && <p className="text-xs text-red-500">{String(errors.name.message)}</p>}
               </div>
             )}
           />
@@ -162,7 +162,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.slug ? 'border-red-300' : 'border-gray-300'}`}
                 />
                 <p className="text-xs text-gray-500">URL-friendly version of the name</p>
-                {errors.slug && <p className="text-xs text-red-500">{errors.slug.message}</p>}
+                {errors.slug?.message && <p className="text-xs text-red-500">{String(errors.slug.message)}</p>}
               </div>
             )}
           />
@@ -209,7 +209,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
                   rows={4}
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.attributes ? 'border-red-300' : 'border-gray-300'}`}
                 />
-                {errors.attributes && <p className="text-xs text-red-500">{errors.attributes.message}</p>}
+                {errors.attributes?.message && <p className="text-xs text-red-500">{String(errors.attributes.message)}</p>}
               </div>
             )}
           />
@@ -233,7 +233,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
                     placeholder="0.00"
                     className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.price ? 'border-red-300' : 'border-gray-300'}`}
                   />
-                  {errors.price && <p className="text-xs text-red-500">{errors.price.message}</p>}
+                  {errors.price?.message && <p className="text-xs text-red-500">{String(errors.price.message)}</p>}
                 </div>
               )}
             />
@@ -271,7 +271,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
                     placeholder="0"
                     className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.stock ? 'border-red-300' : 'border-gray-300'}`}
                   />
-                  {errors.stock && <p className="text-xs text-red-500">{errors.stock.message}</p>}
+                  {errors.stock?.message && <p className="text-xs text-red-500">{String(errors.stock.message)}</p>}
                 </div>
               )}
             />
@@ -364,11 +364,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white ${errors.category_id ? 'border-red-300' : 'border-gray-300'}`}
                 >
                   <option value="">Select a category</option>
-                  {categories.map((cat: Category) => (
+                  {categories.map((cat: any) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
-                {errors.category_id && <p className="text-xs text-red-500">{errors.category_id.message}</p>}
+                {errors.category_id?.message && <p className="text-xs text-red-500">{String(errors.category_id.message)}</p>}
               </div>
             )}
           />

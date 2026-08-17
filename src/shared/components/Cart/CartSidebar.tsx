@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { Drawer } from 'vaul';
+import { X, Minus, Plus, ShoppingBag, ArrowRight, Trash2, ShieldCheck } from 'lucide-react';
 import { useCart } from '@/shared/contexts/CartContext';
 import { Link } from 'react-router-dom';
 
@@ -11,171 +12,185 @@ interface CartSidebarProps {
 export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
   const { items, updateQuantity, removeFromCart, total, clearCart, loading, itemCount } = useCart();
 
-  // Debug logging
-  React.useEffect(() => {
-    if (isOpen) {
-    }
-  }, [isOpen, items, total, itemCount]);
+  const CartContent = (
+    <div className="flex flex-col h-full bg-white max-h-[85vh] sm:max-h-full">
+      {/* Mobile Handle */}
+      <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-stone-300 my-3 sm:hidden" />
+
+      {/* Header */}
+      <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-stone-100">
+        <div>
+          <h2 className="text-xl font-serif font-bold text-stone-900">Shopping Bag</h2>
+          <p className="text-xs text-stone-500">{itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition-colors"
+          aria-label="Close cart"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Items List */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 divide-y divide-stone-100">
+        {loading ? (
+          <div className="flex items-center justify-center h-48 text-stone-400">
+            <p className="text-sm font-medium">Loading bag...</p>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mb-4 text-stone-400">
+              <ShoppingBag className="h-8 w-8" />
+            </div>
+            <h3 className="text-lg font-serif font-bold text-stone-900 mb-1">Your bag is empty</h3>
+            <p className="text-sm text-stone-500 max-w-xs mb-6">Discover our curated collection of luxury fragrances and attars.</p>
+            <Link
+              to="/products"
+              onClick={onClose}
+              className="px-6 py-2.5 bg-stone-900 text-white font-medium text-sm rounded-xl hover:bg-stone-800 transition-colors shadow-sm"
+            >
+              Explore Collection
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4 pt-2">
+            {items.map((item) => {
+              if (!item.product) return null;
+              const unitPrice = typeof item.product.price === 'number'
+                ? item.product.price
+                : parseFloat(String(item.product.price || 0));
+
+              return (
+                <div
+                  key={item.id || item.product.id}
+                  className="flex gap-4 py-3 items-start group"
+                >
+                  <div className="w-20 h-20 bg-stone-100 rounded-2xl overflow-hidden flex-shrink-0 border border-stone-200">
+                    <img
+                      src={item.product.images?.[0] || '/placeholder.png'}
+                      alt={item.product.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-serif font-semibold text-stone-900 text-sm truncate">
+                        {item.product.name}
+                      </h4>
+                      <button
+                        onClick={() => removeFromCart(item.id || item.product.id)}
+                        className="text-stone-300 hover:text-red-600 p-1 transition-colors"
+                        aria-label="Remove item"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      ₹{unitPrice.toLocaleString('en-IN')}
+                    </p>
+
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center border border-stone-200 rounded-xl bg-stone-50 overflow-hidden">
+                        <button
+                          onClick={() => {
+                            if (item.quantity > 1) {
+                              updateQuantity(item.product.id, item.quantity - 1);
+                            } else {
+                              removeFromCart(item.product.id);
+                            }
+                          }}
+                          className="p-1.5 hover:bg-white text-stone-600 transition-colors"
+                          aria-label="Decrease quantity"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="px-3 text-xs font-bold text-stone-900 min-w-[24px] text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          className="p-1.5 hover:bg-white text-stone-600 transition-colors"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+
+                      <span className="font-serif font-bold text-sm text-stone-900">
+                        ₹{(unitPrice * item.quantity).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      {items.length > 0 && (
+        <div className="flex-shrink-0 border-t border-stone-100 p-6 bg-stone-50/50 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-stone-600">Subtotal:</span>
+            <span className="text-xl font-serif font-bold text-stone-900">₹{total.toLocaleString('en-IN')}</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px] text-stone-500 bg-white p-2 rounded-xl border border-stone-200">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>Complimentary luxury packaging & insured delivery included.</span>
+          </div>
+
+          <div className="flex gap-3">
+            <Link to="/checkout" onClick={onClose} className="flex-1">
+              <button
+                className="w-full bg-stone-900 text-white py-3.5 px-5 rounded-2xl font-medium hover:bg-stone-800 transition-all flex items-center justify-center gap-2 shadow-md shadow-stone-900/10 active:scale-[0.98]"
+              >
+                <span>Proceed to Checkout</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
-      {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-50"
-            onClick={onClose}
-          />
+      {/* Mobile Native Vaul Bottom Sheet Drawer */}
+      <div className="sm:hidden">
+        <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+          <Drawer.Portal>
+            <Drawer.Overlay className="fixed inset-0 bg-stone-900/50 backdrop-blur-xs z-50" />
+            <Drawer.Content className="bg-white flex flex-col rounded-t-[32px] h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none">
+              {CartContent}
+            </Drawer.Content>
+          </Drawer.Portal>
+        </Drawer.Root>
+      </div>
 
-          <div
-            className="fixed right-0 top-0 h-screen w-full max-w-md bg-white shadow-xl z-50 animate-slide-in-right"
-            style={{
-              position: 'fixed',
-              height: '100vh',
-              maxHeight: '100vh',
-              right: 0,
-              top: 0,
-              zIndex: 50
-            }}
-          >
-            <div className="flex flex-col h-full max-h-screen">
-              {/* Header - flex-shrink-0 to prevent shrinking */}
-              <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-neutral-200">
-                <h2 className="text-xl font-semibold text-neutral-900">Shopping Cart ({itemCount})</h2>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-neutral-100 rounded-lg transition-colors duration-200"
-                  aria-label="Close cart"
-                >
-                  <X className="h-5 w-5 text-neutral-600" />
-                </button>
+      {/* Desktop Slideover Modal */}
+      <div className="hidden sm:block">
+        {isOpen && (
+          <div className="fixed inset-0 z-50 overflow-hidden">
+            <div 
+              className="absolute inset-0 bg-stone-900/40 backdrop-blur-xs transition-opacity" 
+              onClick={onClose} 
+            />
+
+            <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+              <div className="w-screen max-w-md bg-white shadow-2xl border-l border-stone-200">
+                {CartContent}
               </div>
-
-              {/* Cart Items - flex-grow with overflow handling */}
-              <div className="flex-grow overflow-y-auto p-6">
-                {loading ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="hidden rounded-full h-8 w-8 border-b-2 border-neutral-900"></div>
-                  </div>
-                ) : items.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-64 text-neutral-500">
-                    <ShoppingBag className="h-16 w-16 mb-4 text-neutral-300" />
-                    <p className="text-lg font-medium mb-2 text-neutral-700">Your cart is empty</p>
-                    <p className="text-sm text-neutral-500">Add some products to get started!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <>
-                      {items.map((item) => {
-                        // Skip items with missing product data
-                        if (!item.product) {
-                          return null;
-                        }
-
-                        return (
-                          <div
-                            key={item.id || item.product.id}
-                            className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg animate-fade-in"
-                          >
-                            <img
-                              src={(item.product.images && item.product.images.length > 0 ? item.product.images[0] : '') || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2Y5ZmFmYiIvPgogIDx0ZXh0IHg9IjIwMCIgeT0iMjAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjM3MzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pgo8L3N2Zz4='}
-                              alt={item.product.name}
-                              className="w-16 h-16 object-cover rounded-lg"
-                            />
-
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-gray-900 truncate">
-                                {item.product.name}
-                              </h3>
-                              <p className="text-sm text-gray-500">₹{item.product.price.toLocaleString('en-IN')}</p>
-
-                              <div className="flex items-center space-x-2 mt-2">
-                                <button
-                                  onClick={() => {
-                                    if (item.quantity > 1) {
-                                      updateQuantity(item.id!, item.quantity - 1);
-                                    }
-                                  }}
-                                  className="p-1 hover:bg-gray-100 rounded"
-                                  aria-label={`Decrease quantity of ${item.product.name}`}
-                                  disabled={item.quantity <= 1}
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </button>
-                                <span className="px-2 py-1 bg-gray-100 rounded text-sm min-w-[40px] text-center">
-                                  {item.quantity}
-                                </span>
-                                <button
-                                  onClick={() => updateQuantity(item.id!, item.quantity + 1)}
-                                  className="p-1 hover:bg-gray-100 rounded"
-                                  aria-label={`Increase quantity of ${item.product.name}`}
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="text-right">
-                              <p className="font-semibold text-gray-900">
-                                ₹{(item.product.price * item.quantity).toLocaleString('en-IN')}
-                              </p>
-                              <button
-                                onClick={() => {
-                                  if (item.id) {
-                                    removeFromCart(item.id);
-                                  }
-                                }}
-                                className="text-red-500 text-sm hover:text-red-700 mt-1"
-                                aria-label={`Remove ${item.product.name} from cart`}
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </>
-
-                    {items.length > 0 && (
-                      <button
-                        onClick={clearCart}
-                        className="w-full text-red-500 text-sm hover:text-red-700 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
-                      >
-                        Clear Cart
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Footer - flex-shrink-0 to prevent shrinking */}
-              {items.length > 0 && (
-                <div className="flex-shrink-0 border-t border-neutral-200 p-6 bg-neutral-50">
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="text-lg font-semibold text-neutral-700">Total:</span>
-                    <span className="text-2xl font-bold text-neutral-900">₹{total.toLocaleString('en-IN')}</span>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      onClick={onClose}
-                      className="flex-1 bg-white border-2 border-neutral-200 text-neutral-700 py-3.5 px-4 rounded-lg font-medium hover:bg-neutral-50 hover:border-neutral-300 transition-colors duration-200 text-sm"
-                    >
-                      ← Back to Shop
-                    </button>
-                    <Link to="/checkout" onClick={onClose} className="flex-1">
-                      <button
-                        className="w-full bg-neutral-900 text-white py-3.5 px-4 rounded-lg font-medium hover:bg-neutral-800 transition-colors duration-200 shadow-lg active:scale-95 text-sm"
-                      >
-                        Checkout →
-                      </button>
-                    </Link>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </>
   );
 };

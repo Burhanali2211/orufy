@@ -58,8 +58,11 @@ export const CategoriesList: React.FC = () => {
       const products = productsRes.data || [];
 
       // Build product count map
-      const countMap = products.reduce((acc: Record<string, number>, p: Product) => {
-        if (p.category_id) acc[p.category_id] = (acc[p.category_id] || 0) + 1;
+      const countMap = products.reduce((acc: Record<string, number>, p: any) => {
+        if (p.category_id || p.categoryId) {
+          const catId = p.category_id || p.categoryId;
+          acc[catId] = (acc[catId] || 0) + 1;
+        }
         return acc;
       }, {});
 

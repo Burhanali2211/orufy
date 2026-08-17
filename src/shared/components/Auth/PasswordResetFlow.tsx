@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-
+import { motion } from 'framer-motion';
 import {
   Mail, Lock, ArrowLeft, CheckCircle, AlertCircle,
-  Eye, EyeOff, Shield, Clock, RefreshCw
+  Eye, EyeOff, Shield, Clock, RefreshCw, X
 } from 'lucide-react';
 import { useNotification } from '@/shared/contexts/NotificationContext';
+import { apiClient } from '@/shared/lib/apiClient';
 
 interface PasswordResetFlowProps {
   isOpen: boolean;
@@ -98,16 +99,14 @@ export const PasswordResetFlow: React.FC<PasswordResetFlowProps> = ({
     setErrors({});
 
     try {
-      // Import the resetPassword function from AuthContext
-      const { resetPassword } = await import('../../contexts/AuthContext');
-      await resetPassword(resetData.email);
+      await apiClient.post('/auth/reset-password', { email: resetData.email });
 
-      showNotification('Password reset link sent to your email!', 'success');
+      showNotification({ type: 'success', title: 'Sent', message: 'Password reset link sent to your email!' });
       setStep('verify');
       setResendTimer(60); // 60 seconds cooldown
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to send reset code';
-      showNotification(errorMessage, 'error');
+      showNotification({ type: 'error', title: 'Error', message: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -139,7 +138,7 @@ export const PasswordResetFlow: React.FC<PasswordResetFlowProps> = ({
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to verify code';
-      showNotification(errorMessage, 'error');
+      showNotification({ type: 'error', title: 'Error', message: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -172,15 +171,13 @@ export const PasswordResetFlow: React.FC<PasswordResetFlowProps> = ({
     setErrors({});
 
     try {
-      // Import the updatePassword function from AuthContext
-      const { updatePassword } = await import('../../contexts/AuthContext');
-      await updatePassword(resetData.newPassword);
+      await apiClient.post('/auth/update-password', { password: resetData.newPassword });
 
       setStep('success');
-      showNotification('Password reset successfully!', 'success');
+      showNotification({ type: 'success', title: 'Success', message: 'Password reset successfully!' });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to reset password';
-      showNotification(errorMessage, 'error');
+      showNotification({ type: 'error', title: 'Error', message: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -194,10 +191,10 @@ export const PasswordResetFlow: React.FC<PasswordResetFlowProps> = ({
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      showNotification('New verification code sent!', 'success');
+      showNotification({ type: 'success', title: 'Sent', message: 'New verification code sent!' });
       setResendTimer(60);
     } catch {
-      showNotification('Failed to resend code', 'error');
+      showNotification({ type: 'error', title: 'Error', message: 'Failed to resend code' });
     } finally {
       setLoading(false);
     }

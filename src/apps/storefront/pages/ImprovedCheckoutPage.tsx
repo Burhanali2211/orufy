@@ -17,6 +17,7 @@ import { useCart } from '@/shared/contexts/CartContext';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { RazorpayPayment } from '@/shared/components/Payment/RazorpayPayment';
+import { apiClient } from '@/shared/lib/apiClient';
 
 const SHIPPING_INFO_KEY = 'checkout_shipping_info';
 
@@ -142,17 +143,28 @@ export const ImprovedCheckoutPage: React.FC = () => {
 
       const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `idemp_${Date.now()}_${Math.random()}`;
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Idempotency-Key': idempotencyKey,
+      };
+      const token = apiClient.getToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const storeHost = apiClient.getStoreHostname();
+      if (storeHost) {
+        headers['x-store-hostname'] = storeHost;
+      }
+
       const res = await fetch('/api/platform/payment/checkout/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey,
-        },
+        credentials: 'include',
+        headers,
         body: JSON.stringify({
           items: items.map(i => ({
             productId: i.product.id,
             quantity: i.quantity,
-            variantId: i.variant?.id || null,
+            variantId: i.variantId || null,
           })),
           shippingAddress,
           billingAddress: shippingAddress,
@@ -504,14 +516,30 @@ export const ImprovedCheckoutPage: React.FC = () => {
           orderId={orderId}
           amount={finalTotal}
           razorpayOrderId={razorpayOrderId}
+          items={items}
+          customerInfo={{
+            name: `${formData.firstName} ${formData.lastName}`.trim(),
+            email: formData.email,
+            phone: formData.phone,
+          }}
+          shippingAddress={{
+            street: formData.address,
+            city: formData.city,
+            state: formData.state,
+            zipCode: formData.zipCode,
+            country: 'India',
+          }}
           onSuccess={handlePaymentSuccess}
           onError={(err) => {
             setShowPaymentModal(false);
             showNotification({ type: 'error', title: 'Payment Notice', message: err || 'Payment was not completed.' });
           }}
-          onClose={() => setShowPaymentModal(false)}
+          onCancel={() => setShowPaymentModal(false)}
         />
       )}
     </>
   );
 };
+
+export default ImprovedCheckoutPage;
+

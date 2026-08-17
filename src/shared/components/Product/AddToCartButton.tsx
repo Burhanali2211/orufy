@@ -67,7 +67,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   };
 
   // Base transition for color and shadow
-  const transition = { duration: 0.2, ease: 'easeInOut' };
+  const transition: any = { duration: 0.2, ease: 'easeInOut' };
 
   return (
     <motion.button

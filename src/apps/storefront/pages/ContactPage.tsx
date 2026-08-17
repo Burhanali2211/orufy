@@ -22,7 +22,8 @@ interface FormErrors {
 
 export const ContactPage: React.FC = () => {
   const { settings } = useSettings();
-  const { contactInfo, businessHours } = settings;
+  const contactInfo: any[] = (settings as any)?.contactInfo || [];
+  const businessHours: any[] = (settings as any)?.businessHours || [];
 
   const [formData, setFormData] = useState<FormData>({
     name: '', email: '', phone: '', subject: '', message: '',
@@ -32,12 +33,12 @@ export const ContactPage: React.FC = () => {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [submitMessage, setSubmitMessage] = useState('');
 
-  const emailContact = contactInfo.find(c => c.contact_type === 'email' && c.is_primary) ||
-                       contactInfo.find(c => c.contact_type === 'email');
-  const phoneContact = contactInfo.find(c => c.contact_type === 'phone' && c.is_primary) ||
-                       contactInfo.find(c => c.contact_type === 'phone');
-  const addressContact = contactInfo.find(c => c.contact_type === 'address' && c.is_primary) ||
-                         contactInfo.find(c => c.contact_type === 'address');
+  const emailContact = contactInfo.find((c: any) => c.contact_type === 'email' && c.is_primary) ||
+                       contactInfo.find((c: any) => c.contact_type === 'email');
+  const phoneContact = contactInfo.find((c: any) => c.contact_type === 'phone' && c.is_primary) ||
+                       contactInfo.find((c: any) => c.contact_type === 'phone');
+  const addressContact = contactInfo.find((c: any) => c.contact_type === 'address' && c.is_primary) ||
+                         contactInfo.find((c: any) => c.contact_type === 'address');
 
   const email = emailContact?.value || 'info@aligarhattarhouse.com';
   const phone = phoneContact?.value || '+91-9876543210';
@@ -45,9 +46,9 @@ export const ContactPage: React.FC = () => {
 
   const formatBusinessHours = () => {
     if (!businessHours || businessHours.length === 0) return 'Monday - Sunday: 10:00 AM - 9:00 PM';
-    const openDays = businessHours.filter(bh => bh.is_open);
+    const openDays = businessHours.filter((bh: any) => bh.is_open);
     if (openDays.length === 7) {
-      const firstDay = businessHours.find(bh => bh.is_open);
+      const firstDay = businessHours.find((bh: any) => bh.is_open);
       if (firstDay?.is_24_hours) return 'Open 24/7';
       if (firstDay?.open_time && firstDay?.close_time) {
         return `Monday - Sunday: ${firstDay.open_time} - ${firstDay.close_time}`;

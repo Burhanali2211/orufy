@@ -153,11 +153,11 @@ export const ContactInfoList: React.FC = () => {
                       <p className="text-xs sm:text-base text-gray-700 mb-2 break-all">{contact.value}</p>
                       {contact.additional_info && (
                         <div className="text-xs sm:text-sm text-gray-500 space-y-1">
-                          {contact.additional_info.department && (
-                            <div>Department: {contact.additional_info.department}</div>
+                          {(contact.additional_info as any).department && (
+                            <div>Department: {String((contact.additional_info as any).department)}</div>
                           )}
-                          {contact.additional_info.hours && (
-                            <div>Hours: {contact.additional_info.hours}</div>
+                          {(contact.additional_info as any).hours && (
+                            <div>Hours: {String((contact.additional_info as any).hours)}</div>
                           )}
                         </div>
                       )}

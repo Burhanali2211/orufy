@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
-import { stores, store_members, products } from '../db/schema';
+import { stores, store_members, products, profiles } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth';
 import crypto from 'crypto';
@@ -161,14 +161,30 @@ platformRouter.post('/onboarding', requireAuth, async (req: Request, res: Respon
       return res.status(400).json({ error: 'Subdomain is reserved' });
     }
 
-    // Explicit empty catalog check
-    if (Array.isArray(initialProducts) && initialProducts.length === 0) {
-      return res.status(400).json({ error: 'Store must have at least one product on shelves' });
-    }
+    const getPlatformDomain = () => {
+      if (process.env.PLATFORM_DOMAIN) return process.env.PLATFORM_DOMAIN.toLowerCase();
+      if (process.env.FRONTEND_URL) {
+        try {
+          return new URL(process.env.FRONTEND_URL).hostname.toLowerCase();
+        } catch {
+          return process.env.FRONTEND_URL.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+        }
+      }
+      return "get-oru.com";
+    };
 
-    // Derive platform hostname
-    const platformDomain = process.env.PLATFORM_DOMAIN || process.env.FRONTEND_URL?.replace(/^https?:\/\//, '').replace(/\/$/, '') || 'platform.local';
+    const platformDomain = getPlatformDomain();
     const hostname = `${subdomain}.${platformDomain}`;
+
+    const productsToSeed = (initialProducts && Array.isArray(initialProducts) && initialProducts.length > 0)
+      ? initialProducts
+      : [
+          {
+            name: `${business.name} Signature Product`,
+            price: 1999,
+            description: `Exclusive flagship product from ${business.name}.`,
+          }
+        ];
 
     // Execute store creation atomically in a database transaction
     try {
@@ -193,21 +209,22 @@ platformRouter.post('/onboarding', requireAuth, async (req: Request, res: Respon
           .set({ role: 'admin' })
           .where(eq(profiles.id, userId));
 
-        // C. Seed Verified Initial Products (if any)
-        if (initialProducts && Array.isArray(initialProducts)) {
-          for (const product of initialProducts) {
-            const numericPricePaise = Math.round((parseFloat(product.price) || 0) * 100);
-            await tx.insert(products).values({
-              store_id: newStore.id,
-              name: product.name?.trim() || 'Product',
-              price: numericPricePaise || 0,
-              description: product.description || '',
-              stock: 100,
-            });
-          }
+        // D. Seed Verified Initial Products
+        for (const product of productsToSeed) {
+          const numericPricePaise = Math.round((parseFloat(product.price) || 0) * 100);
+          await tx.insert(products).values({
+            store_id: newStore.id,
+            name: product.name?.trim() || 'Product',
+            price: numericPricePaise > 0 ? numericPricePaise : 199900,
+            description: product.description || '',
+            stock: 100,
+            is_featured: true,
+            show_on_homepage: true,
+            is_active: true,
+          });
         }
 
-        // D. Clear in-memory draft
+        // E. Clear in-memory draft
         onboardingDrafts.delete(userId);
 
         return {

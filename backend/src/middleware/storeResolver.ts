@@ -12,7 +12,19 @@ const storeCache = new LRUCache<string, any>({
 });
 
 const RESERVED_SUBDOMAINS = ["www", "app", "api", "admin"];
-const PLATFORM_DOMAIN = (process.env.PLATFORM_DOMAIN || "platform.com").toLowerCase();
+const getPlatformDomain = () => {
+  if (process.env.PLATFORM_DOMAIN) return process.env.PLATFORM_DOMAIN.toLowerCase();
+  if (process.env.FRONTEND_URL) {
+    try {
+      return new URL(process.env.FRONTEND_URL).hostname.toLowerCase();
+    } catch {
+      return process.env.FRONTEND_URL.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+    }
+  }
+  return "get-oru.com";
+};
+
+const PLATFORM_DOMAIN = getPlatformDomain();
 
 export const storeResolver = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -41,6 +53,21 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
           return res.status(400).json({ error: "INVALID_STORE_HOSTNAME" });
         }
       } else {
+        // For public store endpoints (/api/products, /api/categories, /api/store/settings) in local development on GET,
+        // if no explicit store is passed, fall back to the first active store so development preview doesn't break
+        const isPublicStoreEndpoint = req.path.startsWith('/api/products') || req.path.startsWith('/api/categories') || req.path.startsWith('/api/store/settings');
+        if ((host === 'localhost' || host === '127.0.0.1') && isPublicStoreEndpoint && req.method === 'GET') {
+          try {
+            const [fallbackStore] = await db.select().from(stores).where(eq(stores.is_active, true)).limit(1);
+            if (fallbackStore) {
+              res.locals.storeId = fallbackStore.id;
+              res.locals.store = fallbackStore;
+              res.locals.isPlatform = false;
+              return next();
+            }
+          } catch (_) {}
+        }
+
         res.locals.isPlatform = true;
         res.locals.storeId = null;
         return next();

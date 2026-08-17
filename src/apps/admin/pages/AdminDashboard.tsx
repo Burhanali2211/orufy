@@ -38,3 +38,6 @@ export const AdminDashboard: React.FC = () => {
     </Routes>
   );
 };
+
+export default AdminDashboard;
+

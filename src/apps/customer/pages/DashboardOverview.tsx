@@ -17,28 +17,25 @@ import {
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
 import { useCustomerStats } from '@/shared/hooks/customer/useCustomerStats';
+import { useCustomerOrders } from '@/shared/hooks/customer/useCustomerOrders';
 
 export const DashboardOverview: React.FC = () => {
   const { user } = useAuth();
-  const { data, isLoading: loading } = useCustomerStats();
+  const { data, isLoading: statsLoading } = useCustomerStats();
+  const { data: ordersData, isLoading: ordersLoading } = useCustomerOrders();
+  const loading = statsLoading || ordersLoading;
 
-  const stats = data ? {
-    totalOrders: data.totalOrders,
-    pendingOrders: data.pendingOrders,
-    deliveredOrders: data.deliveredOrders,
-    totalSpent: data.totalSpent,
-    wishlistCount: data.wishlistCount,
-    addressCount: data.addressCount
-  } : {
-    totalOrders: 0,
-    pendingOrders: 0,
-    deliveredOrders: 0,
-    totalSpent: 0,
-    wishlistCount: 0,
-    addressCount: 0
+  const ordersList: any[] = ordersData || [];
+  const recentOrders = ordersList.slice(0, 5);
+
+  const stats = {
+    totalOrders: ordersList.length || (data as any)?.orders || 0,
+    pendingOrders: ordersList.filter(o => o.status === 'pending' || o.status === 'processing').length,
+    deliveredOrders: ordersList.filter(o => o.status === 'delivered').length,
+    totalSpent: ordersList.reduce((acc, o) => acc + (Number(o.totalAmount) || 0), 0),
+    wishlistCount: (data as any)?.wishlistCount || 0,
+    addressCount: (data as any)?.addressCount || 1
   };
-
-  const recentOrders = data?.recentOrders || [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -188,7 +185,7 @@ export const DashboardOverview: React.FC = () => {
             
             <div className="divide-y divide-gray-100">
               {recentOrders.length > 0 ? (
-                recentOrders.map((order) => (
+                recentOrders.map((order: any) => (
                   <Link
                     key={order.id}
                     to={`/dashboard/orders`}

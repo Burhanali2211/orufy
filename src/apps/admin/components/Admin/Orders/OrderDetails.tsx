@@ -7,6 +7,7 @@ import {
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { ConfirmModal } from '@/shared/components/Common/Modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Address } from '@/shared/types';
 import {
   getOrderStatusConfig,
   getPaymentStatusConfig,
@@ -18,38 +19,47 @@ import {
 
 interface OrderDetailsProps {
   orderId: string;
-  onClose: () => void;
+  onBack?: () => void;
+  onClose?: () => void;
 }
 
 interface OrderItem {
   id: string;
-  product_id: string;
   product_name: string;
-  product_image: string;
+  product_image?: string;
+  sku: string;
   quantity: number;
   unit_price: string;
   total_price: string;
+  product_snapshot?: {
+    image_url?: string;
+    images?: string[];
+  };
 }
 
 interface OrderData {
   id: string;
   order_number: string;
-  customer_name: string;
-  customer_email: string;
+  user_id: string;
+  user_name?: string;
+  user_email?: string;
+  user_phone?: string;
+  customer_name?: string;
+  customer_email?: string;
   customer_phone?: string;
   status: string;
   payment_status: string;
   payment_method: string;
   razorpay_payment_id?: string;
   razorpay_order_id?: string;
-  payment_method_details?: Record<string, unknown>;
+  payment_method_details?: any;
   subtotal: string;
   tax_amount: string;
   shipping_amount: string;
   discount_amount: string;
   total_amount: string;
-  shipping_address: Address;
-  billing_address: Address;
+  shipping_address: any;
+  billing_address: any;
   tracking_number: string;
   notes?: string;
   created_at: string;

@@ -5,6 +5,10 @@ import { CombinedProvider } from '@/shared/contexts/CombinedProvider';
 import { Layout } from '@/shared/components/Layout/Layout';
 import { ErrorBoundary } from '@/shared/components/Common/ErrorBoundary';
 import { ScrollToTop } from '@/shared/components/Common/ScrollToTop';
+import { Toaster } from 'sonner';
+import { NuqsAdapter } from 'nuqs/adapters/react-router';
+
+import { CommandPalette } from '@/shared/components/Navigation/CommandPalette';
 
 import { GlobalMediaErrorHandler } from '@/shared/components/Common/MediaErrorHandler';
 
@@ -39,21 +43,11 @@ const RefundPolicyPage = React.lazy(() => import('@/apps/storefront/pages/Refund
 const ShippingPolicyPage = React.lazy(() => import('@/apps/storefront/pages/ShippingPolicyPage'));
 
 // Heavy admin/dashboard pages - loaded only when needed
-const AdminDashboard = React.lazy(() =>
-  import('@/apps/admin/pages/AdminDashboard').then(module => ({ default: module.AdminDashboard }))
-);
-const CustomerDashboard = React.lazy(() =>
-  import('@/apps/customer/pages/customer/CustomerDashboard').then(module => ({ default: module.default }))
-);
-const CheckoutPage = React.lazy(() =>
-  import('./apps/storefront/pages/ImprovedCheckoutPage.tsx').then(module => ({ default: module.default }))
-);
-const OrderTrackingPage = React.lazy(() =>
-  import('@/apps/storefront/pages/OrderTrackingPage').then(module => ({ default: module.default }))
-);
-const OrderConfirmationPage = React.lazy(() =>
-  import('@/apps/storefront/pages/OrderConfirmationPage').then(module => ({ default: module.default }))
-);
+const AdminDashboard = React.lazy(() => import('@/apps/admin/pages/AdminDashboard'));
+const CustomerDashboard = React.lazy(() => import('@/apps/customer/pages/CustomerDashboard'));
+const CheckoutPage = React.lazy(() => import('@/apps/storefront/pages/ImprovedCheckoutPage'));
+const OrderTrackingPage = React.lazy(() => import('@/apps/storefront/pages/OrderTrackingPage'));
+const OrderConfirmationPage = React.lazy(() => import('@/apps/storefront/pages/OrderConfirmationPage'));
 const ProfileRedirect = React.lazy(() =>
   import('@/shared/components/Common/ProfileRedirect').then(module => ({ default: module.ProfileRedirect }))
 );
@@ -151,11 +145,14 @@ function App() {
     <ErrorBoundary>
       <CombinedProvider>
         <Router>
-          <PageTracker />
-          <GlobalMediaErrorHandler />
-          <ScrollToTop />
-          <Suspense fallback={<PageLoadingFallback />}>
-            <Routes>
+          <NuqsAdapter>
+            <Toaster position="top-right" richColors closeButton />
+            <CommandPalette />
+            <PageTracker />
+            <GlobalMediaErrorHandler />
+            <ScrollToTop />
+            <Suspense fallback={<PageLoadingFallback />}>
+              <Routes>
               {/* Admin routes - Protected, requires admin role, NO Layout wrapper (has its own AdminLayout) */}
               <Route 
                 path="/admin/*" 
@@ -294,8 +291,9 @@ function App() {
               } />
             </Routes>
           </Suspense>
-        </Router>
-      </CombinedProvider>
+        </NuqsAdapter>
+      </Router>
+    </CombinedProvider>
     </ErrorBoundary>
   );
 }

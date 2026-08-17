@@ -3,8 +3,9 @@ import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion';
 import {
   CheckCircle2, Package, MapPin, CreditCard,
-  Truck, ArrowRight, ShoppingBag, Copy, Check, AlertCircle, Sparkles
+  Truck, ArrowRight, ShoppingBag, Copy, Check, AlertCircle, Sparkles, Printer
 } from 'lucide-react';
+import { generateInvoicePrintWindow } from '@/shared/utils/invoiceGenerator';
 
 interface OrderItem {
   id: string;
@@ -73,7 +74,11 @@ export const OrderConfirmationPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const url = `/api/customer/orders/${orderId}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
-      const res = await fetch(url);
+      const storeHost = localStorage.getItem('store_hostname');
+      const headers: Record<string, string> = {};
+      if (storeHost) headers['x-store-hostname'] = storeHost;
+
+      const res = await fetch(url, { credentials: 'include', headers });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Failed to load order');
@@ -315,7 +320,37 @@ export const OrderConfirmationPage: React.FC = () => {
               {order.shipping_address?.phone && <p className="font-mono text-stone-500 mt-2">📞 {order.shipping_address.phone}</p>}
             </div>
 
-            <div className="pt-4 border-t border-stone-100">
+            <div className="pt-4 border-t border-stone-100 space-y-2">
+              <button
+                onClick={() => {
+                  generateInvoicePrintWindow({
+                    orderNumber: order.order_number || order.id,
+                    orderDate: order.created_at,
+                    customerName: order.shipping_address?.name || order.shipping_address?.full_name,
+                    customerEmail: order.shipping_address?.email,
+                    customerPhone: order.shipping_address?.phone,
+                    shippingAddress: order.shipping_address,
+                    items: order.items.map(i => ({
+                      name: i.product_name,
+                      quantity: i.quantity,
+                      unitPrice: i.unit_price,
+                      totalPrice: i.total_price || i.unit_price * i.quantity,
+                    })),
+                    subtotal: order.subtotal,
+                    tax: order.tax_amount,
+                    shipping: order.shipping_amount,
+                    discount: order.discount_amount,
+                    total: order.total_amount,
+                    paymentMethod: order.payment_method || 'Online Payment',
+                    storeName: store?.name || 'Orufy Fragrance Store'
+                  });
+                }}
+                className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Printer className="w-3.5 h-3.5 text-stone-600" />
+                <span>Download / Print Invoice</span>
+              </button>
+
               <Link
                 to="/"
                 className="w-full py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
@@ -331,3 +366,6 @@ export const OrderConfirmationPage: React.FC = () => {
     </div>
   );
 };
+
+export default OrderConfirmationPage;
+

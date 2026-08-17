@@ -95,8 +95,8 @@ export const UsersList: React.FC = () => {
       if (currentPage === 1 && !searchTerm && !roleFilter && !statusFilter) {
         _usersCache = { users: paginatedRows, totalItems: ti, totalPages: tp };
       }
-    } catch (error: unknown) {
-      if (!background) showError('Error', error.message || 'Failed to load users');
+    } catch (error: any) {
+      if (!background) showError('Error', error?.message || 'Failed to load users');
     } finally {
       if (!background) setLoading(false);
     }
@@ -112,8 +112,8 @@ export const UsersList: React.FC = () => {
       setShowDeleteModal(false);
       setSelectedUser(null);
       fetchUsers();
-    } catch (error: unknown) {
-      showError('Error', error.message || 'Failed to deactivate user');
+    } catch (error: any) {
+      showError('Error', error?.message || 'Failed to deactivate user');
     } finally {
       setDeleteLoading(false);
     }
@@ -125,8 +125,8 @@ export const UsersList: React.FC = () => {
       
       showSuccess('Updated', `User ${user.is_active ? 'deactivated' : 'activated'} successfully`);
       fetchUsers();
-    } catch (error: unknown) {
-      showError('Error', error.message || 'Failed to update user status');
+    } catch (error: any) {
+      showError('Error', error?.message || 'Failed to update user status');
     }
   };
 

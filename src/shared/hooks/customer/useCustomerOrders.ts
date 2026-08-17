@@ -12,9 +12,9 @@ export const useCustomerOrders = () => {
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
-      const ordersData = await apiClient.get('/orders');
-
-      return (ordersData || []).map(mapDbOrderToAppOrder);
+      const res = await apiClient.get('/customer/orders');
+      const ordersList = Array.isArray(res) ? res : res?.orders || [];
+      return ordersList.map(mapDbOrderToAppOrder);
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes

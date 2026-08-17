@@ -11,6 +11,7 @@ import { domainsRouter } from './routes/domains';
 import { domainPurchasingRouter } from './routes/domainPurchasing';
 import { merchantOrdersRouter } from './routes/merchantOrders';
 import { customerOrdersRouter } from './routes/customerOrders';
+import { customerRouter } from './routes/customer';
 import { adminSettingsRouter } from './routes/adminSettings';
 import { productsRouter } from './routes/products';
 import { categoriesRouter } from './routes/categories';
@@ -19,6 +20,8 @@ import { requestLogger } from './middleware/requestLogger';
 import { WorkerManager } from './workers/workerManager';
 import { storeResolver, requireStore } from './middleware/storeResolver';
 import { withStoreContext } from './db/utils';
+import helmet from 'helmet';
+import { authLimiter, checkoutLimiter, apiLimiter } from './middleware/rateLimiter';
 
 dotenv.config();
 
@@ -27,9 +30,14 @@ app.set('trust proxy', ['loopback', '172.28.0.0/16']); // Explicitly trust Nginx
 
 const port = process.env.PORT || 3001;
 
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(cors());
 app.use(express.json({
-  limit: '1mb',
+  limit: '5mb',
   verify: (req: any, res, buf) => {
     req.rawBody = buf.toString();
   }
@@ -39,14 +47,16 @@ app.use(requestLogger);
 app.use(storeResolver);
 
 app.use('/api/health', healthRouter);
-app.use('/api/auth', authRouter);
+app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/platform', platformRouter);
 app.use('/api/platform/payment', paymentRouter);
 app.use('/api/platform/domains', domainsRouter);
 app.use('/api/platform/domains/purchase', domainPurchasingRouter);
 app.use('/api/merchant/orders', merchantOrdersRouter);
 app.use('/api/admin/settings', adminSettingsRouter);
-app.use('/api/customer/orders', customerOrdersRouter);
+app.use('/api/customer/orders', checkoutLimiter, customerOrdersRouter);
+app.use('/api/customer', customerRouter);
+app.use('/api', customerRouter);
 
 // Mount products and categories routes
 app.use('/api/products', productsRouter);
@@ -95,10 +105,26 @@ app.get('/api/store/settings', requireStore, async (req, res) => {
 
 import { startReservationExpiryWorker } from './workers/reservationExpiryWorker';
 
-// (within app.listen)
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   if (process.env.NODE_ENV !== 'test') {
     startReservationExpiryWorker(30000);
   }
 });
+
+// Graceful shutdown
+const handleShutdown = (signal: string) => {
+  console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+  server.close(() => {
+    console.log('✅ HTTP server closed. Process terminating cleanly.');
+    process.exit(0);
+  });
+
+  setTimeout(() => {
+    console.error('⚠️ Forcefully terminating after 10s timeout.');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));

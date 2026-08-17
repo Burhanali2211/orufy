@@ -8,10 +8,14 @@ import { withStoreContext } from '../db/utils';
 
 export const adminSettingsRouter = Router();
 
+const getStoreId = (req: Request, res: Response): string => {
+  return res.locals.storeId || res.locals.store?.id || (req as any).store?.id;
+};
+
 // --- Admin Dashboard Settings ---
 adminSettingsRouter.get('/dashboard', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const settings = await withStoreContext(storeId, () => 
       db.select().from(admin_dashboard_settings).where(eq(admin_dashboard_settings.store_id, storeId))
     );
@@ -24,14 +28,14 @@ adminSettingsRouter.get('/dashboard', requireAuth, requireStore, async (req: Req
 
 adminSettingsRouter.post('/dashboard', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { setting_key, setting_value, setting_type, category, description, is_active } = req.body;
     
     if (!setting_key) {
       return res.status(400).json({ error: 'setting_key is required' });
     }
 
-    const userId = (req as any).user?.id || req.body.updated_by;
+    const userId = res.locals.user?.id || (req as any).user?.id || req.body.updated_by;
 
     await withStoreContext(storeId, () => 
       // @ts-ignore
@@ -68,7 +72,7 @@ adminSettingsRouter.post('/dashboard', requireAuth, requireStore, async (req: Re
 // --- Site Settings ---
 adminSettingsRouter.get('/site', requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const settings = await withStoreContext(storeId, () => 
       db.select().from(site_settings).where(eq(site_settings.store_id, storeId))
     );
@@ -81,9 +85,9 @@ adminSettingsRouter.get('/site', requireStore, async (req: Request, res: Respons
 
 adminSettingsRouter.post('/site', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { setting_key, setting_value, category, description } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = res.locals.user?.id || (req as any).user?.id;
     await withStoreContext(storeId, () => 
       // @ts-ignore
       db.insert(site_settings).values({
@@ -108,7 +112,7 @@ adminSettingsRouter.post('/site', requireAuth, requireStore, async (req: Request
 // --- Contact Information ---
 adminSettingsRouter.get('/contact', requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const info = await withStoreContext(storeId, () => 
       db.select().from(contact_information).where(eq(contact_information.store_id, storeId))
     );
@@ -121,7 +125,7 @@ adminSettingsRouter.get('/contact', requireStore, async (req: Request, res: Resp
 
 adminSettingsRouter.post('/contact', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { type, label, value, display_order, is_primary, is_active } = req.body;
     await withStoreContext(storeId, () => {
       // @ts-ignore
@@ -144,7 +148,7 @@ adminSettingsRouter.post('/contact', requireAuth, requireStore, async (req: Requ
 
 adminSettingsRouter.put('/contact/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { id } = req.params;
     const updateData = req.body;
     delete updateData.id;
@@ -161,7 +165,7 @@ adminSettingsRouter.put('/contact/:id', requireAuth, requireStore, async (req: R
 
 adminSettingsRouter.delete('/contact/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { id } = req.params;
     await withStoreContext(storeId, () => 
       // @ts-ignore
@@ -177,7 +181,7 @@ adminSettingsRouter.delete('/contact/:id', requireAuth, requireStore, async (req
 // --- Social Media Accounts ---
 adminSettingsRouter.get('/social', requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const accounts = await withStoreContext(storeId, () => 
       db.select().from(social_media_accounts).where(eq(social_media_accounts.store_id, storeId))
     );
@@ -190,7 +194,7 @@ adminSettingsRouter.get('/social', requireStore, async (req: Request, res: Respo
 
 adminSettingsRouter.post('/social', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const data = req.body;
     await withStoreContext(storeId, () => 
       // @ts-ignore
@@ -205,7 +209,7 @@ adminSettingsRouter.post('/social', requireAuth, requireStore, async (req: Reque
 
 adminSettingsRouter.put('/social/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { id } = req.params;
     const updateData = req.body;
     delete updateData.id;
@@ -222,7 +226,7 @@ adminSettingsRouter.put('/social/:id', requireAuth, requireStore, async (req: Re
 
 adminSettingsRouter.delete('/social/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { id } = req.params;
     await withStoreContext(storeId, () => 
       // @ts-ignore
@@ -237,7 +241,7 @@ adminSettingsRouter.delete('/social/:id', requireAuth, requireStore, async (req:
 
 adminSettingsRouter.post('/social/batch-delete', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { ids } = req.body;
     if (!ids || !ids.length) return res.json({ success: true });
     await withStoreContext(storeId, () => 
@@ -254,7 +258,7 @@ adminSettingsRouter.post('/social/batch-delete', requireAuth, requireStore, asyn
 // --- Footer Links ---
 adminSettingsRouter.get('/footer', requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const links = await withStoreContext(storeId, () => 
       db.select().from(footer_links).where(eq(footer_links.store_id, storeId))
     );
@@ -267,7 +271,7 @@ adminSettingsRouter.get('/footer', requireStore, async (req: Request, res: Respo
 
 adminSettingsRouter.post('/footer', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const data = req.body;
     await withStoreContext(storeId, () => 
       // @ts-ignore
@@ -282,7 +286,7 @@ adminSettingsRouter.post('/footer', requireAuth, requireStore, async (req: Reque
 
 adminSettingsRouter.put('/footer/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { id } = req.params;
     const updateData = req.body;
     delete updateData.id;
@@ -299,7 +303,7 @@ adminSettingsRouter.put('/footer/:id', requireAuth, requireStore, async (req: Re
 
 adminSettingsRouter.delete('/footer/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { id } = req.params;
     await withStoreContext(storeId, () => 
       // @ts-ignore
@@ -314,7 +318,7 @@ adminSettingsRouter.delete('/footer/:id', requireAuth, requireStore, async (req:
 
 adminSettingsRouter.post('/footer/batch-delete', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
-    const storeId = (req as any).store.id;
+    const storeId = getStoreId(req, res);
     const { ids } = req.body;
     if (!ids || !ids.length) return res.json({ success: true });
     await withStoreContext(storeId, () => 

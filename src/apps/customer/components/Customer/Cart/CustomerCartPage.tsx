@@ -76,7 +76,7 @@ export const CustomerCartPage: React.FC = () => {
         <div className="space-y-3.5">
           {items.map((item) => (
             <div
-              key={`${item.product.id}-${JSON.stringify(item.selectedOptions)}`}
+              key={`${item.product.id}-${JSON.stringify((item as any).selectedOptions || {})}`}
               className="bg-white p-4 rounded-2xl border border-stone-200/90 shadow-xs hover:border-stone-300 transition-all flex flex-col sm:flex-row gap-4"
             >
               {/* Product Image */}
@@ -96,7 +96,7 @@ export const CustomerCartPage: React.FC = () => {
                       {item.product.name}
                     </h4>
                     <button
-                      onClick={() => removeItem(item.product.id, item.selectedOptions)}
+                      onClick={() => removeItem(item.product.id, (item as any).selectedOptions)}
                       className="p-1.5 text-stone-400 hover:text-red-600 transition-colors rounded-lg"
                       aria-label="Remove item"
                     >
@@ -104,9 +104,9 @@ export const CustomerCartPage: React.FC = () => {
                     </button>
                   </div>
                   
-                  {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
+                  {(item as any).selectedOptions && Object.keys((item as any).selectedOptions).length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-1">
-                      {Object.entries(item.selectedOptions).map(([key, value]) => (
+                      {Object.entries((item as any).selectedOptions).map(([key, value]) => (
                         <span key={key} className="text-[10px] px-2 py-0.5 bg-stone-100 text-stone-700 rounded-md font-medium capitalize border border-stone-200">
                           {key}: {value as string}
                         </span>
@@ -118,7 +118,7 @@ export const CustomerCartPage: React.FC = () => {
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-stone-100">
                   <div className="flex items-center gap-3 bg-stone-100/80 rounded-xl p-1 border border-stone-200">
                     <button
-                      onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1), item.selectedOptions)}
+                      onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1), (item as any).selectedOptions)}
                       className="p-1 hover:bg-white hover:shadow-xs rounded-lg text-stone-700 transition-all cursor-pointer"
                     >
                       <Minus className="w-3.5 h-3.5" />
@@ -127,7 +127,7 @@ export const CustomerCartPage: React.FC = () => {
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedOptions)}
+                      onClick={() => updateQuantity(item.product.id, item.quantity + 1, (item as any).selectedOptions)}
                       className="p-1 hover:bg-white hover:shadow-xs rounded-lg text-stone-700 transition-all cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />

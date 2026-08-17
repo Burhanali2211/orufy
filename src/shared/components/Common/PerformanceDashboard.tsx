@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { performanceMonitor } from '../../utils/performance';
+import { performanceMonitor } from '../../utils/performanceMonitor';
 import { globalResourceManager } from '../../utils/resourceManager';
 import { globalCircuitBreaker, globalOfflineQueue } from '../../utils/networkResilience';
 

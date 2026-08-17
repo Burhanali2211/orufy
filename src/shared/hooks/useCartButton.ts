@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useCart } from '@/shared/contexts/ShoppingContext';
+import { useCart } from '@/shared/contexts/CartContext';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { Product } from '../types';
 

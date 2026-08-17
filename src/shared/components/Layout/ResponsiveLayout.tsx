@@ -285,7 +285,7 @@ export const ResponsiveGrid: React.FC<{
     const styles: React.CSSProperties = {
       display: 'grid',
       gridTemplateColumns: `repeat(${gridColumns}, 1fr)`,
-      gap: getResponsiveValue(gap) || '1rem'
+      gap: gap ? getResponsiveValue(gap) || '1rem' : '1rem'
     };
     
     return styles;
@@ -313,9 +313,9 @@ export const ResponsiveGridItem: React.FC<ResponsiveGridItemProps> = ({
   const { getColumnSpan } = useResponsiveGrid();
   
   const itemStyles = useMemo(() => {
-    const actualSpan = typeof span === 'number' ? span : getResponsiveValue(span) || 1;
-    const actualOffset = typeof offset === 'number' ? offset : getResponsiveValue(offset) || 0;
-    const actualOrder = typeof order === 'number' ? order : getResponsiveValue(order);
+    const actualSpan = typeof span === 'number' ? span : (span ? getResponsiveValue(span) : 1) || 1;
+    const actualOffset = typeof offset === 'number' ? offset : (offset ? getResponsiveValue(offset) : 0) || 0;
+    const actualOrder = typeof order === 'number' ? order : (order ? getResponsiveValue(order) : undefined);
     
     const styles: React.CSSProperties = {
       gridColumn: `span ${getColumnSpan(actualSpan)}`,
@@ -377,7 +377,7 @@ export const ResponsiveStack: React.FC<{
                      justify === 'between' ? 'space-between' :
                      justify === 'around' ? 'space-around' :
                      justify === 'evenly' ? 'space-evenly' : 'flex-start',
-      gap: getResponsiveValue(spacing) || '1rem'
+      gap: spacing ? getResponsiveValue(spacing) || '1rem' : '1rem'
     };
     
     return styles;

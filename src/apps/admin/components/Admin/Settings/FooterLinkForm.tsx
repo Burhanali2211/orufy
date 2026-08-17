@@ -67,8 +67,8 @@ export const FooterLinkForm: React.FC<FooterLinkFormProps> = ({ link, onClose })
       }
       showSuccess(link?.id ? 'Footer link updated successfully' : 'Footer link created successfully');
       onClose();
-    } catch (error: Error) {
-      showError(error.message || 'Failed to save footer link');
+    } catch (error: any) {
+      showError(error?.message || 'Failed to save footer link');
     } finally {
       setLoading(false);
     }

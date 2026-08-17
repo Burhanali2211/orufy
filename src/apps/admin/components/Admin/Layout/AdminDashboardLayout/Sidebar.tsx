@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { X, ExternalLink, LogOut, LayoutDashboard, Store, ChevronRight } from 'lucide-react';
 import { NavItem } from './types';
-import { User } from '@/types';
+import { User } from '@/shared/types';
 import { useAuth } from '@/shared/contexts/AuthContext';
 
 interface SidebarProps {

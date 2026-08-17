@@ -87,9 +87,9 @@ export const AddressesPage: React.FC = () => {
     if (!user) return;
     
     if (editingAddress) {
-      await updateAddress({ id: editingAddress.id, ...formData });
+      await updateAddress({ id: editingAddress.id, ...formData, type: (formData.type as 'shipping' | 'billing') || 'shipping' });
     } else {
-      await createAddress(formData);
+      await createAddress({ ...formData, type: (formData.type as 'shipping' | 'billing') || 'shipping' });
     }
     handleCloseModal();
   };
@@ -152,7 +152,7 @@ export const AddressesPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
-            {addresses.map((address) => (
+            {(addresses || []).map((address: any) => (
               <div
                 key={address.id}
                 className={`relative bg-white rounded-2xl shadow-sm border-2 p-5 transition-all hover:shadow-md ${

@@ -39,7 +39,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product, isOpen,
   ];
 
   // Category specific highlights
-  const isTech = product.categoryName?.toLowerCase().includes('electronics') || product.category?.toLowerCase().includes('electronics');
+  const isTech = ((product as any).categoryName || product.category || '').toLowerCase().includes('electronics');
 
   return (
     <>
@@ -101,7 +101,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product, isOpen,
                   <div className="mb-8">
                     <div className="flex items-center gap-2 mb-4">
                       <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
-                        {product.categoryName || product.category}
+                        {product.category || (product as any).categoryName}
                       </span>
                       {product.stock <= 5 && product.stock > 0 && (
                         <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">

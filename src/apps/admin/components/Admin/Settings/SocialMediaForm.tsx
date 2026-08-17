@@ -61,8 +61,8 @@ export const SocialMediaForm: React.FC<SocialMediaFormProps> = ({ account, onClo
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  } = useForm<any>({
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       platform: '',
       url: '',
@@ -128,7 +128,7 @@ export const SocialMediaForm: React.FC<SocialMediaFormProps> = ({ account, onClo
             <FormSelect
               label="Platform"
               {...field}
-              error={errors.platform?.message}
+              error={errors.platform?.message ? String(errors.platform.message) : undefined}
               options={[
                 { value: '', label: 'Select a platform' },
                 ...platformOptions.map(opt => ({ value: opt.value, label: opt.label }))
@@ -146,7 +146,7 @@ export const SocialMediaForm: React.FC<SocialMediaFormProps> = ({ account, onClo
               label="Profile URL"
               placeholder="https://facebook.com/yourpage"
               {...field}
-              error={errors.url?.message}
+              error={errors.url?.message ? String(errors.url.message) : undefined}
             />
           )}
         />
@@ -159,7 +159,7 @@ export const SocialMediaForm: React.FC<SocialMediaFormProps> = ({ account, onClo
               label="Username"
               placeholder="@yourhandle"
               {...field}
-              error={errors.username?.message}
+              error={errors.username?.message ? String(errors.username.message) : undefined}
             />
           )}
         />
@@ -174,7 +174,7 @@ export const SocialMediaForm: React.FC<SocialMediaFormProps> = ({ account, onClo
                 label="Follower Count"
                 {...field}
                 onChange={e => field.onChange(Number(e.target.value))}
-                error={errors.follower_count?.message}
+                error={errors.follower_count?.message ? String(errors.follower_count.message) : undefined}
               />
             )}
           />
@@ -189,7 +189,7 @@ export const SocialMediaForm: React.FC<SocialMediaFormProps> = ({ account, onClo
                   label="Display Order"
                   {...field}
                   onChange={e => field.onChange(Number(e.target.value))}
-                  error={errors.display_order?.message}
+                  error={errors.display_order?.message ? String(errors.display_order.message) : undefined}
                 />
                 <p className="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
               </div>

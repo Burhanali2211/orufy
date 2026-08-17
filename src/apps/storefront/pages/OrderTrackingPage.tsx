@@ -68,7 +68,11 @@ export const OrderTrackingPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const url = `/api/customer/orders/${id}${trackingToken ? `?token=${encodeURIComponent(trackingToken)}` : ''}`;
-      const res = await fetch(url);
+      const storeHost = localStorage.getItem('store_hostname');
+      const headers: Record<string, string> = {};
+      if (storeHost) headers['x-store-hostname'] = storeHost;
+
+      const res = await fetch(url, { credentials: 'include', headers });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Failed to fetch order details');
@@ -92,9 +96,14 @@ export const OrderTrackingPage: React.FC = () => {
     try {
       setLookupLoading(true);
       setLookupError(null);
+      const storeHost = localStorage.getItem('store_hostname');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (storeHost) headers['x-store-hostname'] = storeHost;
+
       const res = await fetch('/api/customer/orders/lookup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers,
         body: JSON.stringify({
           orderNumber: orderNumberInput.trim(),
           emailOrPhone: identifierInput.trim(),
@@ -335,3 +344,6 @@ export const OrderTrackingPage: React.FC = () => {
     </div>
   );
 };
+
+export default OrderTrackingPage;
+

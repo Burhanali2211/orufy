@@ -67,7 +67,7 @@ export const EnhancedResponsiveImage: React.FC<EnhancedResponsiveImageProps> = (
         // Generate srcSet
         const generatedSrcSet = imageOptimizationService.generateSrcSet(src, breakpoints, {
           quality: adjustedQuality,
-          format: bestFormat,
+          format: bestFormat === 'original' ? 'auto' : (bestFormat as any),
           fit
         });
         
@@ -77,7 +77,7 @@ export const EnhancedResponsiveImage: React.FC<EnhancedResponsiveImageProps> = (
         const bestSrcUrl = imageOptimizationService.generateOptimizedImageUrl(src, {
           width: breakpoints[breakpoints.length - 1], // Use largest breakpoint
           quality: adjustedQuality,
-          format: bestFormat,
+          format: bestFormat === 'original' ? 'auto' : (bestFormat as any),
           fit
         });
         

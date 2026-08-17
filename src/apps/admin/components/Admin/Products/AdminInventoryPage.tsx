@@ -57,8 +57,8 @@ export const AdminInventoryPage: React.FC = () => {
       if (response.success) {
         setItems(response.data);
       }
-    } catch (error: Error) {
-      showError(error.message || 'Failed to fetch inventory');
+    } catch (error: any) {
+      showError(error?.message || 'Failed to fetch inventory');
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ export const AdminInventoryPage: React.FC = () => {
       if (response.success) {
         setMovements(response.data);
       }
-    } catch (error: Error) {
+    } catch (error: any) {
       console.error('Failed to fetch movements', error);
     }
   };
@@ -94,8 +94,8 @@ export const AdminInventoryPage: React.FC = () => {
         fetchInventory();
         fetchMovements();
       }
-    } catch (error: Error) {
-      showError(error.message || 'Failed to update stock');
+    } catch (error: any) {
+      showError(error?.message || 'Failed to update stock');
     }
   };
 
@@ -106,7 +106,7 @@ export const AdminInventoryPage: React.FC = () => {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Inventory Management">
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>

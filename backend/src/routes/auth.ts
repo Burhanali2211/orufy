@@ -1,13 +1,28 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { lucia } from "../lib/auth";
 import { db } from "../db/db";
 import { profiles, store_members, stores } from "../db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { Argon2id } from "oslo/password";
+import { requireAuth } from "../middleware/auth";
 
 export const authRouter = Router();
 
-authRouter.post("/signup", async (req, res) => {
+function extractSessionId(req: Request): string | null {
+  const cookieSession = lucia.readSessionCookie(req.headers.cookie ?? "");
+  if (cookieSession) return cookieSession;
+
+  const authHeader = req.headers.authorization;
+  if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    const bearerToken = authHeader.substring(7).trim();
+    if (bearerToken && bearerToken !== 'null' && bearerToken !== 'undefined') {
+      return bearerToken;
+    }
+  }
+  return null;
+}
+
+const handleSignup = async (req: Request, res: Response) => {
   try {
     const { email, password, full_name, role } = req.body;
     
@@ -15,7 +30,7 @@ authRouter.post("/signup", async (req, res) => {
       return res.status(400).json({ error: "Invalid credentials" });
     }
     
-    const existingUser = await db.select().from(profiles).where(eq(profiles.email, email));
+    const existingUser = await db.select().from(profiles).where(eq(profiles.email, email.trim().toLowerCase()));
     if (existingUser.length > 0) {
       return res.status(400).json({ error: "User already exists" });
     }
@@ -27,7 +42,7 @@ authRouter.post("/signup", async (req, res) => {
       const userRole = role || (res.locals.storeId ? "customer" : "merchant");
 
       const [user] = await tx.insert(profiles).values({
-        email,
+        email: email.trim().toLowerCase(),
         password_hash: hashedPassword,
         full_name: full_name || 'User',
         phone: req.body.phone || null,
@@ -52,6 +67,7 @@ authRouter.post("/signup", async (req, res) => {
     res.setHeader("Set-Cookie", sessionCookie.serialize());
     return res.status(201).json({
       message: "User created",
+      token: session.id,
       user: {
         id: newUser.id,
         email: newUser.email,
@@ -63,7 +79,10 @@ authRouter.post("/signup", async (req, res) => {
     console.error("Signup error:", error);
     res.status(500).json({ error: "An error occurred during signup" });
   }
-});
+};
+
+authRouter.post("/signup", handleSignup);
+authRouter.post("/register", handleSignup);
 
 authRouter.post("/login", async (req, res) => {
   try {
@@ -73,7 +92,7 @@ authRouter.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid credentials" });
     }
     
-    const [existingUser] = await db.select().from(profiles).where(eq(profiles.email, email));
+    const [existingUser] = await db.select().from(profiles).where(eq(profiles.email, email.trim().toLowerCase()));
     
     if (!existingUser || !existingUser.password_hash) {
       return res.status(400).json({ error: "Incorrect email or password" });
@@ -90,29 +109,62 @@ authRouter.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Incorrect email or password" });
     }
     
-    // Verify store membership IF logging in on a specific store tenant domain
+    // Auto-associate or verify store membership if logging in on a specific store tenant domain
     if (res.locals.storeId) {
       const [membership] = await db.select().from(store_members).where(
         and(eq(store_members.store_id, res.locals.storeId), eq(store_members.user_id, existingUser.id))
       );
       
-      if (!membership && existingUser.role !== 'admin' && existingUser.role !== 'merchant' && !existingUser.is_super_admin) {
-        return res.status(403).json({ error: "User does not belong to this store" });
+      if (!membership) {
+        // Automatically enroll customer to this store
+        await db.insert(store_members).values({
+          store_id: res.locals.storeId,
+          user_id: existingUser.id,
+          role: existingUser.role === 'admin' || existingUser.role === 'merchant' ? 'member' : 'customer'
+        }).onConflictDoNothing();
       }
     }
 
     const session = await lucia.createSession(existingUser.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
     
+    // Fetch associated store if owner/admin
+    let store = null;
+    try {
+      const [membership] = await db
+        .select({ store_id: store_members.store_id, role: store_members.role })
+        .from(store_members)
+        .where(
+          and(
+            eq(store_members.user_id, existingUser.id),
+            inArray(store_members.role, ['owner', 'admin', 'member'])
+          )
+        )
+        .limit(1);
+
+      if (membership) {
+        const [storeRow] = await db
+          .select({ id: stores.id, name: stores.name, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
+          .from(stores)
+          .where(eq(stores.id, membership.store_id))
+          .limit(1);
+        store = storeRow || null;
+      }
+    } catch (_) {}
+
     res.setHeader("Set-Cookie", sessionCookie.serialize());
     return res.status(200).json({
       message: "Logged in",
+      token: session.id,
       user: {
         id: existingUser.id,
         email: existingUser.email,
         full_name: existingUser.full_name,
         role: existingUser.role,
-      }
+        avatar_url: existingUser.avatar_url,
+        phone: existingUser.phone,
+      },
+      store,
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -122,7 +174,7 @@ authRouter.post("/login", async (req, res) => {
 
 authRouter.post("/logout", async (req, res) => {
   try {
-    const sessionId = lucia.readSessionCookie(req.headers.cookie ?? "");
+    const sessionId = extractSessionId(req);
     if (!sessionId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -140,7 +192,7 @@ authRouter.post("/logout", async (req, res) => {
 
 authRouter.get("/me", async (req, res) => {
   try {
-    const sessionId = lucia.readSessionCookie(req.headers.cookie ?? "");
+    const sessionId = extractSessionId(req);
     if (!sessionId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -157,6 +209,19 @@ authRouter.get("/me", async (req, res) => {
       const sessionCookie = lucia.createSessionCookie(session.id);
       res.setHeader("Set-Cookie", sessionCookie.serialize());
     }
+
+    // Get full user profile
+    const [profile] = await db
+      .select({
+        id: profiles.id,
+        email: profiles.email,
+        full_name: profiles.full_name,
+        role: profiles.role,
+        avatar_url: profiles.avatar_url,
+        phone: profiles.phone,
+      })
+      .from(profiles)
+      .where(eq(profiles.id, user.id));
 
     // Fetch the user's owned/admin store so the dashboard can show store context
     let store = null;
@@ -184,9 +249,49 @@ authRouter.get("/me", async (req, res) => {
       // non-fatal: dashboard works without store info
     }
 
-    return res.status(200).json({ user, store });
+    return res.status(200).json({
+      token: session.id,
+      user: profile || user,
+      store,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "An error occurred" });
   }
 });
+
+// Update Profile
+authRouter.put("/profile", requireAuth, async (req, res) => {
+  try {
+    const userId = res.locals.user.id;
+    const { full_name, fullName, phone, avatar_url, avatar } = req.body;
+
+    const updates: any = {};
+    if (full_name !== undefined) updates.full_name = full_name;
+    if (fullName !== undefined) updates.full_name = fullName;
+    if (phone !== undefined) updates.phone = phone;
+    if (avatar_url !== undefined) updates.avatar_url = avatar_url;
+    if (avatar !== undefined) updates.avatar_url = avatar;
+
+    if (Object.keys(updates).length > 0) {
+      await db.update(profiles).set(updates).where(eq(profiles.id, userId));
+    }
+
+    const [updated] = await db.select().from(profiles).where(eq(profiles.id, userId));
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: updated.id,
+        email: updated.email,
+        full_name: updated.full_name,
+        role: updated.role,
+        avatar_url: updated.avatar_url,
+        phone: updated.phone,
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+

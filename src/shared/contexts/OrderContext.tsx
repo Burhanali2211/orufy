@@ -105,15 +105,19 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         quantity: item.quantity,
       }));
 
-      // Call the secure Express backend instead of using Supabase client
-      const response = await fetch('/api/platform/checkout/orders', {
+      // Call the secure Express backend with store context
+      const storeHost = localStorage.getItem('store_hostname');
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (storeHost) headers['x-store-hostname'] = storeHost;
+
+      const response = await fetch('/api/platform/payment/checkout/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Assuming the frontend routes through Nginx or Vite proxy that forwards the hostname correctly,
-          // or we explicitly pass it if needed, but standard auth middleware will find it.
-          // In standard flow, the API receives the host header natively.
-        },
+        credentials: 'include',
+        headers,
         body: JSON.stringify({
           items: backendItems,
           shippingAddress,
@@ -128,17 +132,14 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
 
       const result = await response.json();
-      const orderId = result.order.id;
-      const razorpayOrderId = result.order.razorpayOrderId;
-
-      // Clear cart if order created successfully
-      await db.clearCart(user.id);
+      const orderId = result.order?.id || result.id;
+      const razorpayOrderId = result.order?.razorpayOrderId || result.razorpayOrderId || null;
 
       await fetchUserOrders();
       showNotification({
         type: 'success',
         title: 'Order Placed!',
-        message: `Order ${result.order.orderNumber} created successfully.`
+        message: `Order ${result.order?.orderNumber || orderId} created successfully.`
       });
 
       return { orderId, razorpayOrderId };

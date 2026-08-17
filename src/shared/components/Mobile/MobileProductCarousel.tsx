@@ -229,7 +229,7 @@ export const MobileProductGrid: React.FC<MobileProductGridProps> = ({
         >
           <MobileProductCard
             product={product}
-            variant={variant}
+            variant={variant === 'luxury' ? 'featured' : variant}
           />
         </div>
       ))}

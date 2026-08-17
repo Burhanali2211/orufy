@@ -6,11 +6,11 @@ import { Link } from 'react-router-dom';
 
 export const AboutPage: React.FC = () => {
   const { settings, getSiteSetting } = useSettings();
-  const { contactInfo } = settings;
+  const contactInfo: any[] = (settings as any)?.contactInfo || [];
   const siteName = getSiteSetting('site_name') || 'Our Store';
 
-  const addressContact = contactInfo.find(c => c.contact_type === 'address' && c.is_primary) ||
-                         contactInfo.find(c => c.contact_type === 'address');
+  const addressContact = contactInfo.find((c: any) => c.contact_type === 'address' && c.is_primary) ||
+                         contactInfo.find((c: any) => c.contact_type === 'address');
   const address = addressContact?.value || `${siteName}, Main Market, Placeholder City, 10001`;
 
   return (
