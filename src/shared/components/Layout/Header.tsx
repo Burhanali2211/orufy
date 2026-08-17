@@ -168,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({ onAuthClick, onCartClick }) => {
   const { user, logout } = useAuth();
   const { itemCount } = useCart();
   const { items: wishlistItems } = useWishlist();
-  const { getSiteSetting } = useSettings();
+  const { config, getSiteSetting } = useSettings();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
@@ -176,8 +176,8 @@ export const Header: React.FC<HeaderProps> = ({ onAuthClick, onCartClick }) => {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const isHome = location.pathname === '/';
-  const siteName = getSiteSetting('site_name') || 'Aligarh Attarsavenue';
-  const logoUrl = getSiteSetting('logo_url');
+  const siteName = config?.identity?.siteName || config?.identity?.name || getSiteSetting('site_name') || 'Store';
+  const logoUrl = config?.identity?.logo || getSiteSetting('logo_url') || '';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -217,10 +217,18 @@ export const Header: React.FC<HeaderProps> = ({ onAuthClick, onCartClick }) => {
             
           {/* Logo Area */}
           <Link to="/" className="flex items-center gap-3 flex-shrink-0 min-w-0 group">
-            <div className="flex-shrink-0 flex items-center justify-center bg-white rounded-full p-1 border border-transparent group-hover:border-gray-200 transition-colors">
-              <img src="/logo.png" alt="Logo" className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover" />
-            </div>
-            <span className={`text-[18px] sm:text-[22px] font-medium tracking-tight truncate hidden sm:block ${headerStyles.logo}`}>
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={siteName}
+                className="h-9 w-auto max-w-[140px] max-h-10 object-contain rounded"
+              />
+            ) : (
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-stone-900 text-white font-bold flex items-center justify-center text-sm sm:text-base shadow-sm group-hover:scale-105 transition-transform">
+                {siteName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className={`text-[18px] sm:text-[22px] font-bold tracking-tight truncate hidden sm:block ${headerStyles.logo}`}>
               {siteName}
             </span>
           </Link>

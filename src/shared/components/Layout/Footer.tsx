@@ -70,8 +70,8 @@ export const Footer: React.FC = () => {
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-[#1A73E8] text-white flex items-center justify-center font-bold text-sm">
-                  MB
+                <div className="h-10 w-10 rounded-full bg-stone-900 text-white flex items-center justify-center font-bold text-sm">
+                  {siteName.charAt(0).toUpperCase()}
                 </div>
               )}
               <span className="font-medium text-[20px] text-[#202124] tracking-tight group-hover:text-[#1A73E8] transition-colors">

@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { db } from './db/db';
-import { products, categories, stores } from './db/schema';
+import { products, categories, stores, site_settings } from './db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { authRouter } from './routes/auth';
 import { platformRouter } from './routes/platform';
@@ -66,19 +66,63 @@ app.use('/api/categories', categoriesRouter);
 app.get('/api/store/settings', requireStore, async (req, res) => {
   try {
     const store = res.locals.store;
+    const storeId = store.id;
+
+    const siteSettingsRows = await withStoreContext(storeId, () =>
+      db.select().from(site_settings).where(eq(site_settings.store_id, storeId))
+    );
+
+    const settingsMap: Record<string, string> = {};
+    siteSettingsRows.forEach((r) => {
+      settingsMap[r.setting_key] = r.setting_value || '';
+    });
+
+    let heroConfig = null;
+    if (settingsMap['hero_settings']) {
+      try {
+        heroConfig = JSON.parse(settingsMap['hero_settings']);
+      } catch (_) {}
+    }
+
     res.json({
       identity: {
         id: store.id,
         name: store.name,
         siteName: store.name,
-        logo: '',
-        favicon: '',
-        announcementBar: 'Complimentary shipping on orders above ₹499',
+        logo: store.logo_url || settingsMap['site_logo'] || '',
+        favicon: settingsMap['site_favicon'] || '',
+        announcementBar: settingsMap['announcement_bar'] || 'Complimentary shipping on orders above ₹499',
       },
       branding: {
-        primary: '#8c7e5a',
-        accent: '#bfa760',
-        typography: 'Inter',
+        primary: settingsMap['brand_primary'] || '#8c7e5a',
+        accent: settingsMap['brand_accent'] || '#bfa760',
+        typography: settingsMap['brand_typography'] || 'Inter',
+      },
+      hero: heroConfig || {
+        layout: 'carousel',
+        topTitle: 'New Collection',
+        titleMain: `${store.name} Curated Essentials`,
+        subtitle: 'Showcase your best products with beautiful, high-resolution imagery',
+        cta: 'Shop Now',
+        ctaLink: '/products',
+        slides: [
+          {
+            image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80',
+            topTitle: 'New Collection',
+            titleMain: `${store.name} Flagship`,
+            subtitle: 'Discover hand-selected pieces crafted for distinction.',
+            cta: 'Shop Now',
+            ctaLink: '/products',
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1600&q=80',
+            topTitle: 'Featured Items',
+            titleMain: 'Exclusive Deals',
+            subtitle: 'Highlight your top selling items and promotions right here.',
+            cta: 'View Offers',
+            ctaLink: '/products',
+          }
+        ]
       },
       commerce: {
         currency: 'INR',
@@ -88,9 +132,9 @@ app.get('/api/store/settings', requireStore, async (req, res) => {
         razorpayReady: Boolean(store.razorpay_linked_account_id),
       },
       contact: {
-        email: `contact@${store.hostname}`,
-        phone: '+91 98765 43210',
-        address: 'Registered Business Address',
+        email: settingsMap['contact_email'] || `contact@${store.hostname}`,
+        phone: settingsMap['contact_phone'] || '+91 98765 43210',
+        address: settingsMap['contact_address'] || 'Registered Business Address',
       },
       domain: {
         hostname: store.hostname,

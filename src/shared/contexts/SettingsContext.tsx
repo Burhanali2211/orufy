@@ -1,5 +1,30 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
+export interface HeroSlide {
+  id?: string;
+  image?: string;
+  topTitle?: string;
+  titleMain: string;
+  subtitle?: string;
+  cta?: string;
+  ctaLink?: string;
+  secondaryCta?: string;
+  secondaryCtaLink?: string;
+}
+
+export interface StorefrontHero {
+  layout: 'carousel' | 'split' | 'minimal' | 'immersive';
+  topTitle?: string;
+  titleMain?: string;
+  subtitle?: string;
+  cta?: string;
+  ctaLink?: string;
+  secondaryCta?: string;
+  secondaryCtaLink?: string;
+  backgroundImage?: string;
+  slides?: HeroSlide[];
+}
+
 export interface StorefrontIdentity {
   id?: string;
   name: string;
@@ -37,6 +62,7 @@ export interface StorefrontDomain {
 export interface StorefrontConfig {
   identity: StorefrontIdentity;
   branding: StorefrontBranding;
+  hero?: StorefrontHero;
   commerce: StorefrontCommerce;
   contact: StorefrontContact;
   domain: StorefrontDomain;
@@ -80,6 +106,32 @@ const DEFAULT_CONFIG: StorefrontConfig = {
     accent: '#bfa760',
     typography: 'Inter',
   },
+  hero: {
+    layout: 'carousel',
+    topTitle: 'New Collection',
+    titleMain: 'Curated Essentials',
+    subtitle: 'Showcase your best products with beautiful, high-resolution imagery',
+    cta: 'Shop Now',
+    ctaLink: '/products',
+    slides: [
+      {
+        image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80',
+        topTitle: 'New Collection',
+        titleMain: 'Premium Storefront',
+        subtitle: 'Showcase your best products with beautiful, high-resolution imagery',
+        cta: 'Shop Now',
+        ctaLink: '/products',
+      },
+      {
+        image: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1600&q=80',
+        topTitle: 'Featured Items',
+        titleMain: 'Exclusive Deals',
+        subtitle: 'Highlight your top selling items and promotions right here',
+        cta: 'View Offers',
+        ctaLink: '/products',
+      }
+    ]
+  },
   commerce: {
     currency: 'INR',
     taxRatePct: 18,
@@ -100,6 +152,14 @@ const DEFAULT_CONFIG: StorefrontConfig = {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+export function clearStorefrontSettingsCache() {
+  try {
+    Object.keys(sessionStorage)
+      .filter(k => k.startsWith('storefront_config_'))
+      .forEach(k => sessionStorage.removeItem(k));
+  } catch (_) {}
+}
+
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [config, setConfig] = useState<StorefrontConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
@@ -107,7 +167,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [error, setError] = useState<string | null>(null);
 
   const CACHE_KEY = `storefront_config_${typeof window !== 'undefined' ? window.location.hostname : 'default'}`;
-  const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+  const CACHE_TTL_MS = 30 * 1000; // 30 seconds TTL for fast updates
 
   const readCache = (): StorefrontConfig | null => {
     try {
@@ -179,6 +239,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             accent: data.branding?.accent || '#bfa760',
             typography: data.branding?.typography || 'Inter',
           },
+          hero: data.hero || DEFAULT_CONFIG.hero,
           commerce: {
             currency: data.commerce?.currency || 'INR',
             taxRatePct: data.commerce?.taxRatePct ?? 18,
@@ -220,41 +281,53 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     const baseDomain = import.meta.env.VITE_SITE_URL
       ? new URL(import.meta.env.VITE_SITE_URL).hostname
       : 'get-oru.com';
-    const isStorefront = host !== baseDomain && host !== 'localhost' && host !== '127.0.0.1';
-    
-    if (isStorefront) {
+
+    const isPlatformRoot =
+      host === baseDomain ||
+      host === `www.${baseDomain}` ||
+      host === 'localhost' ||
+      host === '127.0.0.1';
+
+    // On tenant subdomain or custom domain, always fetch dynamic store settings
+    if (!isPlatformRoot) {
       fetchSettings();
     } else {
       setLoading(false);
     }
   }, [fetchSettings]);
 
-  const publicSettings: PublicSettings = {
-    siteSettings: [
-      { setting_key: 'site_name', setting_value: config.identity.siteName, setting_type: 'string', category: 'general', description: '' },
-      { setting_key: 'contact_email', setting_value: config.contact.email, setting_type: 'string', category: 'general', description: '' },
-      { setting_key: 'contact_phone', setting_value: config.contact.phone, setting_type: 'string', category: 'general', description: '' },
-      { setting_key: 'primary_color', setting_value: config.branding.primary, setting_type: 'string', category: 'theme', description: '' },
-    ],
-    config,
-  };
+  const getSiteSetting = useCallback((key: string): string | undefined => {
+    switch (key) {
+      case 'site_name':
+      case 'siteName':
+        return config.identity.siteName;
+      case 'site_logo':
+      case 'logo_url':
+      case 'logo':
+        return config.identity.logo;
+      case 'announcement_bar':
+        return config.identity.announcementBar;
+      case 'brand_primary':
+        return config.branding.primary;
+      case 'brand_accent':
+        return config.branding.accent;
+      default:
+        return undefined;
+    }
+  }, [config]);
 
-  const getSiteSetting = (key: string): string | undefined => {
-    return publicSettings.siteSettings.find((s) => s.setting_key === key)?.setting_value;
-  };
+  const getSiteSettingsByCategory = useCallback((category: string): SiteSetting[] => {
+    return [];
+  }, []);
 
-  const getSiteSettingsByCategory = (category: string): SiteSetting[] => {
-    return publicSettings.siteSettings.filter((s) => s.category === category);
-  };
-
-  const refetch = async () => {
+  const refetch = useCallback(async () => {
     await fetchSettings(true);
-  };
+  }, [fetchSettings]);
 
   return (
     <SettingsContext.Provider
       value={{
-        settings: publicSettings,
+        settings: { siteSettings: [], config },
         config,
         loading,
         storeNotFound,
