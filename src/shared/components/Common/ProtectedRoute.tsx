@@ -63,6 +63,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // Enforce onboarding for merchants without a store
+  // NOTE: We check 'useAuth().store' indirectly via useAuth export
+  const { store } = useAuth();
+  if (user.role === 'merchant' && !store && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   // Check for required role
   if (requiredRole && user.role !== requiredRole) {
     // User is authenticated but doesn't have the required role

@@ -1,6 +1,6 @@
 @import './shared/styles/design-system.css';
 @import './shared/styles/unified-design-system.css';
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
@@ -33,7 +33,7 @@
     background-color: #ffffff;
     color: #202124;
     @apply antialiased;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-feature-settings: 'kern' 1, 'liga' 1;
     font-optical-sizing: auto;
     opacity: 1;

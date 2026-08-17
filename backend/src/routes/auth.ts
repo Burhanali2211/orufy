@@ -2,7 +2,7 @@ import { Router } from "express";
 import { lucia } from "../lib/auth";
 import { db } from "../db/db";
 import { profiles, store_members, stores } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { Argon2id } from "oslo/password";
 
 export const authRouter = Router();
@@ -75,11 +75,16 @@ authRouter.post("/login", async (req, res) => {
     
     const [existingUser] = await db.select().from(profiles).where(eq(profiles.email, email));
     
-    if (!existingUser) {
+    if (!existingUser || !existingUser.password_hash) {
       return res.status(400).json({ error: "Incorrect email or password" });
     }
     
-    const validPassword = await new Argon2id().verify(existingUser.password_hash || "", password);
+    let validPassword = false;
+    try {
+      validPassword = await new Argon2id().verify(existingUser.password_hash, password);
+    } catch (e) {
+      validPassword = false; // Gracefully handle invalid hash formats (e.g. from migrations)
+    }
     
     if (!validPassword) {
       return res.status(400).json({ error: "Incorrect email or password" });
@@ -162,7 +167,7 @@ authRouter.get("/me", async (req, res) => {
         .where(
           and(
             eq(store_members.user_id, user.id),
-            eq(store_members.role, 'owner')
+            inArray(store_members.role, ['owner', 'admin', 'member'])
           )
         )
         .limit(1);
