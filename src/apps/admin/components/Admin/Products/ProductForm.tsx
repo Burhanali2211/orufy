@@ -27,6 +27,7 @@ const productSchema = z.object({
   min_stock_level: z.coerce.number().min(0).default(5),
   sku: z.string().optional(),
   is_featured: z.boolean().default(false),
+  show_on_homepage: z.boolean().default(true),
   is_active: z.boolean().default(true),
   images: z.array(z.string()).default([]),
   attributes: z.string().refine((val) => {
@@ -57,7 +58,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
       stock: product?.stock !== undefined ? product.stock : 0,
       min_stock_level: product?.min_stock_level !== undefined ? product.min_stock_level : 5,
       sku: product?.sku || '',
-      is_featured: product?.is_featured || false,
+      is_featured: Boolean(product?.is_featured),
+      show_on_homepage: product?.show_on_homepage !== false,
       is_active: product?.is_active !== undefined ? product.is_active : true,
       images: product?.images || [],
       attributes: typeof product?.attributes === 'object' ? JSON.stringify(product.attributes, null, 2) : (product?.attributes || '{}')
@@ -96,8 +98,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
         min_stock_level: data.min_stock_level,
         sku: data.sku || undefined,
         is_featured: data.is_featured,
+        show_on_homepage: data.show_on_homepage,
         is_active: data.is_active,
-        show_on_homepage: true,
         images: Array.isArray(data.images) ? data.images : (data.images ? [data.images] : []),
         attributes: JSON.parse(data.attributes)
       };
@@ -384,9 +386,31 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
                     type="checkbox"
                     checked={field.value}
                     onChange={(e) => field.onChange(e.target.checked)}
-                    className="w-4 h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500"
+                    className="w-4 h-4 text-stone-900 rounded border-gray-300 focus:ring-stone-900"
                   />
-                  <span className="text-sm font-medium text-gray-700">Featured Product</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-700">Featured Product</span>
+                    <span className="text-xs text-gray-500">Highlight in Featured Collections</span>
+                  </div>
+                </label>
+              )}
+            />
+
+            <Controller
+              name="show_on_homepage"
+              control={control}
+              render={({ field }) => (
+                <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    className="w-4 h-4 text-stone-900 rounded border-gray-300 focus:ring-stone-900"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-700">Show on Homepage</span>
+                    <span className="text-xs text-gray-500">Display on store landing page</span>
+                  </div>
                 </label>
               )}
             />
@@ -400,9 +424,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
                     type="checkbox"
                     checked={field.value}
                     onChange={(e) => field.onChange(e.target.checked)}
-                    className="w-4 h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500"
+                    className="w-4 h-4 text-stone-900 rounded border-gray-300 focus:ring-stone-900"
                   />
-                  <span className="text-sm font-medium text-gray-700">Active</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-700">Active</span>
+                    <span className="text-xs text-gray-500">Visible in the storefront</span>
+                  </div>
                 </label>
               )}
             />

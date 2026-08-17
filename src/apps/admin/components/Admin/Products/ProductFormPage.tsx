@@ -104,10 +104,9 @@ export const ProductFormPage: React.FC = () => {
           specifications: product.specifications
             ? JSON.stringify(product.specifications, null, 2)
             : '',
-          is_featured: product.is_featured || false,
-          is_active: product.is_active !== undefined ? product.is_active : true,
-          show_on_homepage:
-            product.show_on_homepage !== undefined ? product.show_on_homepage : true,
+          is_featured: Boolean(product.is_featured),
+          is_active: product.is_active !== false && product.is_active !== 'false' && product.is_active !== 0,
+          show_on_homepage: product.show_on_homepage !== false && product.show_on_homepage !== 'false' && product.show_on_homepage !== 0,
           images: product.images || [],
           attributes: product.attributes ? JSON.stringify(product.attributes, null, 2) : '{}'
         });
@@ -462,38 +461,47 @@ export const ProductFormPage: React.FC = () => {
               <h3 className="font-extrabold text-stone-900 text-lg tracking-tight mb-6">Display Settings</h3>
               
               <div className="space-y-3">
-                <label className="flex items-center gap-4 p-4 border border-stone-200 rounded-2xl cursor-pointer hover:bg-stone-50 hover:border-stone-300 transition-all group">
-                  <div className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-200 ${formData.is_active ? 'bg-stone-900 shadow-md scale-105' : 'border-2 border-stone-300 group-hover:border-stone-400'}`}>
-                    {formData.is_active && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
-                  </div>
-                  <input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} className="hidden" />
+                <button
+                  type="button"
+                  onClick={() => toggleCheckbox('is_active')}
+                  className="w-full flex items-center justify-between p-4 border border-stone-200 rounded-2xl hover:bg-stone-50 hover:border-stone-300 transition-all text-left group cursor-pointer"
+                >
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-stone-900">Active</span>
                     <span className="text-xs text-stone-500 font-medium">Visible in the store</span>
                   </div>
-                </label>
-
-                <label className="flex items-center gap-4 p-4 border border-stone-200 rounded-2xl cursor-pointer hover:bg-stone-50 hover:border-stone-300 transition-all group">
-                  <div className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-200 ${formData.is_featured ? 'bg-stone-900 shadow-md scale-105' : 'border-2 border-stone-300 group-hover:border-stone-400'}`}>
-                    {formData.is_featured && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
+                  <div className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out ${formData.is_active ? 'bg-stone-900' : 'bg-stone-200'}`}>
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${formData.is_active ? 'translate-x-6' : 'translate-x-0'}`} />
                   </div>
-                  <input type="checkbox" name="is_featured" checked={formData.is_featured} onChange={handleChange} className="hidden" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => toggleCheckbox('is_featured')}
+                  className="w-full flex items-center justify-between p-4 border border-stone-200 rounded-2xl hover:bg-stone-50 hover:border-stone-300 transition-all text-left group cursor-pointer"
+                >
                   <div className="flex flex-col">
-                    <span className="text-sm font-bold text-stone-900">Featured</span>
-                    <span className="text-xs text-stone-500 font-medium">Highlight this product</span>
+                    <span className="text-sm font-bold text-stone-900">Featured Product</span>
+                    <span className="text-xs text-stone-500 font-medium">Highlight in Featured Collections</span>
                   </div>
-                </label>
+                  <div className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out ${formData.is_featured ? 'bg-stone-900' : 'bg-stone-200'}`}>
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${formData.is_featured ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </div>
+                </button>
 
-                <label className="flex items-center gap-4 p-4 border border-stone-200 rounded-2xl cursor-pointer hover:bg-stone-50 hover:border-stone-300 transition-all group">
-                  <div className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-200 ${formData.show_on_homepage ? 'bg-stone-900 shadow-md scale-105' : 'border-2 border-stone-300 group-hover:border-stone-400'}`}>
-                    {formData.show_on_homepage && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
-                  </div>
-                  <input type="checkbox" name="show_on_homepage" checked={formData.show_on_homepage} onChange={handleChange} className="hidden" />
+                <button
+                  type="button"
+                  onClick={() => toggleCheckbox('show_on_homepage')}
+                  className="w-full flex items-center justify-between p-4 border border-stone-200 rounded-2xl hover:bg-stone-50 hover:border-stone-300 transition-all text-left group cursor-pointer"
+                >
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-stone-900">Show on Homepage</span>
-                    <span className="text-xs text-stone-500 font-medium">Display on landing page</span>
+                    <span className="text-xs text-stone-500 font-medium">Display on landing and storefront pages</span>
                   </div>
-                </label>
+                  <div className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out ${formData.show_on_homepage ? 'bg-stone-900' : 'bg-stone-200'}`}>
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${formData.show_on_homepage ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </div>
+                </button>
               </div>
             </div>
 

@@ -104,23 +104,10 @@ export default function HomePage() {
       {/* 1. Banner Carousel */}
       <Hero />
 
-      {/* 2. Focused Category Showcase */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-[32px] md:text-[40px] font-semibold tracking-tight text-[#1D1D1F] mb-4">
-              Featured Collection
-            </h2>
-            <p className="text-[17px] text-[#86868B]">
-              Discover our exclusive selection of premium products.
-            </p>
-          </div>
-          
-          <Suspense fallback={<div className="h-64 flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#0071E3] border-t-transparent rounded-full animate-spin" /></div>}>
-            <FeaturedProducts />
-          </Suspense>
-        </div>
-      </section>
+      {/* 2. Featured Collection */}
+      <Suspense fallback={<div className="h-64 flex items-center justify-center bg-white"><div className="w-8 h-8 border-2 border-[#0071E3] border-t-transparent rounded-full animate-spin" /></div>}>
+        <FeaturedProducts />
+      </Suspense>
 
       {/* 3. Removed Testimonials as per request */}
     </div>
