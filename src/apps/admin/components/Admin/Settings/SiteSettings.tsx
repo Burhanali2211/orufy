@@ -21,7 +21,7 @@ export const SiteSettings: React.FC = () => {
 
   const { data: settings = [], isLoading, refetch, isRefetching } = useQuery<Setting[]>({
     queryKey: ['admin-site-settings'],
-    queryFn: () => apiClient.get('/admin/settings/site-settings').then(res => res.data || []),
+    queryFn: () => apiClient.get('/admin/settings/site-settings').then(res => (Array.isArray(res) ? res : (res?.data || []))),
   });
 
   const saveMutation = useMutation({

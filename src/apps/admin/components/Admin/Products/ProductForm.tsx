@@ -77,7 +77,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSu
     queryKey: ['admin-categories-options'],
     queryFn: async () => {
       const res = await apiClient.get('/categories');
-      return (res.data || []).filter((cat: any) => cat.is_active);
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      return list.filter((cat: any) => cat.is_active !== false);
     }
   });
 

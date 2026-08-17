@@ -55,7 +55,8 @@ export const CategoryFormPage: React.FC = () => {
     queryKey: ['admin-categories-options'],
     queryFn: async () => {
       const res = await apiClient.get('/categories');
-      return (res.data || []).filter((cat: any) => cat.is_active && cat.id !== id);
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      return list.filter((cat: any) => cat.is_active !== false && cat.id !== id);
     }
   });
 
@@ -64,7 +65,7 @@ export const CategoryFormPage: React.FC = () => {
     queryFn: async () => {
       if (!id) return null;
       const res = await apiClient.get(`/categories/${id}`);
-      return res.data;
+      return res?.data || res;
     },
     enabled: isEditMode,
   });

@@ -61,7 +61,7 @@ export const UsersList: React.FC = () => {
       if (!background) setLoading(true);
       
       const response = await apiClient.get('/merchant/orders/customers/list');
-      let data = response.data || [];
+      let data = Array.isArray(response) ? response : (response?.data || []);
       
       if (roleFilter) data = data.filter((u: User) => u.role === roleFilter);
       if (statusFilter === 'active') data = data.filter((u: User) => u.is_active !== false);

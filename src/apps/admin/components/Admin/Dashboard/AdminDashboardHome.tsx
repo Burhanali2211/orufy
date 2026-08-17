@@ -115,9 +115,9 @@ export const AdminDashboardHome: React.FC = () => {
         apiClient.get('/merchant/orders/customers/list'),
       ]);
 
-      const storeOrders = ordersRes.data?.orders || [];
-      const productsList = productsRes.data || [];
-      const customersList = customersRes.data || [];
+      const storeOrders = (ordersRes?.orders || ordersRes?.data?.orders || ordersRes?.data || (Array.isArray(ordersRes) ? ordersRes : [])) || [];
+      const productsList = Array.isArray(productsRes) ? productsRes : (productsRes?.data || []);
+      const customersList = Array.isArray(customersRes) ? customersRes : (customersRes?.data || []);
 
       const totalUsers = customersList.length;
       const newUsersToday = customersList.filter((c: any) => c.created_at >= todayIso).length;

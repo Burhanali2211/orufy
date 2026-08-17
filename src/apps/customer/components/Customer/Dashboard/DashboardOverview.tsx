@@ -57,7 +57,7 @@ export const DashboardOverview: React.FC = () => {
     try {
       // Fetch orders
       const ordersResponse = await apiClient.getOrders();
-      const orders = ordersResponse.data || [];
+      const orders = Array.isArray(ordersResponse) ? ordersResponse : (ordersResponse?.data || []);
       
       // Calculate stats from orders - handle both camelCase and snake_case
       const totalSpent = orders.reduce((sum: number, order: any) => 
@@ -72,7 +72,7 @@ export const DashboardOverview: React.FC = () => {
       let addressCount = 0;
       try {
         const addressesResponse = await apiClient.getAddresses();
-        addressCount = (addressesResponse.data || []).length;
+        addressCount = (Array.isArray(addressesResponse) ? addressesResponse : (addressesResponse?.data || [])).length;
       } catch (e) {
         // Addresses might fail if not logged in properly
       }
@@ -81,7 +81,7 @@ export const DashboardOverview: React.FC = () => {
       let wishlistCount = 0;
       try {
         const wishlistResponse = await apiClient.getWishlist();
-        wishlistCount = (wishlistResponse.data || []).length;
+        wishlistCount = (Array.isArray(wishlistResponse) ? wishlistResponse : (wishlistResponse?.data || [])).length;
       } catch (e) {
         // Wishlist might fail
       }

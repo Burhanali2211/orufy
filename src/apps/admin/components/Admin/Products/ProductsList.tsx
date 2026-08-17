@@ -107,9 +107,10 @@ export const ProductsList: React.FC = () => {
         apiClient.get('/categories')
       ]);
       
-      const productsData = productsRes.data || [];
+      const productsData = Array.isArray(productsRes) ? productsRes : (productsRes?.data || []);
+      const categoriesData = Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes?.data || []);
       const categoryMap: Record<string, string> = {};
-      (categoriesRes.data || []).forEach((c: any) => { categoryMap[c.id] = c.name; });
+      categoriesData.forEach((c: any) => { categoryMap[c.id] = c.name; });
       
       return productsData.map((p: any) => ({
         id: p.id,

@@ -55,7 +55,7 @@ export const CustomerAddressesPage: React.FC = () => {
   const fetchAddresses = async () => {
     try {
       const response = await apiClient.getAddresses();
-      setAddresses(response.data || []);
+      setAddresses(Array.isArray(response) ? response : (response?.data || []));
     } catch (error) {
       console.error('Failed to fetch addresses:', error);
       showError('Error', 'Failed to load addresses');

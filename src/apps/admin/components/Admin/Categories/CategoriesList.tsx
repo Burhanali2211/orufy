@@ -54,8 +54,8 @@ export const CategoriesList: React.FC = () => {
         apiClient.get('/products'),
       ]);
       
-      const cats = catsRes.data || [];
-      const products = productsRes.data || [];
+      const cats = Array.isArray(catsRes) ? catsRes : (catsRes?.data || []);
+      const products = Array.isArray(productsRes) ? productsRes : (productsRes?.data || []);
 
       // Build product count map
       const countMap = products.reduce((acc: Record<string, number>, p: any) => {

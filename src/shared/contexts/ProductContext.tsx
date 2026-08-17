@@ -18,7 +18,7 @@ interface PaginationState {
   pages: number;
 }
 
-const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_TTL = 30 * 1000; // 30 seconds TTL for fast updates
 
 interface CacheEntry<T> {
   data: T;
@@ -60,17 +60,7 @@ let cacheVersion = (() => {
   try { return parseInt(sessionStorage.getItem('pc_cache_version') || '0', 10); } catch { return 0; }
 })();
 
-const MOCK_PRODUCTS: any[] = Array.from({ length: 8 }).map((_, i) => ({
-  id: `generic-${i + 1}`,
-  name: `Premium Product ${i + 1}`,
-  price: 1999 + i * 500,
-  original_price: 2499 + i * 600,
-  description: 'High quality premium product placeholder for template display.',
-  category_id: `default-${(i % 3) + 1}`,
-  images: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80']
-}));
-
-function bumpCacheVersion() {
+export function bumpProductCacheVersion() {
   cacheVersion++;
   try { sessionStorage.setItem('pc_cache_version', String(cacheVersion)); } catch { /* ignore */ }
   cacheClear('pc_');
@@ -98,7 +88,6 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [bestSellersLoading, setBestSellersLoading] = useState(false);
   const [latestLoading, setLatestLoading] = useState(false);
   const [pagination, setPagination] = useState<PaginationState>({ page: 1, limit: 20, total: 0, pages: 0 });
-  const { showError } = useNotification();
 
   const initFetched = useRef(false);
 
@@ -114,7 +103,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       shortDescription: dbProduct.short_description || dbProduct.description?.slice(0, 100) || '',
       price: Number(dbProduct.price) || 0,
       originalPrice: dbProduct.original_price ? Number(dbProduct.original_price) : undefined,
-      categoryId: dbProduct.category_id,
+      categoryId: dbProduct.category_id || dbProduct.categoryId,
       images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80'],
       stock: dbProduct.stock ?? 100,
       minStockLevel: dbProduct.min_stock_level || 5,
@@ -122,14 +111,14 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       weight: dbProduct.weight,
       dimensions: dbProduct.dimensions,
       rating: parseFloat(dbProduct.rating) || 5.0,
-      reviewCount: dbProduct.review_count || 12,
+      reviewCount: dbProduct.review_count || 0,
       reviews: [],
       sellerId: dbProduct.seller_id,
       sellerName: dbProduct.seller_name || 'Verified Merchant',
       tags: dbProduct.tags || [],
       specifications: dbProduct.specifications || {},
       featured: dbProduct.is_featured || false,
-      showOnHomepage: dbProduct.show_on_homepage || true,
+      showOnHomepage: dbProduct.show_on_homepage ?? true,
       isActive: dbProduct.is_active ?? true,
       metaTitle: dbProduct.meta_title,
       metaDescription: dbProduct.meta_description,
@@ -148,7 +137,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     parentId: dbCategory.parent_id,
     isActive: dbCategory.is_active ?? true,
     sortOrder: dbCategory.sort_order || 0,
-    productCount: dbCategory.product_count || 1,
+    productCount: dbCategory.product_count || 0,
     createdAt: dbCategory.created_at ? new Date(dbCategory.created_at) : undefined,
     updatedAt: dbCategory.updated_at ? new Date(dbCategory.updated_at) : undefined,
   }), []);
@@ -156,33 +145,19 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const fetchCategories = useCallback(async (background = false, force = false) => {
     const keys = getCacheKeys();
     const cached = cacheGet<Category[]>(keys.categories);
-    if (cached) setCategories(cached);
-    if (cached && background && !force) return;
+    if (cached && !force) {
+      setCategories(cached);
+      if (background) return;
+    }
 
     try {
-      const storeHost = apiClient.getStoreHostname();
-      const headers: Record<string, string> = {};
-      if (storeHost) headers['x-store-hostname'] = storeHost;
-
-      const res = await fetch('/api/categories', { credentials: 'include', headers });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          const mapped = data.map(mapDbCategoryToAppCategory);
-          setCategories(mapped);
-          cacheSet(keys.categories, mapped);
-          return;
-        }
-      }
-      throw new Error("No categories returned");
+      const data = await apiClient.get('/categories');
+      const list = Array.isArray(data) ? data : (data?.data || []);
+      const mapped = list.map(mapDbCategoryToAppCategory);
+      setCategories(mapped);
+      cacheSet(keys.categories, mapped);
     } catch (error) {
-      if (!cached) {
-        setCategories([
-          { id: '1', name: 'Perfumes & Attars', slug: 'perfumes-attars', productCount: 4, sortOrder: 1, isActive: true, imageUrl: '' },
-          { id: '2', name: 'Oud & Woods', slug: 'oud-woods', productCount: 2, sortOrder: 2, isActive: true, imageUrl: '' },
-          { id: '3', name: 'Signature Blends', slug: 'signature-blends', productCount: 3, sortOrder: 3, isActive: true, imageUrl: '' },
-        ]);
-      }
+      console.warn("Failed to fetch categories:", error);
     }
   }, [mapDbCategoryToAppCategory]);
 
@@ -194,154 +169,106 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     const isDefault = page === 1 && (!filters || Object.keys(filters).length === 0);
     const cached = isDefault ? cacheGet<{ products: Product[]; pagination: PaginationState }>(cacheKey) : null;
 
-    if (cached) {
+    if (cached && !force) {
       setProducts(cached.products);
       setPagination(cached.pagination);
+      return;
     }
 
-    if (force || !cached) {
-      if (!cached) setLoading(true);
-      try {
-        const storeHost = apiClient.getStoreHostname();
-        const headers: Record<string, string> = {};
-        if (storeHost) headers['x-store-hostname'] = storeHost;
-
-        const res = await fetch('/api/products', { credentials: 'include', headers });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            const mapped = data.map(mapDbProductToAppProduct);
-            setProducts(mapped);
-            const pag = { page, limit, total: mapped.length, pages: 1 };
-            setPagination(pag);
-            if (isDefault) cacheSet(cacheKey, { products: mapped, pagination: pag });
-            return;
-          }
-        }
-        throw new Error("No products returned");
-      } catch (error) {
-        if (!cached) {
-          const fallback = MOCK_PRODUCTS.map(mapDbProductToAppProduct);
-          setProducts(fallback);
-        }
-      } finally {
-        if (!cached) setLoading(false);
-      }
+    setLoading(true);
+    try {
+      const data = await apiClient.get('/products');
+      const list = Array.isArray(data) ? data : (data?.data || []);
+      const mapped = list.map(mapDbProductToAppProduct);
+      setProducts(mapped);
+      const pag = { page, limit, total: mapped.length, pages: Math.max(1, Math.ceil(mapped.length / limit)) };
+      setPagination(pag);
+      if (isDefault) cacheSet(cacheKey, { products: mapped, pagination: pag });
+    } catch (error) {
+      console.warn("Failed to fetch products:", error);
+    } finally {
+      setLoading(false);
     }
   }, [mapDbProductToAppProduct]);
 
   const fetchFeaturedProducts = useCallback(async (limit: number = 8, force = false) => {
     const keys = getCacheKeys();
     const cached = cacheGet<Product[]>(keys.featured);
-    if (cached) { setFeaturedProducts(cached); setFeaturedLoading(false); }
-
-    if (force || !cached) {
-      if (!cached) setFeaturedLoading(true);
-      try {
-        const storeHost = apiClient.getStoreHostname();
-        const headers: Record<string, string> = {};
-        if (storeHost) headers['x-store-hostname'] = storeHost;
-
-        const res = await fetch('/api/products?featured=true', { credentials: 'include', headers });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            const mapped = data.map(mapDbProductToAppProduct).slice(0, limit);
-            setFeaturedProducts(mapped);
-            cacheSet(keys.featured, mapped);
-            return;
-          }
-        }
-        throw new Error("No products");
-      } catch {
-        if (!cached) {
-          setFeaturedProducts(MOCK_PRODUCTS.map(mapDbProductToAppProduct).slice(0, limit));
-        }
-      } finally {
-        if (!cached) setFeaturedLoading(false);
-      }
+    if (cached && !force) {
+      setFeaturedProducts(cached);
+      setFeaturedLoading(false);
+      return;
     }
-  }, [mapDbProductToAppProduct]);
+
+    setFeaturedLoading(true);
+    try {
+      const data = await apiClient.get('/products/featured');
+      const list = Array.isArray(data) ? data : (data?.data || []);
+      const mapped = list.map(mapDbProductToAppProduct).slice(0, limit);
+      setFeaturedProducts(mapped);
+      cacheSet(keys.featured, mapped);
+    } catch {
+      // Fall back to featured from products list
+      setFeaturedProducts(products.filter(p => p.featured).slice(0, limit));
+    } finally {
+      setFeaturedLoading(false);
+    }
+  }, [mapDbProductToAppProduct, products]);
 
   const fetchBestSellers = useCallback(async (limit: number = 8, force = false) => {
     const keys = getCacheKeys();
     const cached = cacheGet<Product[]>(keys.bestSellers);
-    if (cached) { setBestSellers(cached); setBestSellersLoading(false); }
-
-    if (force || !cached) {
-      if (!cached) setBestSellersLoading(true);
-      try {
-        const storeHost = apiClient.getStoreHostname();
-        const headers: Record<string, string> = {};
-        if (storeHost) headers['x-store-hostname'] = storeHost;
-
-        const res = await fetch('/api/products?bestsellers=true', { credentials: 'include', headers });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            const mapped = data.map(mapDbProductToAppProduct).slice(0, limit);
-            setBestSellers(mapped);
-            cacheSet(keys.bestSellers, mapped);
-            return;
-          }
-        }
-        throw new Error("No products");
-      } catch {
-        if (!cached) {
-          setBestSellers(MOCK_PRODUCTS.map(mapDbProductToAppProduct).slice(0, limit).reverse());
-        }
-      } finally {
-        if (!cached) setBestSellersLoading(false);
-      }
+    if (cached && !force) {
+      setBestSellers(cached);
+      setBestSellersLoading(false);
+      return;
     }
-  }, [mapDbProductToAppProduct]);
+
+    setBestSellersLoading(true);
+    try {
+      const data = await apiClient.get('/products');
+      const list = Array.isArray(data) ? data : (data?.data || []);
+      const mapped = list.map(mapDbProductToAppProduct).slice(0, limit);
+      setBestSellers(mapped);
+      cacheSet(keys.bestSellers, mapped);
+    } catch {
+      setBestSellers(products.slice(0, limit));
+    } finally {
+      setBestSellersLoading(false);
+    }
+  }, [mapDbProductToAppProduct, products]);
 
   const fetchLatestProducts = useCallback(async (limit: number = 8, force = false) => {
     const keys = getCacheKeys();
     const cached = cacheGet<Product[]>(keys.latest);
-    if (cached) { setLatestProducts(cached); setLatestLoading(false); }
-
-    if (force || !cached) {
-      if (!cached) setLatestLoading(true);
-      try {
-        const storeHost = apiClient.getStoreHostname();
-        const headers: Record<string, string> = {};
-        if (storeHost) headers['x-store-hostname'] = storeHost;
-
-        const res = await fetch('/api/products?latest=true', { credentials: 'include', headers });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            const mapped = data.map(mapDbProductToAppProduct).slice(0, limit);
-            setLatestProducts(mapped);
-            cacheSet(keys.latest, mapped);
-            return;
-          }
-        }
-        throw new Error("No products");
-      } catch {
-        if (!cached) {
-          setLatestProducts(MOCK_PRODUCTS.map(mapDbProductToAppProduct).slice(1, limit + 1));
-        }
-      } finally {
-        if (!cached) setLatestLoading(false);
-      }
+    if (cached && !force) {
+      setLatestProducts(cached);
+      setLatestLoading(false);
+      return;
     }
-  }, [mapDbProductToAppProduct]);
+
+    setLatestLoading(true);
+    try {
+      const data = await apiClient.get('/products');
+      const list = Array.isArray(data) ? data : (data?.data || []);
+      const mapped = list.map(mapDbProductToAppProduct).slice(0, limit);
+      setLatestProducts(mapped);
+      cacheSet(keys.latest, mapped);
+    } catch {
+      setLatestProducts(products.slice(0, limit));
+    } finally {
+      setLatestLoading(false);
+    }
+  }, [mapDbProductToAppProduct, products]);
 
   const getProductById = useCallback(async (id: string): Promise<Product | null> => {
     const local = products.find(p => p.id === id);
     if (local) return local;
 
     try {
-      const storeHost = apiClient.getStoreHostname();
-      const headers: Record<string, string> = {};
-      if (storeHost) headers['x-store-hostname'] = storeHost;
-
-      const res = await fetch(`/api/products/${id}`, { credentials: 'include', headers });
-      if (res.ok) {
-        const data = await res.json();
-        return mapDbProductToAppProduct(data);
+      const data = await apiClient.get(`/products/${id}`);
+      if (data) {
+        return mapDbProductToAppProduct(data?.data || data);
       }
     } catch {
       // Fall through
@@ -410,7 +337,6 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       fetchLatestProducts();
     }
   }, [fetchCategories, fetchProducts, fetchFeaturedProducts, fetchBestSellers, fetchLatestProducts]);
-
 
   return (
     <ProductContext.Provider

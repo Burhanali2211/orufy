@@ -47,7 +47,7 @@ export const CustomerPaymentsPage: React.FC = () => {
   const fetchPaymentMethods = async () => {
     try {
       const response = await apiClient.getPaymentMethods();
-      setPaymentMethods(response.data || []);
+      setPaymentMethods(Array.isArray(response) ? response : (response?.data || []));
     } catch (error) {
       console.error('Failed to fetch payment methods:', error);
       // Don't show error for empty results

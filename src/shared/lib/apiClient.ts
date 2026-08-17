@@ -183,6 +183,18 @@ class ApiClient {
         throw error;
       }
 
+      // If data is an array, ensure accessing .data returns the array itself for robust compatibility
+      if (Array.isArray(data)) {
+        try {
+          Object.defineProperty(data, 'data', {
+            value: data,
+            enumerable: false,
+            configurable: true,
+            writable: true
+          });
+        } catch (_) {}
+      }
+
       return data;
     } catch (error: any) {
       // Check if it's a 401 error from the response
