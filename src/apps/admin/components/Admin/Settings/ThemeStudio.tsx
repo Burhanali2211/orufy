@@ -412,16 +412,6 @@ export const ThemeStudio: React.FC = () => {
             </button>
           </div>
 
-          {/* Launch Full-Screen Hero Studio */}
-          <Link
-            to="/admin/hero-studio"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition-colors cursor-pointer"
-            title="Launch Full-Screen Hero Visual Studio (Elementor Pro Mode)"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span className="hidden sm:inline">Hero Studio ↗</span>
-          </Link>
-
           {/* Publish Live CTA */}
           <button
             type="button"
@@ -449,31 +439,30 @@ export const ThemeStudio: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedSectionId(null)}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-stone-900 transition-colors cursor-pointer"
+                className="text-xs font-bold text-stone-600 hover:text-stone-900 flex items-center gap-1.5 cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Navigator</span>
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Sections
               </button>
-              <span className="text-xs font-bold text-stone-900 bg-white px-2.5 py-1 rounded-lg border border-stone-200">
-                {selectedSection?.name || 'Section Inspector'}
+              <span className="text-xs font-bold text-stone-900 capitalize font-serif">
+                {selectedSection?.name || 'Section'}
               </span>
             </div>
           ) : (
-            <div className="grid grid-cols-4 p-1.5 bg-stone-100 border-b border-stone-200 gap-1">
+            <div className="grid grid-cols-4 p-1 bg-stone-100/80 border-b border-stone-200 gap-0.5">
               {[
-                { id: 'navigator', label: 'Blocks', icon: Layers },
-                { id: 'design', label: 'Colors & Fonts', icon: Palette },
-                { id: 'header', label: 'Header', icon: Layout },
-                { id: 'footer', label: 'Footer', icon: Store },
+                { id: 'sections', label: 'Layout Blocks', icon: Layout },
+                { id: 'palette', label: 'Colors & Fonts', icon: Palette },
+                { id: 'header', label: 'Header & Bar', icon: Sliders },
+                { id: 'footer', label: 'Footer & Trust', icon: ShieldCheck },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id as StudioTab)}
-                  className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
                     activeTab === tab.id
                       ? 'bg-white text-stone-900 shadow-xs'
-                      : 'text-stone-600 hover:text-stone-900'
+                      : 'text-stone-500 hover:text-stone-900'
                   }`}
                 >
                   <tab.icon className="w-3.5 h-3.5" />
@@ -485,34 +474,83 @@ export const ThemeStudio: React.FC = () => {
 
           {/* Inspector Body */}
           <div className="p-4 sm:p-5 flex-1 overflow-y-auto max-h-[660px] space-y-5">
-            {/* ── FOCUSED HERO INSPECTOR ── */}
+            {/* ── FOCUSED HERO INSPECTOR: 5 ENTERPRISE PREDEFINED DESIGNS ── */}
             {selectedSectionId === 'hero' && (
               <div className="space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1.5">
-                    Hero Layout Variant
+                    Predefined Enterprise Hero Designs
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <p className="text-[11px] text-stone-500 mb-3">
+                    Select a high-grade curated layout. Zero fluff, instant switch.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {[
-                      { id: 'carousel', label: 'Dynamic Carousel', icon: Layers },
-                      { id: 'split', label: 'Split Showcase', icon: Columns },
-                      { id: 'minimal', label: 'Editorial Minimal', icon: Layout },
-                      { id: 'immersive', label: 'Full Bleed', icon: Maximize2 },
-                    ].map((style) => (
-                      <button
-                        key={style.id}
-                        type="button"
-                        onClick={() => setHero({ ...hero, layout: style.id as any })}
-                        className={`p-2.5 rounded-xl border text-left text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-                          hero.layout === style.id
-                            ? 'border-stone-900 bg-stone-900 text-white shadow-xs'
-                            : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700'
-                        }`}
-                      >
-                        <style.icon className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="truncate">{style.label}</span>
-                      </button>
-                    ))}
+                      {
+                        id: 'carousel',
+                        label: 'Luxury Multi-Slide',
+                        desc: 'Auto-rotating stage with high-res imagery',
+                        icon: Layers,
+                        badge: 'Popular',
+                      },
+                      {
+                        id: 'apple_minimal',
+                        label: 'Apple Stage Minimal',
+                        desc: 'Massive typography, centered spotlight & whitespace',
+                        icon: Sparkles,
+                        badge: 'Clean',
+                      },
+                      {
+                        id: 'split',
+                        label: 'Haute Editorial Split',
+                        desc: '50/50 side-by-side with framed visual',
+                        icon: Columns,
+                      },
+                      {
+                        id: 'immersive',
+                        label: 'Cinematic Full-Bleed',
+                        desc: 'Dark photo backdrop with subtle vignette',
+                        icon: Maximize2,
+                      },
+                      {
+                        id: 'bento',
+                        label: 'Bento Grid Showcase',
+                        desc: 'Flagship hero + 2 mini feature tiles',
+                        icon: Grid,
+                        badge: 'Modern',
+                      },
+                    ].map((style) => {
+                      const isCurrent = hero.layout === style.id || (style.id === 'apple_minimal' && hero.layout === 'minimal');
+                      return (
+                        <button
+                          key={style.id}
+                          type="button"
+                          onClick={() => setHero({ ...hero, layout: (style.id === 'apple_minimal' ? 'apple_minimal' : style.id) as any })}
+                          className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                            isCurrent
+                              ? 'border-stone-900 bg-stone-900 text-white shadow-sm ring-1 ring-stone-900'
+                              : 'border-stone-200 bg-stone-50/70 hover:bg-stone-100 text-stone-800'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className={`p-1.5 rounded-lg ${isCurrent ? 'bg-white/20 text-white' : 'bg-stone-200/80 text-stone-700'}`}>
+                              <style.icon className="w-3.5 h-3.5" />
+                            </div>
+                            {style.badge && (
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${isCurrent ? 'bg-white text-stone-900' : 'bg-stone-200 text-stone-800'}`}>
+                                {style.badge}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold leading-tight">{style.label}</p>
+                            <p className={`text-[10px] mt-0.5 leading-snug ${isCurrent ? 'text-stone-300' : 'text-stone-500'}`}>
+                              {style.desc}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

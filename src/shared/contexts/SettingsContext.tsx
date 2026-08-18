@@ -17,7 +17,7 @@ export interface HeroSlide {
 }
 
 export interface StorefrontHero {
-  layout?: 'carousel' | 'split' | 'minimal' | 'immersive';
+  layout?: 'carousel' | 'split' | 'minimal' | 'immersive' | 'apple_minimal' | 'bento';
   topTitle?: string;
   titleMain?: string;
   subtitle?: string;

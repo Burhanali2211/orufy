@@ -16,18 +16,11 @@ import { PolicyPagesManager } from './PolicyPagesManager';
 
 const settingsNav = [
   {
-    name: 'Hero Visual Studio (Elementor Pro Mode)',
-    path: '/admin/hero-studio',
-    icon: Sliders,
-    badge: 'Pro Studio',
-    description: 'Full-screen visual canvas editor for carousel slide images, typography scaling, button styles, and AI palette extraction.',
-  },
-  {
     name: 'Theme Studio & Live Visuals',
     path: '/admin/settings/theme-studio',
     icon: Sliders,
     badge: 'Popular',
-    description: 'Visual live customizer for layout sections, font pairings, color palettes, and announcement bar.',
+    description: 'Visual live customizer for layout sections, enterprise hero presets, font pairings, color palettes, and announcement bar.',
   },
   {
     name: 'Store Identity & Logo',
