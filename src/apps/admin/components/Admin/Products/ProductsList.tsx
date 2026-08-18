@@ -238,7 +238,7 @@ export const ProductsList: React.FC = () => {
           </button>
           <button
             onClick={() => navigate('/admin/products/add')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors shadow-sm flex-shrink-0 text-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl font-medium transition-colors shadow-sm flex-shrink-0 text-sm"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Add Product</span>

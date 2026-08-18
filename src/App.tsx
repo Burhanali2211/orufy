@@ -1,6 +1,5 @@
 import React, { Suspense, useEffect, lazy, memo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import './shared/styles/pwa-responsive.css';
 import { CombinedProvider } from '@/shared/contexts/CombinedProvider';
 import { Layout } from '@/shared/components/Layout/Layout';
 import { ErrorBoundary } from '@/shared/components/Common/ErrorBoundary';

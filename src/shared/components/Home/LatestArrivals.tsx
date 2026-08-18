@@ -80,8 +80,8 @@ export const LatestArrivals: React.FC = memo(() => {
               </button>
             </div>
             
-            <Link to="/products?sort=latest" className="group flex items-center gap-1.5 text-[14px] font-medium text-[#1A73E8] hover:text-[#1557B0] transition-colors">
-              View All <ArrowRight className="h-4 w-4" />
+            <Link to="/products?sort=latest" className="group flex items-center gap-1.5 text-[14px] font-medium text-stone-900 hover:text-stone-600 transition-colors">
+              View All <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
         </div>

@@ -155,12 +155,12 @@ export const DEFAULT_THEME_STUDIO: StorefrontThemeStudio = {
   palette: {
     id: 'classic_luxury',
     name: 'Classic Luxury',
-    primary: '#1c1917',
-    accent: '#8c7e5a',
-    background: '#fafaf9',
+    primary: '#09090b',
+    accent: '#18181b',
+    background: '#fafafa',
     surface: '#ffffff',
-    text: '#1c1917',
-    mutedText: '#78716c',
+    text: '#09090b',
+    mutedText: '#71717a',
   },
   typography: {
     headingFont: 'Inter',
@@ -298,12 +298,18 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const applyBrandTheme = (themeConfig?: StorefrontThemeStudio, fallbackPrimary?: string, fallbackAccent?: string) => {
     if (typeof document === 'undefined') return;
-    const primary = themeConfig?.palette?.primary || fallbackPrimary || '#8c7e5a';
-    const accent = themeConfig?.palette?.accent || fallbackAccent || '#bfa760';
+    const primary = themeConfig?.palette?.primary || fallbackPrimary || '#09090b';
+    const accent = themeConfig?.palette?.accent || fallbackAccent || '#18181b';
+    const background = themeConfig?.palette?.background || '#fafafa';
+    const surface = themeConfig?.palette?.surface || '#ffffff';
     const headingFont = themeConfig?.typography?.headingFont || 'Inter';
 
     document.documentElement.style.setProperty('--brand-primary', primary);
     document.documentElement.style.setProperty('--brand-accent', accent);
+    document.documentElement.style.setProperty('--brand-bg', background);
+    document.documentElement.style.setProperty('--brand-surface', surface);
+    document.documentElement.style.setProperty('--color-primary', primary);
+    document.documentElement.style.setProperty('--color-accent', accent);
     document.documentElement.style.setProperty('--brand-font-heading', headingFont);
 
     if (headingFont && headingFont !== 'Inter') {
@@ -348,8 +354,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             announcementBar: data.identity?.announcementBar || '',
           },
           branding: {
-            primary: data.branding?.primary || '#8c7e5a',
-            accent: data.branding?.accent || '#bfa760',
+            primary: data.branding?.primary || '#09090b',
+            accent: data.branding?.accent || '#18181b',
             typography: data.branding?.typography || 'Inter',
           },
           hero: data.hero || DEFAULT_CONFIG.hero,

@@ -228,20 +228,20 @@ export const OrderConfirmationPage: React.FC = () => {
 
           {/* Carrier & Tracking AWB Card (When available) */}
           {order.tracking_number && (
-            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-stone-900 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
                   <Truck className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-blue-900">
+                  <div className="text-xs font-semibold text-stone-900">
                     Carrier: {order.carrier || 'Standard Courier'}
                   </div>
-                  <div className="font-mono text-xs text-blue-700 font-semibold flex items-center gap-1.5 mt-0.5">
+                  <div className="font-mono text-xs text-stone-600 font-semibold flex items-center gap-1.5 mt-0.5">
                     AWB: {order.tracking_number}
                     <button
                       onClick={copyTrackingNumber}
-                      className="p-0.5 hover:bg-blue-200 rounded text-blue-800 transition-colors"
+                      className="p-0.5 hover:bg-stone-200 rounded text-stone-700 transition-colors"
                       title="Copy Tracking Number"
                     >
                       {copiedTracking ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}

@@ -239,13 +239,13 @@ const ProductsPage: React.FC = () => {
                                     onClick={() => handleFilterChange('category', '')}
                                     className={`flex items-center justify-between w-full px-3 py-2.5 text-[13px] font-medium rounded-xl transition-all cursor-pointer ${
                                         filters.category === ''
-                                            ? 'bg-[#e8f0fe] text-[#1A73E8]'
-                                            : 'text-[#3c4043] hover:bg-[#f1f3f4]'
+                                            ? 'bg-stone-900 text-white shadow-xs'
+                                            : 'text-stone-700 hover:bg-stone-100'
                                     }`}
                                 >
                                     <span>All Categories</span>
                                     <span className={`text-[11px] px-2 py-0.5 rounded-full ${
-                                        filters.category === '' ? 'bg-[#1A73E8] text-white' : 'bg-[#f1f3f4] text-[#5f6368]'
+                                        filters.category === '' ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-600'
                                     }`}>
                                         {products.length}
                                     </span>
@@ -262,13 +262,13 @@ const ProductsPage: React.FC = () => {
                                             onClick={() => handleFilterChange('category', isSelected ? '' : c.id)}
                                             className={`flex items-center justify-between w-full px-3 py-2.5 text-[13px] font-medium rounded-xl transition-all cursor-pointer ${
                                                 isSelected
-                                                    ? 'bg-[#e8f0fe] text-[#1A73E8]'
-                                                    : 'text-[#3c4043] hover:bg-[#f1f3f4]'
+                                                    ? 'bg-stone-900 text-white shadow-xs'
+                                                    : 'text-stone-700 hover:bg-stone-100'
                                             }`}
                                         >
                                             <span className="truncate pr-2">{c.name}</span>
                                             <span className={`text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 ${
-                                                isSelected ? 'bg-[#1A73E8] text-white' : 'bg-[#f1f3f4] text-[#5f6368]'
+                                                isSelected ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-600'
                                             }`}>
                                                 {count}
                                             </span>
@@ -279,7 +279,7 @@ const ProductsPage: React.FC = () => {
                                 {categories.length > 7 && (
                                     <button
                                         onClick={() => setShowAllCategories(!showAllCategories)}
-                                        className="w-full text-center py-2 text-[12px] font-medium text-[#1A73E8] hover:bg-[#f8f9fa] rounded-xl transition-colors mt-1"
+                                        className="w-full text-center py-2 text-[12px] font-medium text-stone-900 hover:bg-stone-100 rounded-xl transition-colors mt-1"
                                     >
                                         {showAllCategories ? 'Show Less ↑' : `+ ${categories.length - 7} More Categories`}
                                     </button>
@@ -312,7 +312,7 @@ const ProductsPage: React.FC = () => {
                                             handleFilterChange('priceRange', [0, val]);
                                         }, 300);
                                     }}
-                                    className="w-full h-1 bg-[#dadce0] rounded-full appearance-none cursor-pointer accent-[#1A73E8]"
+                                    className="w-full h-1 bg-stone-200 rounded-full appearance-none cursor-pointer accent-stone-900"
                                 />
                                 <div className="flex flex-wrap gap-2 pt-1">
                                     {[299, 499, 999, 2000].map(p => (
@@ -324,8 +324,8 @@ const ProductsPage: React.FC = () => {
                                             }}
                                             className={`text-[12px] px-3 py-1.5 rounded-full border cursor-pointer font-medium transition-colors ${
                                                 priceSliderValue === p
-                                                    ? 'bg-[#e8f0fe] text-[#1A73E8] border-[#1A73E8]'
-                                                    : 'bg-white text-[#5f6368] border-[#dadce0] hover:bg-[#f8f9fa]'
+                                                    ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                                                    : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
                                             }`}
                                         >
                                             Under ₹{p.toLocaleString()}
@@ -347,18 +347,18 @@ const ProductsPage: React.FC = () => {
                                         key={stars}
                                         onClick={() => handleFilterChange('rating', filters.rating === stars ? 0 : stars)}
                                         className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all ${
-                                            filters.rating === stars ? 'bg-[#e8f0fe] text-[#1A73E8]' : 'text-[#3c4043] hover:bg-[#f1f3f4]'
+                                            filters.rating === stars ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-700 hover:bg-stone-100'
                                         }`}
                                     >
                                         <div className="flex items-center gap-1.5">
                                             <div className="flex items-center">
                                                 {Array.from({ length: 5 }).map((_, i) => (
-                                                    <Star key={i} className={`h-3.5 w-3.5 ${i < stars ? 'fill-[#fbbc04] text-[#fbbc04]' : 'fill-[#dadce0] text-[#dadce0]'}`} />
+                                                    <Star key={i} className={`h-3.5 w-3.5 ${i < stars ? 'fill-amber-400 text-amber-400' : 'fill-stone-200 text-stone-200'}`} />
                                                 ))}
                                             </div>
                                             <span>& Up</span>
                                         </div>
-                                        {filters.rating === stars && <Check className="w-4 h-4 text-[#1A73E8]" />}
+                                        {filters.rating === stars && <Check className="w-4 h-4 text-white" />}
                                     </button>
                                 ))}
                             </div>
@@ -376,9 +376,9 @@ const ProductsPage: React.FC = () => {
                                         type="checkbox"
                                         checked={filters.availability === 'in-stock'}
                                         onChange={() => handleFilterChange('availability', filters.availability === 'in-stock' ? 'all' : 'in-stock')}
-                                        className="w-4 h-4 rounded border-[#dadce0] text-[#1A73E8] focus:ring-[#1A73E8]"
+                                        className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900"
                                     />
-                                    <span className="text-[13px] text-[#5f6368] font-medium group-hover:text-[#202124]">In Stock Only</span>
+                                    <span className="text-[13px] text-stone-600 font-medium group-hover:text-stone-900">In Stock Only</span>
                                 </label>
                             </div>
                         </FilterSection>
@@ -390,19 +390,19 @@ const ProductsPage: React.FC = () => {
                 <main className="flex-1 min-w-0">
                     
                     {/* Top Control Bar */}
-                    <div className="hidden md:flex bg-white rounded-[24px] border border-black/[0.05] p-4 mb-6 flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                    <div className="hidden md:flex bg-white rounded-[24px] border border-stone-200 p-4 mb-6 flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shadow-xs">
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setIsFilterOpen(!isFilterOpen)}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-[13px] font-medium transition-all ${
-                                    isFilterOpen ? 'bg-[#e8f0fe] text-[#1A73E8] border-[#1A73E8]' : 'bg-white text-[#5f6368] border-[#dadce0] hover:bg-[#f8f9fa]'
+                                    isFilterOpen ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
                                 }`}
                             >
                                 <SlidersHorizontal className="h-4 w-4" />
                                 <span>Filter</span>
                             </button>
-                            <span className="text-[13px] font-medium text-[#5f6368]">
-                                Showing <strong className="text-[#202124]">{sortedProducts.length}</strong> Products
+                            <span className="text-[13px] font-medium text-stone-500">
+                                Showing <strong className="text-stone-900">{sortedProducts.length}</strong> Products
                             </span>
                         </div>
 
@@ -411,7 +411,7 @@ const ProductsPage: React.FC = () => {
                             <select
                                 value={filters.sortBy}
                                 onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                                className="h-10 bg-white border border-[#dadce0] rounded-xl text-[13px] font-medium px-4 focus:outline-none focus:ring-1 focus:ring-[#1A73E8] focus:border-[#1A73E8] cursor-pointer text-[#3c4043]"
+                                className="h-10 bg-white border border-stone-200 rounded-xl text-[13px] font-medium px-4 focus:outline-none focus:ring-1 focus:ring-stone-900 focus:border-stone-900 cursor-pointer text-stone-800"
                             >
                                 <option value="newest">Sort by: Newest Arrivals</option>
                                 <option value="price-low-high">Price: Low to High</option>
@@ -505,16 +505,16 @@ const ProductsPage: React.FC = () => {
                             <button 
                                 onClick={() => { fetchProducts(pagination.page - 1, 40, { categoryId: filters.category || undefined, search: filters.search || undefined }); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                                 disabled={pagination.page === 1}
-                                className="w-10 h-10 flex items-center justify-center rounded-full border border-[#dadce0] bg-white hover:bg-[#f8f9fa] disabled:opacity-30 transition-colors cursor-pointer"
+                                className="w-10 h-10 flex items-center justify-center rounded-full border border-stone-200 bg-white hover:bg-stone-50 disabled:opacity-30 transition-colors cursor-pointer"
                             >
-                                <ChevronLeft className="h-4 w-4" />
+                                <ChevronLeft className="h-4 w-4 text-stone-700" />
                             </button>
                             <div className="flex gap-1.5">
                                 {Array.from({ length: pagination.pages }).map((_, i) => (
-                                    <button 
+                                     <button 
                                         key={i}
                                         onClick={() => { fetchProducts(i + 1, 40, { categoryId: filters.category || undefined, search: filters.search || undefined }); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                                        className={`w-10 h-10 rounded-full text-[14px] font-medium transition-all cursor-pointer ${pagination.page === i + 1 ? 'bg-[#1A73E8] text-white' : 'bg-white text-[#3c4043] border border-[#dadce0] hover:bg-[#f8f9fa]'}`}
+                                        className={`w-10 h-10 rounded-full text-[14px] font-medium transition-all cursor-pointer ${pagination.page === i + 1 ? 'bg-stone-900 text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'}`}
                                     >
                                         {i + 1}
                                     </button>
@@ -523,9 +523,9 @@ const ProductsPage: React.FC = () => {
                             <button 
                                 onClick={() => { fetchProducts(pagination.page + 1, 40, { categoryId: filters.category || undefined, search: filters.search || undefined }); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                                 disabled={pagination.page === pagination.pages}
-                                className="w-10 h-10 flex items-center justify-center rounded-full border border-[#dadce0] bg-white hover:bg-[#f8f9fa] disabled:opacity-30 transition-colors cursor-pointer"
+                                className="w-10 h-10 flex items-center justify-center rounded-full border border-stone-200 bg-white hover:bg-stone-50 disabled:opacity-30 transition-colors cursor-pointer"
                             >
-                                <ChevronRight className="h-4 w-4" />
+                                <ChevronRight className="h-4 w-4 text-stone-700" />
                             </button>
                         </div>
                     )}

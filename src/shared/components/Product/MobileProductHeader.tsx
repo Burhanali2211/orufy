@@ -74,15 +74,15 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                         placeholder="Search products..."
                         value={searchValue}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-[#f1f3f4] rounded-full text-[14px] font-medium text-[#202124] placeholder:text-[#5f6368] focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#1A73E8] transition-colors"
+                        className="w-full pl-10 pr-4 py-2.5 bg-stone-100 rounded-full text-[14px] font-medium text-stone-900 placeholder:text-stone-500 focus:outline-none focus:bg-white focus:ring-1 focus:ring-stone-900 transition-colors"
                     />
                 </div>
                 <button
                     onClick={onFilterClick}
                     className={`flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full transition-all ${
                         isFilterActive
-                            ? 'bg-[#e8f0fe] text-[#1A73E8]'
-                            : 'bg-[#f1f3f4] text-[#5f6368] hover:bg-[#e8eaed]'
+                            ? 'bg-stone-900 text-white shadow-xs'
+                            : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                     }`}
                     title="Toggle filters"
                 >
@@ -101,8 +101,8 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                         onClick={() => onCategoryChange('')}
                         className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors flex-shrink-0 border ${
                             selectedCategory === ''
-                                ? 'bg-[#e8f0fe] text-[#1A73E8] border-[#1A73E8]'
-                                : 'bg-white border-[#dadce0] text-[#5f6368] hover:bg-[#f8f9fa]'
+                                ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                                : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
                         }`}
                     >
                         All Items
@@ -115,8 +115,8 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                             onClick={() => onCategoryChange(category.id)}
                             className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors flex-shrink-0 border ${
                                 selectedCategory === category.id
-                                    ? 'bg-[#e8f0fe] text-[#1A73E8] border-[#1A73E8]'
-                                    : 'bg-white border-[#dadce0] text-[#5f6368] hover:bg-[#f8f9fa]'
+                                    ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                                    : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
                             }`}
                         >
                             {category.name}
@@ -125,7 +125,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                 </div>
 
                 {/* View mode toggle */}
-                <div className="flex bg-[#f1f3f4] rounded-full p-1 shrink-0">
+                <div className="flex bg-stone-100 rounded-full p-1 shrink-0">
                     <button
                         onClick={() => onViewModeChange('grid')}
                         className={`p-1.5 rounded-full flex items-center justify-center transition-colors ${

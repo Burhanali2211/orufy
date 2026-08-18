@@ -552,7 +552,7 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
                   <button
                     onClick={handleUpdateTracking}
                     disabled={updateMutation.isPending}
-                    className="mt-2.5 w-full px-4 py-2.5 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                    className="mt-2.5 w-full px-4 py-2.5 bg-stone-900 text-white rounded-xl hover:bg-stone-800 disabled:opacity-50 transition-colors font-medium text-sm flex items-center justify-center gap-2"
                   >
                     {updateMutation.isPending ? <RefreshCw className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4" />}
                     {trackingNumber.trim() ? 'Save Tracking' : 'Clear Tracking'}

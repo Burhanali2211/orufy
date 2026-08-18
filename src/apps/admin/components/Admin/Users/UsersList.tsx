@@ -159,7 +159,7 @@ export const UsersList: React.FC = () => {
               if (p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)) {
                 return (
                   <button key={p} onClick={() => setCurrentPage(p)}
-                    className={`min-w-[32px] h-8 rounded-full text-sm font-medium transition-colors ${p === currentPage ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+                    className={`min-w-[32px] h-8 rounded-full text-sm font-medium transition-colors ${p === currentPage ? 'bg-stone-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
                     {p}
                   </button>
                 );
@@ -192,7 +192,7 @@ export const UsersList: React.FC = () => {
         </div>
         <button
           onClick={() => { setSelectedUser(null); setShowFormModal(true); }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors min-h-11 shadow-sm text-sm"
+          className="flex items-center gap-2 px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl font-medium transition-colors min-h-11 shadow-sm text-sm"
         >
           <Plus className="h-5 w-5" />
           <span className="hidden sm:inline">Add User</span>

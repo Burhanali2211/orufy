@@ -39,13 +39,13 @@ import {
 const CURATED_PALETTES = [
   {
     id: 'classic_luxury',
-    name: 'Classic Luxury',
-    primary: '#1c1917',
-    accent: '#8c7e5a',
-    background: '#fafaf9',
+    name: 'Obsidian Flagship',
+    primary: '#09090b',
+    accent: '#18181b',
+    background: '#fafafa',
     surface: '#ffffff',
-    text: '#1c1917',
-    mutedText: '#78716c',
+    text: '#09090b',
+    mutedText: '#71717a',
   },
   {
     id: 'obsidian_gold',

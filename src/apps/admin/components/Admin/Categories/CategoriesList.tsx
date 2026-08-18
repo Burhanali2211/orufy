@@ -184,7 +184,7 @@ export const CategoriesList: React.FC = () => {
           </button>
           <button
             onClick={() => navigate('/admin/categories/add')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors min-h-11 shadow-sm text-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl font-medium transition-colors min-h-11 shadow-sm text-sm"
           >
             <Plus className="h-5 w-5" />
             <span>Add Category</span>

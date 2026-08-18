@@ -74,29 +74,29 @@ export const Footer: React.FC = () => {
                   {siteName.charAt(0).toUpperCase()}
                 </div>
               )}
-              <span className="font-medium text-[20px] text-[#202124] tracking-tight group-hover:text-[#1A73E8] transition-colors">
+              <span className="font-medium text-[20px] text-stone-900 tracking-tight group-hover:text-stone-700 transition-colors">
                 {siteName}
               </span>
             </Link>
 
-            <p className="text-[#5f6368] leading-relaxed text-[14px] max-w-sm">
+            <p className="text-stone-500 leading-relaxed text-[14px] max-w-sm">
               Discover curated luxury essentials and artisanal collections. Designed for seamless shopping, instant fulfillment, and complete peace of mind.
             </p>
 
             <div className="space-y-3 pt-2">
-              <span className="block text-[13px] font-medium text-[#202124] uppercase tracking-wide">
+              <span className="block text-[13px] font-medium text-stone-900 uppercase tracking-wide">
                 Get Updates & Exclusive Drops
               </span>
               <form onSubmit={(e) => e.preventDefault()} className="relative max-w-sm flex items-center">
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="w-full pl-4 pr-12 py-3.5 bg-white border border-[#dadce0] rounded-2xl text-[14px] font-medium text-[#202124] placeholder:text-[#5f6368] outline-none focus:border-[#1A73E8] focus:ring-1 focus:ring-[#1A73E8] transition-all"
+                  className="w-full pl-4 pr-12 py-3.5 bg-white border border-stone-200 rounded-2xl text-[14px] font-medium text-stone-900 placeholder:text-stone-400 outline-none focus:border-stone-900 focus:ring-1 focus:ring-stone-900 transition-all"
                 />
                 <button
                   type="submit"
                   aria-label="Subscribe to newsletter"
-                  className="absolute right-1.5 top-1.5 bottom-1.5 px-3.5 bg-[#f1f3f4] text-[#202124] rounded-xl hover:bg-[#e8eaed] transition-all flex items-center justify-center active:scale-95 cursor-pointer"
+                  className="absolute right-1.5 top-1.5 bottom-1.5 px-3.5 bg-stone-900 text-white rounded-xl hover:bg-stone-800 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -108,7 +108,7 @@ export const Footer: React.FC = () => {
           <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-8 sm:gap-12">
             {DEFAULT_FOOTER_SECTIONS.map((section) => (
               <div key={section.title} className="space-y-4">
-                <h4 className="text-[13px] font-medium text-[#202124] uppercase tracking-wide">
+                <h4 className="text-[13px] font-medium text-stone-900 uppercase tracking-wide">
                   {section.title}
                 </h4>
                 <ul className="space-y-3">
@@ -116,7 +116,7 @@ export const Footer: React.FC = () => {
                     <li key={link.url}>
                       <Link
                         to={link.url}
-                        className="text-[#5f6368] hover:text-[#1A73E8] text-[14px] font-medium transition-colors inline-flex items-center group"
+                        className="text-stone-500 hover:text-stone-900 text-[14px] font-medium transition-colors inline-flex items-center group"
                       >
                         {link.text}
                       </Link>
@@ -130,22 +130,22 @@ export const Footer: React.FC = () => {
 
         {/* Contact Info Row */}
         {(contactEmail || contactPhone || contactAddress) && (
-          <div className="border-t border-black/[0.05] mt-12 pt-8 flex flex-wrap items-center gap-6 text-[14px] text-[#5f6368]">
+          <div className="border-t border-stone-100 mt-12 pt-8 flex flex-wrap items-center gap-6 text-[14px] text-stone-500">
             {contactEmail && (
-              <a href={`mailto:${contactEmail}`} className="inline-flex items-center gap-2 hover:text-[#1A73E8] transition-colors font-medium">
-                <Mail className="w-4 h-4 text-[#5f6368]" />
+              <a href={`mailto:${contactEmail}`} className="inline-flex items-center gap-2 hover:text-stone-900 transition-colors font-medium">
+                <Mail className="w-4 h-4 text-stone-500" />
                 <span>{contactEmail}</span>
               </a>
             )}
             {contactPhone && (
-              <a href={`tel:${contactPhone}`} className="inline-flex items-center gap-2 hover:text-[#1A73E8] transition-colors font-medium">
-                <Phone className="w-4 h-4 text-[#5f6368]" />
+              <a href={`tel:${contactPhone}`} className="inline-flex items-center gap-2 hover:text-stone-900 transition-colors font-medium">
+                <Phone className="w-4 h-4 text-stone-500" />
                 <span>{contactPhone}</span>
               </a>
             )}
             {contactAddress && (
-              <div className="inline-flex items-center gap-2 font-medium">
-                <MapPin className="w-4 h-4 text-[#5f6368]" />
+              <div className="inline-flex items-center gap-2 font-medium text-stone-600">
+                <MapPin className="w-4 h-4 text-stone-500" />
                 <span>{contactAddress}</span>
               </div>
             )}
@@ -154,16 +154,16 @@ export const Footer: React.FC = () => {
       </div>
 
       {/* Clean Bottom Copyright Bar */}
-      <div className="border-t border-black/[0.05] py-6 text-[13px] text-[#5f6368]">
+      <div className="border-t border-stone-100 py-6 text-[13px] text-stone-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="font-medium text-center sm:text-left">
             &copy; {currentYear} {siteName}. All rights reserved.
           </p>
           <div className="flex items-center gap-6 font-medium">
-            <Link to="/privacy-policy" className="hover:text-[#1A73E8] transition-colors">Privacy</Link>
-            <Link to="/terms-of-service" className="hover:text-[#1A73E8] transition-colors">Terms</Link>
-            <Link to="/refund-policy" className="hover:text-[#1A73E8] transition-colors">Refunds</Link>
-            <Link to="/shipping-policy" className="hover:text-[#1A73E8] transition-colors">Shipping</Link>
+            <Link to="/privacy-policy" className="hover:text-stone-900 transition-colors">Privacy</Link>
+            <Link to="/terms-of-service" className="hover:text-stone-900 transition-colors">Terms</Link>
+            <Link to="/refund-policy" className="hover:text-stone-900 transition-colors">Refunds</Link>
+            <Link to="/shipping-policy" className="hover:text-stone-900 transition-colors">Shipping</Link>
           </div>
         </div>
       </div>

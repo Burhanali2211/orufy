@@ -159,7 +159,7 @@ export const OrdersList: React.FC = () => {
               if (p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)) {
                 return (
                   <button key={p} onClick={() => setCurrentPage(p)}
-                    className={`min-w-[32px] h-8 rounded-full text-sm font-medium transition-colors ${p === currentPage ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+                    className={`min-w-[32px] h-8 rounded-full text-sm font-medium transition-colors ${p === currentPage ? 'bg-stone-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
                     {p}
                   </button>
                 );

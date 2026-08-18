@@ -146,7 +146,7 @@ const SearchBar: React.FC<{ mobile?: boolean; isLight?: boolean }> = ({ mobile =
                 ))}
                 <button
                   onClick={goToSearch}
-                  className="w-full mt-2 py-3 text-[14px] font-medium text-[#1A73E8] bg-[#f8f9fa] hover:bg-[#f1f3f4] rounded-[16px] transition-all flex items-center justify-center gap-2"
+                  className="w-full mt-2 py-3 text-[14px] font-medium text-stone-900 bg-stone-100 hover:bg-stone-200 rounded-[16px] transition-all flex items-center justify-center gap-2"
                 >
                   View All Collections
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -262,7 +262,7 @@ export const Header: React.FC<HeaderProps> = ({ onAuthClick, onCartClick }) => {
             >
               <Heart className="h-5 w-5" />
               {wishlistItems.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#1A73E8] rounded-full border border-white"></span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-stone-900 rounded-full border border-white"></span>
               )}
             </Link>
 
@@ -274,7 +274,7 @@ export const Header: React.FC<HeaderProps> = ({ onAuthClick, onCartClick }) => {
               <div className="relative">
                 <ShoppingCart className="h-5 w-5" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-[#1A73E8] text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                  <span className="absolute -top-1.5 -right-1.5 bg-stone-900 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                     {itemCount}
                   </span>
                 )}

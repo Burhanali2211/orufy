@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 /* ── Brand palette ─────────────────────────────────────────── */
 const BRAND_PALETTES = [
-  { name: 'Noir',       hex: '#1d1d1f', light: '#f5f5f7', label: 'Minimalist luxury' },
+  { name: 'Noir',       hex: '#09090b', light: '#f4f4f5', label: 'Minimalist luxury' },
   { name: 'Gold',       hex: '#92784c', light: '#faf8f2', label: 'Artisanal heritage' },
   { name: 'Emerald',    hex: '#0d7a6b', light: '#f0faf8', label: 'Botanical & organic' },
   { name: 'Crimson',    hex: '#be123c', light: '#fff1f2', label: 'Bold & couture' },
@@ -42,10 +42,10 @@ const FONT_OPTIONS = [
 
 export const BrandThemeStep: React.FC = () => {
   const { data, updateBrand, nextStep, prevStep } = useOnboarding();
-  const [customHex, setCustomHex] = useState(data.brand.primaryColor || '#1d1d1f');
+  const [customHex, setCustomHex] = useState(data.brand.primaryColor || '#09090b');
   const [logoPreview, setLogoPreview] = useState<string | null>(data.brand.logoUrl || null);
 
-  const selectedColor = data.brand.primaryColor || '#1d1d1f';
+  const selectedColor = data.brand.primaryColor || '#09090b';
   const selectedFont = data.brand.fontPairing || 'sans';
 
   const handleColorSelect = (hex: string) => {
