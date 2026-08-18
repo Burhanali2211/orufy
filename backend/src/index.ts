@@ -85,9 +85,9 @@ app.get('/api/store/settings', requireStore, async (req, res) => {
     }
 
     let themeStudioConfig = null;
-    if (settingsMap['theme_studio_settings']) {
+    if (settingsMap['theme_studio_settings'] || settingsMap['theme_studio']) {
       try {
-        themeStudioConfig = JSON.parse(settingsMap['theme_studio_settings']);
+        themeStudioConfig = JSON.parse(settingsMap['theme_studio_settings'] || settingsMap['theme_studio']);
       } catch (_) {}
     }
 
@@ -101,8 +101,8 @@ app.get('/api/store/settings', requireStore, async (req, res) => {
         announcementBar: settingsMap['announcement_bar'] || 'Complimentary shipping on orders above ₹499',
       },
       branding: {
-        primary: settingsMap['brand_primary'] || '#8c7e5a',
-        accent: settingsMap['brand_accent'] || '#bfa760',
+        primary: settingsMap['brand_primary'] || '#09090b',
+        accent: settingsMap['brand_accent'] || '#18181b',
         typography: settingsMap['brand_typography'] || 'Inter',
       },
       theme: themeStudioConfig,

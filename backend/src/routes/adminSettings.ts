@@ -337,6 +337,11 @@ adminSettingsRouter.get('/hero', requireAuth, requireStore, async (req: Request,
   try {
     const storeId = getStoreId(req, res);
     const [heroRow] = await withStoreContext(storeId, () =>
+// --- Hero Settings ---
+adminSettingsRouter.get('/hero', requireAuth, requireStore, async (req: Request, res: Response) => {
+  try {
+    const storeId = getStoreId(req, res);
+    const [heroRow] = await withStoreContext(storeId, () =>
       db.select().from(site_settings).where(and(eq(site_settings.store_id, storeId), eq(site_settings.setting_key, 'hero_settings')))
     );
     let hero = null;
@@ -398,12 +403,20 @@ adminSettingsRouter.get('/branding', requireAuth, requireStore, async (req: Requ
     const settingsMap: Record<string, string> = {};
     siteSettingsRows.forEach(r => { settingsMap[r.setting_key] = r.setting_value || ''; });
 
+    let themeStudio = null;
+    if (settingsMap['theme_studio_settings'] || settingsMap['theme_studio']) {
+      try {
+        themeStudio = JSON.parse(settingsMap['theme_studio_settings'] || settingsMap['theme_studio']);
+      } catch (_) {}
+    }
+
     res.json({
       name: store?.name || '',
       logo_url: store?.logo_url || settingsMap['site_logo'] || '',
       announcement_bar: settingsMap['announcement_bar'] || '',
-      primary_color: settingsMap['brand_primary'] || '#8c7e5a',
-      accent_color: settingsMap['brand_accent'] || '#bfa760',
+      primary_color: settingsMap['brand_primary'] || '#09090b',
+      accent_color: settingsMap['brand_accent'] || '#18181b',
+      theme_studio: themeStudio,
     });
   } catch (error) {
     console.error('Error fetching branding:', error);
@@ -414,7 +427,7 @@ adminSettingsRouter.get('/branding', requireAuth, requireStore, async (req: Requ
 adminSettingsRouter.post('/branding', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const { name, logo_url, announcement_bar, primary_color, accent_color } = req.body;
+    const { name, logo_url, announcement_bar, primary_color, accent_color, theme_studio } = req.body;
     const userId = res.locals.user?.id || (req as any).user?.id;
 
     if (name !== undefined || logo_url !== undefined) {
@@ -428,30 +441,33 @@ adminSettingsRouter.post('/branding', requireAuth, requireStore, async (req: Req
       );
     }
 
-    const updates = [
-      { key: 'site_name', value: name || '' },
-      { key: 'site_logo', value: logo_url || '' },
-      { key: 'announcement_bar', value: announcement_bar || '' },
-      { key: 'brand_primary', value: primary_color || '#8c7e5a' },
-      { key: 'brand_accent', value: accent_color || '#bfa760' },
-    ];
+    const updates: { key: string; value: string }[] = [];
+
+    if (name !== undefined) updates.push({ key: 'site_name', value: name });
+    if (logo_url !== undefined) updates.push({ key: 'site_logo', value: logo_url });
+    if (announcement_bar !== undefined) updates.push({ key: 'announcement_bar', value: announcement_bar });
+    if (primary_color !== undefined) updates.push({ key: 'brand_primary', value: primary_color });
+    if (accent_color !== undefined) updates.push({ key: 'brand_accent', value: accent_color });
+    if (theme_studio !== undefined) {
+      const tsStr = typeof theme_studio === 'string' ? theme_studio : JSON.stringify(theme_studio);
+      updates.push({ key: 'theme_studio', value: tsStr });
+      updates.push({ key: 'theme_studio_settings', value: tsStr });
+    }
 
     for (const item of updates) {
-      if (item.value !== undefined) {
-        await withStoreContext(storeId, () =>
-          // @ts-ignore
-          db.insert(site_settings).values({
-            store_id: storeId,
-            setting_key: item.key,
-            setting_value: item.value,
-            category: 'branding',
-            updated_by: userId,
-          }).onConflictDoUpdate({
-            target: [site_settings.store_id, site_settings.setting_key],
-            set: { setting_value: item.value, updated_by: userId, updated_at: new Date() }
-          })
-        );
-      }
+      await withStoreContext(storeId, () =>
+        // @ts-ignore
+        db.insert(site_settings).values({
+          store_id: storeId,
+          setting_key: item.key,
+          setting_value: item.value,
+          category: 'branding',
+          updated_by: userId,
+        }).onConflictDoUpdate({
+          target: [site_settings.store_id, site_settings.setting_key],
+          set: { setting_value: item.value, updated_by: userId, updated_at: new Date() }
+        })
+      );
     }
 
     res.json({ success: true });
