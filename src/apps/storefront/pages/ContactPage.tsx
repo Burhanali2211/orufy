@@ -40,9 +40,9 @@ export const ContactPage: React.FC = () => {
   const addressContact = contactInfo.find((c: any) => c.contact_type === 'address' && c.is_primary) ||
                          contactInfo.find((c: any) => c.contact_type === 'address');
 
-  const email = emailContact?.value || 'info@aligarhattarhouse.com';
-  const phone = phoneContact?.value || '+91-9876543210';
-  const address = addressContact?.value || 'Jaipur, Rajasthan, India';
+  const email = emailContact?.value || (settings as any)?.contact_email || (settings as any)?.email || 'support@store.local';
+  const phone = phoneContact?.value || (settings as any)?.contact_phone || (settings as any)?.phone || '+91 98765 43210';
+  const address = addressContact?.value || (settings as any)?.contact_address || (settings as any)?.address || 'Flagship Store, India';
 
   const formatBusinessHours = () => {
     if (!businessHours || businessHours.length === 0) return 'Monday - Sunday: 10:00 AM - 9:00 PM';

@@ -11,7 +11,7 @@ export const AboutPage: React.FC = () => {
 
   const addressContact = contactInfo.find((c: any) => c.contact_type === 'address' && c.is_primary) ||
                          contactInfo.find((c: any) => c.contact_type === 'address');
-  const address = addressContact?.value || `${siteName}, Main Market, Placeholder City, 10001`;
+  const address = addressContact?.value || (settings as any)?.contact_address || `${siteName} Flagship Boutique`;
 
   return (
     <div className="min-h-screen bg-[#FBF9F5] text-stone-900">

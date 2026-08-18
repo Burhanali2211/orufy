@@ -22,9 +22,6 @@ const ProductDetailPage = React.lazy(() => import('@/apps/storefront/pages/Produ
 const SearchPage = React.lazy(() => import('@/apps/storefront/pages/SearchPage'));
 const CartPage = React.lazy(() => import('@/apps/storefront/pages/CartPage'));
 const WishlistPage = React.lazy(() => import('@/apps/storefront/pages/WishlistPage'));
-const ComparePage = React.lazy(() => import('@/apps/storefront/pages/ComparePage'));
-const NewArrivalsPage = React.lazy(() => import('@/apps/storefront/pages/NewArrivalsPage'));
-const DealsPage = React.lazy(() => import('@/apps/storefront/pages/DealsPage'));
 const AuthPage = React.lazy(() => import('@/apps/storefront/pages/AuthPage'));
 const ResetPasswordPage = React.lazy(() => import('@/apps/storefront/pages/ResetPasswordPage'));
 const NotFoundPage = React.lazy(() => import('@/apps/storefront/pages/NotFoundPage'));
@@ -200,14 +197,18 @@ function App() {
                       <Route path="/products" element={<ProductsPage />} />
                       <Route path="/products/:id" element={<ProductDetailPage />} />
                       <Route path="/search" element={<SearchPage />} />
-                      <Route path="/compare" element={<ComparePage />} />
-                      <Route path="/new-arrivals" element={<NewArrivalsPage />} />
-                      <Route path="/deals" element={<DealsPage />} />
+                      <Route path="/compare" element={<Navigate to="/products" replace />} />
+                      <Route path="/new-arrivals" element={<Navigate to="/products?sort=newest" replace />} />
+                      <Route path="/deals" element={<Navigate to="/products?deals=true" replace />} />
                       <Route path="/categories" element={<CategoriesPage />} />
                       <Route path="/categories/:slug" element={<ProductsPage />} />
                       <Route path="/collections" element={<Navigate to="/products" replace />} />
                       <Route path="/collections/:slug" element={<ProductsPage />} />
                       <Route path="/cart" element={<CartPage />} />
+                      <Route path="/wishlist" element={<WishlistPage />} />
+                      <Route path="/track-order" element={<OrderTrackingPage />} />
+                      <Route path="/track-order/:orderId" element={<OrderTrackingPage />} />
+                      <Route path="/orders/:orderId" element={<OrderTrackingPage />} />
                       <Route path="/about" element={<AboutPage />} />
                       <Route path="/contact" element={<ContactPage />} />
                       
@@ -241,34 +242,10 @@ function App() {
                         } 
                       />
                       <Route 
-                        path="/wishlist" 
-                        element={
-                          <ProtectedRoute>
-                            <WishlistPage />
-                          </ProtectedRoute>
-                        } 
-                      />
-                      <Route 
                         path="/checkout" 
                         element={
                           <ProtectedRoute>
                             <CheckoutPage />
-                          </ProtectedRoute>
-                        } 
-                      />
-                      <Route
-                        path="/track-order/:orderId"
-                        element={
-                          <ProtectedRoute>
-                            <OrderTrackingPage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route 
-                        path="/orders/:orderId" 
-                        element={
-                          <ProtectedRoute>
-                            <OrderTrackingPage />
                           </ProtectedRoute>
                         } 
                       />
