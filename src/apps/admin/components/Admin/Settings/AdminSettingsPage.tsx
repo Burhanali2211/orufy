@@ -20,7 +20,7 @@ const settingsNav = [
     path: '/admin/settings/theme-studio',
     icon: Sliders,
     badge: 'Popular',
-    description: 'Visual live customizer for layout sections, enterprise hero presets, font pairings, color palettes, and announcement bar.',
+    description: 'Visual live customizer for layout sections, hero slides, font pairings, color palettes, and announcement bar.',
   },
   {
     name: 'Store Identity & Logo',

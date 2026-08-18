@@ -181,6 +181,7 @@ function App() {
                 } 
               />
 
+              {/* Standalone Order Confirmation (No Storefront Header/Footer) */}
               {/* Standalone Distraction-Free Checkout & Order Confirmation */}
               <Route 
                 path="/checkout" 
