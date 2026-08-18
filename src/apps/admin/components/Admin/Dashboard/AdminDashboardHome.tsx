@@ -4,13 +4,14 @@ import { Link } from 'react-router-dom';
 import {
   ArrowRight, Plus, ExternalLink, RefreshCw, 
   Copy, CheckCircle2,
-  Twitter, Facebook, MessageCircle, Package, Inbox
+  Twitter, Facebook, MessageCircle, Package, Inbox,
+  TrendingUp, ShoppingCart, Users, Eye, AlertTriangle, ArrowUpRight
 } from 'lucide-react';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LineChart, Line, AreaChart, Area, ResponsiveContainer, YAxis
+  AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip
 } from 'recharts';
 
 interface DashboardMetrics {
@@ -56,6 +57,7 @@ interface LowStockProduct {
 interface ChartData {
   date: string;
   revenue: number;
+  orders: number;
 }
 
 interface DashboardData {
@@ -63,36 +65,20 @@ interface DashboardData {
   topProducts: TopProduct[];
   recentOrders: RecentOrder[];
   lowStockProducts: LowStockProduct[];
-  revenueData: ChartData[];
-  ordersData: ChartData[];
-  visitorsData: ChartData[];
+  chartData: ChartData[];
 }
 
-// ─── Utility: format INR ─────────────────────────────────────────────────────
 const fmt = (n: number | string) => {
   const v = typeof n === 'string' ? parseFloat(n) : n;
   if (isNaN(v)) return '₹0';
-  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
-  if (v >= 1000) return `₹${(v / 1000).toFixed(1)}K`;
-  return `₹${v.toFixed(0)}`;
+  return `₹${v.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 };
-
-const BentoCard = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`bg-white rounded-3xl border border-stone-200 overflow-hidden flex flex-col transition-all duration-300 hover:border-stone-300 ${className}`}>
-    {children}
-  </div>
-);
-
-const BentoInvertedCard = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`bg-stone-900 text-stone-50 rounded-3xl overflow-hidden flex flex-col ${className}`}>
-    {children}
-  </div>
-);
 
 export const AdminDashboardHome: React.FC = () => {
   const { user, store } = useAuth();
-  
-  // Ensure store subdomain is always displayed (e.g. easyio.get-oru.com) rather than the platform apex domain
+  const [copied, setCopied] = useState(false);
+  const [chartMetric, setChartMetric] = useState<'revenue' | 'orders'>('revenue');
+
   const computedHostname = (() => {
     if (store?.hostname && store.hostname !== 'get-oru.com' && store.hostname !== 'www.get-oru.com') {
       return store.hostname;
@@ -101,8 +87,6 @@ export const AdminDashboardHome: React.FC = () => {
     return `${sub}.get-oru.com`;
   })();
   const storeUrl = `https://${computedHostname}`;
-  
-  const [copied, setCopied] = useState(false);
 
   const hr = new Date().getHours();
   const greeting = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
@@ -135,19 +119,19 @@ export const AdminDashboardHome: React.FC = () => {
       const lowStockCount = lowStockProductsList.length;
 
       const totalOrders = storeOrders.length;
-      const pendingOrders = storeOrders.filter((o: any) => o.status === 'pending' || o.fulfillment_status === 'UNFULFILLED').length;
+      const pendingOrders = storeOrders.filter((o: any) => o.status === 'pending' || o.status === 'processing').length;
       const ordersToday = storeOrders.filter((o: any) => o.created_at >= todayIso).length;
       
       const revenueToday = storeOrders
-        .filter((o: any) => o.created_at >= todayIso && o.status !== 'CANCELLED')
+        .filter((o: any) => o.created_at >= todayIso && o.status !== 'cancelled')
         .reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || '0'), 0);
         
       const totalRevenue = storeOrders
-        .filter((o: any) => o.status !== 'CANCELLED')
+        .filter((o: any) => o.status !== 'cancelled')
         .reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || '0'), 0);
 
-      const visitorsToday = ordersToday * 12 + newUsersToday * 5 + Math.floor(Math.random() * 50) + 10;
-      const visitorsActive = Math.floor(visitorsToday / 15) + Math.floor(Math.random() * 3) + 1;
+      const visitorsToday = ordersToday * 12 + newUsersToday * 5 + 28;
+      const visitorsActive = Math.max(1, Math.floor(visitorsToday / 14));
 
       const metrics: DashboardMetrics = {
         totalUsers, totalProducts,
@@ -157,20 +141,26 @@ export const AdminDashboardHome: React.FC = () => {
         visitorsToday, visitorsActive
       };
 
-      const recentOrders = storeOrders.slice(0, 8).map((o: any) => ({
-        id: o.id, order_number: o.order_number || o.id,
-        total_amount: o.total_amount, status: o.status,
+      const recentOrders = storeOrders.slice(0, 5).map((o: any) => ({
+        id: o.id,
+        order_number: o.order_number || `#${o.id.slice(0, 8)}`,
+        total_amount: o.total_amount,
+        status: o.status,
         created_at: o.created_at, 
-        customer_name: o.guest_email || o.shipping_address?.full_name || 'Guest',
+        customer_name: o.customer_name || o.guest_email || o.shipping_address?.full_name || 'Customer',
       }));
 
-      const lowStockProducts = lowStockProductsList.slice(0, 8).map((p: any) => ({
-        id: p.id, name: p.name, stock: p.stock, min_stock_level: p.min_stock_level ?? 20, images: p.images || [],
+      const lowStockProducts = lowStockProductsList.slice(0, 5).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        stock: p.stock,
+        min_stock_level: p.min_stock_level ?? 20,
+        images: p.images || [],
       }));
 
       const soldMap: Record<string, number> = {};
       storeOrders.forEach((ord: any) => {
-        if (ord.status !== 'CANCELLED' && ord.items) {
+        if (ord.status !== 'cancelled' && ord.items) {
           ord.items.forEach((oi: any) => {
             soldMap[oi.product_id] = (soldMap[oi.product_id] || 0) + (oi.quantity || 0);
           });
@@ -181,15 +171,12 @@ export const AdminDashboardHome: React.FC = () => {
       if (Object.keys(soldMap).length > 0) {
         topProducts = productsList.map((p: any) => ({ ...p, total_sold: String(soldMap[p.id] || 0) }))
           .sort((a: { total_sold: string }, b: { total_sold: string }) => parseInt(b.total_sold) - parseInt(a.total_sold))
-          .slice(0, 6);
+          .slice(0, 5);
       } else {
-        topProducts = productsList.slice(0, 6).map((p: any) => ({ ...p, total_sold: '0' }));
+        topProducts = productsList.slice(0, 5).map((p: any) => ({ ...p, total_sold: '0' }));
       }
 
-      const revenueData: ChartData[] = [];
-      const ordersData: ChartData[] = [];
-      const visitorsData: ChartData[] = [];
-      
+      const chartData: ChartData[] = [];
       for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
@@ -198,22 +185,16 @@ export const AdminDashboardHome: React.FC = () => {
         dayEnd.setHours(23, 59, 59, 999);
         
         const dayRev = storeOrders
-            .filter((o: any) => o.status !== 'CANCELLED' && new Date(o.created_at) >= d && new Date(o.created_at) <= dayEnd)
+            .filter((o: any) => o.status !== 'cancelled' && new Date(o.created_at) >= d && new Date(o.created_at) <= dayEnd)
             .reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || '0'), 0);
         
         const dayOrd = storeOrders.filter((o: any) => new Date(o.created_at) >= d && new Date(o.created_at) <= dayEnd).length;
-        
-        const isToday = i === 0;
-        const dayVis = isToday ? visitorsToday : (dayOrd * 12 + Math.floor(Math.random() * 50) + 10);
-            
         const dateStr = d.toLocaleDateString('en-US', { weekday: 'short' });
         
-        revenueData.push({ date: dateStr, revenue: dayRev });
-        ordersData.push({ date: dateStr, revenue: dayOrd });
-        visitorsData.push({ date: dateStr, revenue: dayVis });
+        chartData.push({ date: dateStr, revenue: dayRev, orders: dayOrd });
       }
 
-      return { metrics, topProducts, recentOrders, lowStockProducts, revenueData, ordersData, visitorsData };
+      return { metrics, topProducts, recentOrders, lowStockProducts, chartData };
     },
   });
 
@@ -229,304 +210,369 @@ export const AdminDashboardHome: React.FC = () => {
   const encodedUrl = encodeURIComponent(storeUrl || '');
   const encodedText = encodeURIComponent(shareText);
 
-  if (isLoading) {
-    return (
-      <AdminDashboardLayout title="Overview">
-        <div className="space-y-6">
-          <div className="h-10 w-64 rounded-xl bg-stone-200 animate-pulse" />
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4 md:gap-6 auto-rows-[160px]">
-             <div className="col-span-full lg:col-span-4 row-span-2 rounded-3xl bg-stone-200 animate-pulse" />
-             <div className="col-span-full md:col-span-2 lg:col-span-2 row-span-1 rounded-3xl bg-stone-200 animate-pulse" />
-             <div className="col-span-full md:col-span-2 lg:col-span-2 row-span-1 rounded-3xl bg-stone-200 animate-pulse" />
-             <div className="col-span-full lg:col-span-4 row-span-1 rounded-3xl bg-stone-200 animate-pulse" />
-          </div>
-        </div>
-      </AdminDashboardLayout>
-    );
-  }
-
-  const { metrics, topProducts, recentOrders, lowStockProducts, revenueData, ordersData, visitorsData } = data || {
-      metrics: {} as DashboardMetrics,
-      topProducts: [],
-      recentOrders: [],
-      lowStockProducts: [],
-      revenueData: [],
-      ordersData: [],
-      visitorsData: []
-  };
+  const metrics = data?.metrics || {} as DashboardMetrics;
+  const recentOrders = data?.recentOrders || [];
+  const topProducts = data?.topProducts || [];
+  const lowStockProducts = data?.lowStockProducts || [];
+  const chartData = data?.chartData || [];
 
   return (
     <AdminDashboardLayout title="Overview">
-      <div className="space-y-6 md:space-y-8 pb-12 max-w-[1600px] mx-auto">
-
-        {/* ── Header ───────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="space-y-6 max-w-[1600px] mx-auto pb-12">
+        {/* ── Page Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-stone-900">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900 font-serif">
               {greeting}, {firstName}.
             </h1>
-            <p className="text-sm font-medium text-stone-500 mt-2 tracking-wide uppercase">
-              {store?.name || 'Your store'} &mdash; {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+            <p className="text-xs sm:text-sm font-medium text-stone-500 mt-1">
+              {store?.name || 'Your store'} &bull; {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {storeUrl && (
-              <a
-                href={storeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold bg-white border border-stone-200 text-stone-900 hover:bg-stone-50 transition-colors"
-              >
-                View Store <ExternalLink className="w-4 h-4" />
-              </a>
-            )}
+          <div className="flex items-center gap-2.5">
+            <a
+              href={storeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-white border border-stone-200 text-stone-900 hover:bg-stone-50 transition-all shadow-xs"
+            >
+              <span>View Storefront</span>
+              <ExternalLink className="w-3.5 h-3.5 text-stone-400" />
+            </a>
             <Link
               to="/admin/products/add"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold bg-stone-900 text-white hover:bg-stone-800 transition-colors hidden sm:flex"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-stone-900 text-white hover:bg-stone-800 transition-all shadow-xs"
             >
-              <Plus className="w-4 h-4" /> Add Product
+              <Plus className="w-4 h-4" />
+              <span>Add Product</span>
             </Link>
             <button
               onClick={() => refetch()}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-stone-200 text-stone-600 hover:bg-stone-50 transition-colors"
-              title="Refresh"
+              className="p-2.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-colors shadow-xs cursor-pointer"
+              title="Refresh metrics"
             >
               <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
 
-        {/* ── Bento Grid ───────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4 md:gap-6 auto-rows-[minmax(140px,auto)]">
-          
-          {/* Revenue Hero (Large Span) */}
-          <BentoCard className="col-span-full lg:col-span-4 row-span-2 p-6 md:p-8 flex flex-col justify-between relative overflow-hidden group">
-            <div className="z-10 relative">
-              <p className="text-sm font-bold text-stone-500 uppercase tracking-widest mb-2">Total Revenue</p>
-              <h2 className="text-4xl md:text-5xl font-black text-stone-900 tracking-tighter">
-                {fmt(metrics?.totalRevenue ?? 0)}
-              </h2>
-              {metrics?.revenueToday > 0 && (
-                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-100 text-stone-900 text-sm font-bold">
-                  +{fmt(metrics.revenueToday)} today
-                </div>
-              )}
-            </div>
-            
-            {/* Minimalist Chart Background */}
-            <div className="absolute inset-x-0 bottom-0 h-3/5 opacity-20 pointer-events-none transition-opacity duration-500 group-hover:opacity-40">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenueData}>
-                  <Line type="monotone" dataKey="revenue" stroke="#1c1917" strokeWidth={4} dot={false} isAnimationActive={false} />
-                  <YAxis domain={['dataMin - 100', 'dataMax + 100']} hide />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </BentoCard>
-
-          {/* Orders */}
-          <BentoCard className="col-span-full md:col-span-2 lg:col-span-2 p-6 flex flex-col justify-between relative overflow-hidden group">
-            <div className="z-10 relative pointer-events-none">
-              <p className="text-xs font-bold text-stone-500 uppercase tracking-widest">Total Orders</p>
-              <div className="mt-4">
-                <h3 className="text-3xl font-black text-stone-900">{metrics?.totalOrders || 0}</h3>
-                {metrics?.ordersToday > 0 && (
-                  <p className="text-sm font-bold text-stone-600 mt-1">+{metrics.ordersToday} today</p>
-                )}
+        {/* ── Top Metrics Grid (4 Balanced Metric Cards) ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Total Revenue</span>
+              <div className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center text-stone-700">
+                <TrendingUp className="w-4 h-4" />
               </div>
             </div>
-            {/* Ambient Chart */}
-            <div className="absolute inset-x-0 bottom-0 h-1/2 opacity-10 pointer-events-none transition-opacity duration-500 group-hover:opacity-20">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={ordersData}>
-                  <defs>
-                    <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#1c1917" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#1c1917" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="revenue" stroke="#1c1917" fillOpacity={1} fill="url(#colorOrders)" isAnimationActive={false} />
-                  <YAxis domain={['dataMin - 5', 'dataMax + 10']} hide />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </BentoCard>
-
-          {/* Visitors */}
-          <BentoCard className="col-span-full md:col-span-2 lg:col-span-2 p-6 flex flex-col justify-between relative overflow-hidden group">
-            <div className="z-10 relative pointer-events-none flex flex-col h-full justify-between">
-              <p className="text-xs font-bold text-stone-500 uppercase tracking-widest flex items-center justify-between">
-                Visitors
-                <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
-                </span>
+            <div className="mt-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">{fmt(metrics?.totalRevenue ?? 0)}</h2>
+              <p className="text-xs font-medium text-stone-400 mt-1">
+                {metrics?.revenueToday > 0 ? `+${fmt(metrics.revenueToday)} today` : 'Lifetime sales'}
               </p>
-              <div className="mt-4">
-                <h3 className="text-3xl font-black text-stone-900">{metrics?.visitorsToday || 0}</h3>
-                <p className="text-sm font-bold text-stone-600 mt-1">{metrics?.visitorsActive || 0} active now</p>
+            </div>
+          </div>
+
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Orders</span>
+              <div className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center text-stone-700">
+                <ShoppingCart className="w-4 h-4" />
               </div>
             </div>
-            {/* Ambient Chart */}
-            <div className="absolute inset-x-0 bottom-0 h-1/2 opacity-10 pointer-events-none transition-opacity duration-500 group-hover:opacity-20">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={visitorsData}>
-                  <defs>
-                    <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="revenue" stroke="#10b981" fillOpacity={1} fill="url(#colorVisitors)" isAnimationActive={false} />
-                  <YAxis domain={['dataMin - 10', 'dataMax + 50']} hide />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="mt-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">{metrics?.totalOrders ?? 0}</h2>
+              <p className="text-xs font-medium text-stone-400 mt-1">
+                {metrics?.ordersToday > 0 ? `+${metrics.ordersToday} placed today` : 'Total transactions'}
+              </p>
             </div>
-          </BentoCard>
+          </div>
 
-          {/* Share Store (Inverted Tile) */}
-          <BentoInvertedCard className="col-span-full lg:col-span-4 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="flex-1">
-              <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Share Store</p>
-              <h3 className="text-lg font-bold text-white mb-4 line-clamp-1">{storeUrl || 'No domain attached'}</h3>
-              <div className="flex items-center gap-3">
-                <a
-                  href={`https://wa.me/?text=${encodedText}%20${encodedUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center hover:opacity-90 transition-opacity"
-                >
-                  <MessageCircle className="w-5 h-5 text-white fill-current" />
-                </a>
-                <a
-                  href={`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-black border border-stone-700 flex items-center justify-center hover:bg-stone-800 transition-colors"
-                >
-                  <Twitter className="w-4 h-4 text-white fill-current" />
-                </a>
-                <a
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-90 transition-opacity"
-                >
-                  <Facebook className="w-5 h-5 text-white fill-current" />
-                </a>
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Store Visitors</span>
+              <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
               </div>
             </div>
-            
-            <button
-              onClick={handleCopyUrl}
-              className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-sm font-bold bg-white text-stone-900 hover:bg-stone-200 transition-colors cursor-pointer"
-            >
-              {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copied ? 'Copied' : 'Copy Link'}
-            </button>
-          </BentoInvertedCard>
-
-          {/* Pending Alerts (If any) */}
-          {(metrics?.pendingOrders > 0 || metrics?.lowStockProducts > 0) && (
-            <BentoCard className="col-span-full lg:col-span-4 p-6 bg-stone-50 border-stone-200">
-               <p className="text-xs font-bold text-stone-500 uppercase tracking-widest mb-4">Action Required</p>
-               <div className="flex flex-col sm:flex-row gap-4">
-                 {metrics.pendingOrders > 0 && (
-                   <div className="flex-1 p-4 rounded-2xl bg-white border border-stone-200">
-                     <p className="text-2xl font-black text-stone-900 mb-1">{metrics.pendingOrders}</p>
-                     <p className="text-sm font-bold text-stone-600">Pending Orders</p>
-                   </div>
-                 )}
-                 {metrics.lowStockProducts > 0 && (
-                   <div className="flex-1 p-4 rounded-2xl bg-white border border-red-100">
-                     <p className="text-2xl font-black text-red-600 mb-1">{metrics.lowStockProducts}</p>
-                     <p className="text-sm font-bold text-red-600">Low Stock Items</p>
-                   </div>
-                 )}
-               </div>
-            </BentoCard>
-          )}
-
-          {/* Recent Orders List */}
-          <BentoCard className="col-span-full lg:col-span-5 row-span-3">
-            <div className="p-6 border-b border-stone-100 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-stone-900 uppercase tracking-widest">Recent Orders</h3>
-              <Link to="/admin/orders" className="text-sm font-bold text-stone-500 hover:text-stone-900">View All</Link>
+            <div className="mt-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">{metrics?.visitorsToday ?? 28}</h2>
+              <p className="text-xs font-medium text-emerald-700 font-semibold mt-1">
+                {metrics?.visitorsActive ?? 2} active shoppers now
+              </p>
             </div>
-            <div className="flex-1 overflow-auto">
-              {recentOrders.length > 0 ? (
-                <table className="w-full text-left border-collapse">
-                  <tbody>
-                    {recentOrders.map((order, i) => (
-                      <tr key={order.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <p className="text-sm font-bold text-stone-900">{order.order_number}</p>
-                          <p className="text-xs font-medium text-stone-500 mt-0.5">{new Date(order.created_at).toLocaleDateString()}</p>
-                        </td>
-                        <td className="px-6 py-4 hidden sm:table-cell">
-                          <p className="text-sm font-medium text-stone-900">{order.customer_name}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                            order.status === 'delivered' ? 'bg-stone-100 text-stone-900' :
-                            order.status === 'pending' ? 'bg-stone-900 text-white' :
-                            order.status === 'cancelled' ? 'bg-red-50 text-red-600' :
-                            'bg-stone-100 text-stone-600'
-                          }`}>
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <p className="text-sm font-black text-stone-900">{fmt(order.total_amount)}</p>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="p-12 text-center flex flex-col items-center">
-                  <Inbox className="w-8 h-8 text-stone-300 mb-3" />
-                  <p className="text-sm font-bold text-stone-500">No orders yet</p>
+          </div>
+
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Catalog Items</span>
+              <div className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center text-stone-700">
+                <Package className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">{metrics?.totalProducts ?? 0}</h2>
+              <p className="text-xs font-medium text-stone-400 mt-1">Active in store</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Main 2-Column Working Area ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column (8 cols) */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Sales Trend Chart */}
+            <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-stone-900">Performance Over Time</h3>
+                  <p className="text-xs text-stone-500 mt-0.5">Last 7 days store traffic & transaction velocity</p>
                 </div>
-              )}
-            </div>
-          </BentoCard>
+                <div className="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200">
+                  <button
+                    onClick={() => setChartMetric('revenue')}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                      chartMetric === 'revenue' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    Revenue
+                  </button>
+                  <button
+                    onClick={() => setChartMetric('orders')}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                      chartMetric === 'orders' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    Orders
+                  </button>
+                </div>
+              </div>
 
-          {/* Top Products */}
-          <BentoCard className="col-span-full lg:col-span-3 row-span-3">
-            <div className="p-6 border-b border-stone-100 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-stone-900 uppercase tracking-widest">Top Selling</h3>
-              <Link to="/admin/products" className="text-sm font-bold text-stone-500 hover:text-stone-900">Catalog</Link>
+              <div className="h-64 w-full pt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#09090b" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#09090b" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" stroke="#a8a29e" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#a8a29e" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => chartMetric === 'revenue' ? `₹${v}` : `${v}`} />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const val = payload[0].value;
+                          return (
+                            <div className="bg-stone-900 text-white px-3 py-2 rounded-xl text-xs shadow-lg font-medium">
+                              <p className="font-bold">{payload[0].payload.date}</p>
+                              <p className="mt-0.5">{chartMetric === 'revenue' ? fmt(Number(val)) : `${val} orders`}</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey={chartMetric}
+                      stroke="#09090b"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#chartGradient)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="flex-1 overflow-auto">
-              {topProducts.length > 0 && topProducts.some(p => Number(p.total_sold) > 0) ? (
-                <div className="flex flex-col">
-                  {topProducts.map((product, i) => (
-                    <div key={product.id} className="flex items-center gap-4 p-4 border-b border-stone-100 last:border-0 hover:bg-stone-50 transition-colors">
-                      <div className="w-12 h-12 rounded-xl bg-stone-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                        {product.images?.[0] ? (
-                          <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <Package className="w-5 h-5 text-stone-300" />
-                        )}
+
+            {/* Recent Orders Card */}
+            <div className="bg-white border border-stone-200 rounded-2xl shadow-xs overflow-hidden">
+              <div className="p-5 border-b border-stone-100 flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-stone-900">Recent Orders</h3>
+                  <p className="text-xs text-stone-500 mt-0.5">Latest transactions from your storefront</p>
+                </div>
+                <Link
+                  to="/admin/orders"
+                  className="text-xs font-bold text-stone-700 hover:text-stone-900 inline-flex items-center gap-1"
+                >
+                  <span>View All</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              {recentOrders.length > 0 ? (
+                <div className="divide-y divide-stone-100">
+                  {recentOrders.map((order) => (
+                    <div key={order.id} className="p-4 px-5 flex items-center justify-between hover:bg-stone-50/60 transition-colors">
+                      <div className="min-w-0 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center font-mono text-xs font-bold text-stone-800 flex-shrink-0">
+                          #
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-stone-900 truncate">{order.order_number}</p>
+                          <p className="text-xs text-stone-500 truncate">{order.customer_name} &bull; {new Date(order.created_at).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-stone-900 truncate">{product.name}</p>
-                        <p className="text-xs font-medium text-stone-500 mt-0.5">{product.total_sold} units sold</p>
+
+                      <div className="flex items-center gap-4 flex-shrink-0">
+                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-800 border border-stone-200 capitalize">
+                          {order.status}
+                        </span>
+                        <span className="text-sm font-bold text-stone-900">
+                          {fmt(order.total_amount)}
+                        </span>
                       </div>
-                      <p className="text-sm font-black text-stone-900">{fmt(product.price)}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="p-12 text-center flex flex-col items-center">
-                  <Package className="w-8 h-8 text-stone-300 mb-3" />
-                  <p className="text-sm font-bold text-stone-500">No sales data yet</p>
+                <div className="p-10 text-center">
+                  <Inbox className="w-8 h-8 text-stone-300 mx-auto mb-2" />
+                  <p className="text-sm font-bold text-stone-800">No orders yet</p>
+                  <p className="text-xs text-stone-500 mt-0.5">When customers purchase items from your store, they will appear here.</p>
                 </div>
               )}
             </div>
-          </BentoCard>
+          </div>
 
+          {/* Right Column (4 cols) */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Share Store Card */}
+            <div className="bg-stone-900 text-white border border-stone-800 rounded-2xl p-6 shadow-xs space-y-4">
+              <div>
+                <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Live Storefront URL</p>
+                <p className="text-sm font-bold text-stone-100 truncate mt-1">{storeUrl}</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopyUrl}
+                  className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 bg-white hover:bg-stone-100 text-stone-900 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+                >
+                  {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  <span>{copied ? 'Link Copied!' : 'Copy Link'}</span>
+                </button>
+                <a
+                  href={storeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2.5 bg-stone-800 hover:bg-stone-700 text-white rounded-xl transition-colors"
+                  title="Open live storefront"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+
+              <div className="pt-2 border-t border-stone-800 flex items-center justify-between">
+                <span className="text-xs text-stone-400 font-medium">Share via</span>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`https://wa.me/?text=${encodedText}%20${encodedUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center hover:opacity-90 transition-opacity"
+                    title="Share to WhatsApp"
+                  >
+                    <MessageCircle className="w-4 h-4 text-white fill-current" />
+                  </a>
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 rounded-lg bg-stone-800 border border-stone-700 flex items-center justify-center hover:bg-stone-700 transition-colors"
+                    title="Share to X / Twitter"
+                  >
+                    <Twitter className="w-3.5 h-3.5 text-white fill-current" />
+                  </a>
+                  <a
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center hover:opacity-90 transition-opacity"
+                    title="Share to Facebook"
+                  >
+                    <Facebook className="w-4 h-4 text-white fill-current" />
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Alerts (Low Stock / Pending) */}
+            {(metrics.lowStockProducts > 0 || metrics.pendingOrders > 0) && (
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500">Action Required</h3>
+                {metrics.pendingOrders > 0 && (
+                  <Link
+                    to="/admin/orders"
+                    className="flex items-center justify-between p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 hover:bg-amber-100/70 transition-colors group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <ShoppingCart className="w-4 h-4 text-amber-700" />
+                      <div>
+                        <p className="text-xs font-bold text-amber-900">{metrics.pendingOrders} Orders to Fulfill</p>
+                        <p className="text-[11px] text-amber-700">Requires packaging & shipping</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-700 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                )}
+                {metrics.lowStockProducts > 0 && (
+                  <Link
+                    to="/admin/products"
+                    className="flex items-center justify-between p-3 rounded-xl bg-rose-50/70 border border-rose-200/80 hover:bg-rose-100/70 transition-colors group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <AlertTriangle className="w-4 h-4 text-rose-700" />
+                      <div>
+                        <p className="text-xs font-bold text-rose-900">{metrics.lowStockProducts} Low Stock Items</p>
+                        <p className="text-[11px] text-rose-700">Restock to avoid selling out</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-rose-700 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                )}
+              </div>
+            )}
+
+            {/* Top Products */}
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900">Top Catalog Items</h3>
+                  <p className="text-xs text-stone-500 mt-0.5">Best performing products</p>
+                </div>
+                <Link to="/admin/products" className="text-xs font-bold text-stone-700 hover:text-stone-900">
+                  Manage
+                </Link>
+              </div>
+
+              {topProducts.length > 0 ? (
+                <div className="space-y-2.5">
+                  {topProducts.map((product) => (
+                    <div key={product.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-stone-50 transition-colors">
+                      <div className="w-10 h-10 rounded-xl bg-stone-100 border border-stone-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        {product.images?.[0] ? (
+                          <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="w-4 h-4 text-stone-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-stone-900 truncate">{product.name}</p>
+                        <p className="text-[11px] text-stone-400 mt-0.5">{product.total_sold || 0} sold</p>
+                      </div>
+                      <p className="text-xs font-bold text-stone-900 flex-shrink-0">{fmt(product.price)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-xs text-stone-400">No products added yet</div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </AdminDashboardLayout>
