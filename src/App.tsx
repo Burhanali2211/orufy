@@ -182,6 +182,15 @@ function App() {
               />
 
               {/* Standalone Order Confirmation (No Storefront Header/Footer) */}
+              {/* Standalone Distraction-Free Checkout & Order Confirmation */}
+              <Route 
+                path="/checkout" 
+                element={
+                  <ProtectedRoute>
+                    <CheckoutPage />
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/order-confirmation/:orderId" 
                 element={<OrderConfirmationPage />} 
@@ -238,14 +247,6 @@ function App() {
                         element={
                           <ProtectedRoute>
                             <CustomerDashboard />
-                          </ProtectedRoute>
-                        } 
-                      />
-                      <Route 
-                        path="/checkout" 
-                        element={
-                          <ProtectedRoute>
-                            <CheckoutPage />
                           </ProtectedRoute>
                         } 
                       />

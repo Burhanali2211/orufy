@@ -41,6 +41,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             role: data.user.role || 'customer',
             avatar: data.user.avatar_url || data.user.avatar,
             phone: data.user.phone,
+            gender: data.user.gender,
+            dateOfBirth: data.user.date_of_birth || data.user.dateOfBirth,
           });
           setStore(data.store || null);
           if (data.store?.hostname) {
@@ -76,7 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(data.error || 'Failed to login');
+      throw new Error(data.error || 'Failed to sign in');
     }
 
     const loginData = await response.json();
@@ -100,6 +102,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         role: data.user.role || 'customer',
         avatar: data.user.avatar_url || data.user.avatar,
         phone: data.user.phone,
+        gender: data.user.gender,
+        dateOfBirth: data.user.date_of_birth || data.user.dateOfBirth,
       });
       setStore(data.store || null);
       if (data.store?.hostname) {
@@ -199,10 +203,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateProfile = async (updates: Partial<User>): Promise<void> => {
     try {
-      const res = await apiClient.put('/auth/profile', {
+      const res = await apiClient.put<any>('/auth/profile', {
         fullName: updates.fullName || updates.name,
         phone: updates.phone,
         avatar_url: updates.avatar,
+        gender: updates.gender,
+        date_of_birth: updates.dateOfBirth,
       });
       if (res?.user) {
         setUser((prev) => prev ? {
@@ -211,6 +217,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           fullName: res.user.full_name || prev.fullName,
           phone: res.user.phone ?? prev.phone,
           avatar: res.user.avatar_url ?? prev.avatar,
+          gender: res.user.gender ?? prev.gender,
+          dateOfBirth: res.user.date_of_birth ?? prev.dateOfBirth,
         } : null);
       }
     } catch (error) {

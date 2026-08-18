@@ -219,6 +219,8 @@ authRouter.get("/me", async (req, res) => {
         role: profiles.role,
         avatar_url: profiles.avatar_url,
         phone: profiles.phone,
+        gender: profiles.gender,
+        date_of_birth: profiles.date_of_birth,
       })
       .from(profiles)
       .where(eq(profiles.id, user.id));
@@ -264,7 +266,7 @@ authRouter.get("/me", async (req, res) => {
 authRouter.put("/profile", requireAuth, async (req, res) => {
   try {
     const userId = res.locals.user.id;
-    const { full_name, fullName, phone, avatar_url, avatar } = req.body;
+    const { full_name, fullName, phone, avatar_url, avatar, gender, date_of_birth, dateOfBirth } = req.body;
 
     const updates: any = {};
     if (full_name !== undefined) updates.full_name = full_name;
@@ -272,6 +274,9 @@ authRouter.put("/profile", requireAuth, async (req, res) => {
     if (phone !== undefined) updates.phone = phone;
     if (avatar_url !== undefined) updates.avatar_url = avatar_url;
     if (avatar !== undefined) updates.avatar_url = avatar;
+    if (gender !== undefined) updates.gender = gender;
+    if (date_of_birth !== undefined) updates.date_of_birth = date_of_birth;
+    if (dateOfBirth !== undefined) updates.date_of_birth = dateOfBirth;
 
     if (Object.keys(updates).length > 0) {
       await db.update(profiles).set(updates).where(eq(profiles.id, userId));
@@ -287,11 +292,47 @@ authRouter.put("/profile", requireAuth, async (req, res) => {
         role: updated.role,
         avatar_url: updated.avatar_url,
         phone: updated.phone,
+        gender: updated.gender,
+        date_of_birth: updated.date_of_birth,
       }
     });
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// Change Password
+authRouter.post("/change-password", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = res.locals.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Current password and new password are required" });
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < 6) {
+      return res.status(400).json({ error: "New password must be at least 6 characters long" });
+    }
+
+    const [existingUser] = await db.select().from(profiles).where(eq(profiles.id, userId));
+    if (!existingUser || !existingUser.password_hash) {
+      return res.status(400).json({ error: "User account does not have a password configured" });
+    }
+
+    const validPassword = await new Argon2id().verify(existingUser.password_hash, currentPassword);
+    if (!validPassword) {
+      return res.status(400).json({ error: "Current password is incorrect" });
+    }
+
+    const newHashedPassword = await new Argon2id().hash(newPassword);
+    await db.update(profiles).set({ password_hash: newHashedPassword, updated_at: new Date() }).where(eq(profiles.id, userId));
+
+    return res.status(200).json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: "Failed to change password" });
   }
 });
 

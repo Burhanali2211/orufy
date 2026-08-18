@@ -8,6 +8,8 @@ export const profiles = pgTable('profiles', {
   full_name: text('full_name'),
   phone: text('phone'),
   avatar_url: text('avatar_url'),
+  gender: text('gender'),
+  date_of_birth: text('date_of_birth'),
   role: text('role').default('customer').notNull(), // customer, merchant, admin
   is_super_admin: boolean('is_super_admin').default(false).notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),

@@ -83,7 +83,7 @@ export const OrdersPage: React.FC = () => {
       {
         title: 'Order Confirmed',
         description: 'Order received and verified in system',
-        date: new Date(order.created_at || order.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+        date: new Date(order.created_at || order.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
         completed: true,
         current: status === 'pending'
       },
@@ -328,7 +328,7 @@ export const OrdersPage: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs text-stone-500 mt-0.5">
-                    Placed on {new Date(selectedOrder.created_at || selectedOrder.createdAt).toLocaleDateString('en-IN', { dateStyle: 'long', timeStyle: 'short' })}
+                    Placed on {new Date(selectedOrder.created_at || selectedOrder.createdAt).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })}
                   </p>
                 </div>
                 <button

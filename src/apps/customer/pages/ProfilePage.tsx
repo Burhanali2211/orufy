@@ -47,11 +47,25 @@ export const ProfilePage: React.FC = () => {
   });
   const [changingPassword, setChangingPassword] = useState(false);
 
-  const [notificationPrefs, setNotificationPrefs] = useState({
-    orderUpdates: true,
-    emailReceipts: true,
-    promotions: false
+  const [notificationPrefs, setNotificationPrefs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('customer_notification_prefs');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      orderUpdates: true,
+      emailReceipts: true,
+      promotions: false
+    };
   });
+
+  const handleTogglePref = (key: 'orderUpdates' | 'emailReceipts' | 'promotions', val: boolean) => {
+    const updated = { ...notificationPrefs, [key]: val };
+    setNotificationPrefs(updated);
+    try {
+      localStorage.setItem('customer_notification_prefs', JSON.stringify(updated));
+    } catch {}
+  };
 
   const [originalData, setOriginalData] = useState(profileData);
   const [hasChanges, setHasChanges] = useState(false);
@@ -364,7 +378,7 @@ export const ProfilePage: React.FC = () => {
               <input
                 type="checkbox"
                 checked={notificationPrefs.orderUpdates}
-                onChange={(e) => setNotificationPrefs({ ...notificationPrefs, orderUpdates: e.target.checked })}
+                onChange={(e) => handleTogglePref('orderUpdates', e.target.checked)}
                 className="w-4 h-4 accent-stone-900"
               />
             </label>
@@ -377,7 +391,7 @@ export const ProfilePage: React.FC = () => {
               <input
                 type="checkbox"
                 checked={notificationPrefs.emailReceipts}
-                onChange={(e) => setNotificationPrefs({ ...notificationPrefs, emailReceipts: e.target.checked })}
+                onChange={(e) => handleTogglePref('emailReceipts', e.target.checked)}
                 className="w-4 h-4 accent-stone-900"
               />
             </label>

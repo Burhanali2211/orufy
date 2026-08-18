@@ -217,61 +217,76 @@ export const CheckoutPage: React.FC = () => {
     );
   }
 
-  const stepLabels = ['Shipping', 'Payment', 'Review'];
+  const stepLabels = [
+    { num: 1, label: 'Delivery' },
+    { num: 2, label: 'Payment' },
+    { num: 3, label: 'Review' },
+  ];
 
   return (
-    <>
-      {/* Fixed top header */}
-      <div className="fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 pt-4 pb-3">
-          <div className="flex items-center justify-between mb-3">
+    <div className="min-h-screen bg-stone-50/60 font-sans antialiased text-stone-900">
+      {/* ── Fixed Top Header ── */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/80 shadow-xs">
+        <div className="max-w-2xl mx-auto px-4 py-3 space-y-2.5">
+          <div className="flex items-center justify-between">
             <button
               onClick={() => (step > 1 ? setStep(step - 1) : navigate(-1))}
-              className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors py-1"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-stone-900 text-xs font-semibold transition-colors cursor-pointer"
             >
-              <ArrowLeft className="h-5 w-5" />
-              <span className="text-sm font-medium">Back</span>
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back</span>
             </button>
-            <h1 className="text-base font-bold text-gray-900">Checkout</h1>
-            <div className="w-12" />
+
+            <h1 className="text-sm font-bold text-stone-900 uppercase tracking-wider font-serif">
+              Secure Checkout
+            </h1>
+
+            <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60">
+              <Shield className="h-3 w-3" />
+              <span className="hidden sm:inline">256-Bit SSL</span>
+            </div>
           </div>
 
-          {/* Stepper bar */}
-          <div className="flex items-center justify-between relative">
-            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-200 z-0" />
-            <div
-              className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-stone-900 transition-all duration-300 z-0"
-              style={{ width: `${((step - 1) / (stepLabels.length - 1)) * 100}%` }}
-            />
-            {stepLabels.map((label, index) => {
-              const stepNum = index + 1;
-              const isCompleted = step > stepNum;
-              const isCurrent = step === stepNum;
+          {/* ── Modern Segmented Progress Pills (No Overlapping Lines) ── */}
+          <div className="grid grid-cols-3 gap-2">
+            {stepLabels.map(({ num, label }) => {
+              const isCompleted = step > num;
+              const isCurrent = step === num;
               return (
-                <div key={label} className="flex flex-col items-center relative z-10">
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
-                      isCompleted
-                        ? 'bg-stone-900 text-white'
-                        : isCurrent
-                        ? 'bg-stone-900 text-white ring-4 ring-stone-100'
-                        : 'bg-white border-2 border-gray-300 text-gray-400'
-                    }`}
-                  >
-                    {isCompleted ? <CheckCircle className="h-4 w-4" /> : stepNum}
-                  </div>
-                  <span className={`text-[11px] mt-1 font-medium ${isCurrent ? 'text-stone-900 font-semibold' : 'text-gray-400'}`}>
-                    {label}
-                  </span>
-                </div>
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => {
+                    if (isCompleted) setStep(num);
+                  }}
+                  disabled={!isCompleted && !isCurrent}
+                  className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-default ${
+                    isCurrent
+                      ? 'bg-stone-900 text-white shadow-xs'
+                      : isCompleted
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 cursor-pointer hover:bg-emerald-100'
+                      : 'bg-stone-100/90 text-stone-400 border border-transparent'
+                  }`}
+                >
+                  {isCompleted ? (
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                  ) : (
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
+                      isCurrent ? 'bg-white/20 text-white' : 'bg-stone-200 text-stone-500'
+                    }`}>
+                      {num}
+                    </span>
+                  )}
+                  <span className="truncate">{label}</span>
+                </button>
               );
             })}
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Main content */}
-      <div className="min-h-screen bg-gray-50 pt-28 pb-36 px-4">
+      <div className="pt-28 pb-36 px-4">
         <div className="max-w-2xl mx-auto space-y-4">
           {/* STEP 1: Shipping Address */}
           {step === 1 && (
@@ -527,7 +542,7 @@ export const CheckoutPage: React.FC = () => {
           onCancel={() => setShowPaymentModal(false)}
         />
       )}
-    </>
+    </div>
   );
 };
 
