@@ -1,553 +1,828 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring, Variants } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
-  Shield,
-  Zap,
-  Globe,
-  Layout,
   CheckCircle2,
   Lock,
-  Layers,
-  Sparkles,
   Smartphone,
-  ChevronRight,
+  Sparkles,
   ShoppingBag,
   CreditCard,
-  Sliders,
-  Database,
-  ExternalLink,
   Store,
-  Clock
+  ChevronRight,
+  ShieldCheck,
+  Zap,
+  Check,
+  TrendingUp,
+  Globe,
+  Database,
+  ArrowUpRight,
+  Banknote,
+  Percent,
+  SlidersHorizontal,
+  Building2,
+  ExternalLink,
+  PackageCheck,
+  BadgeCheck,
+  RefreshCw,
+  Share2,
+  Flame,
+  Send,
+  Layers,
+  Heart,
+  Eye,
+  Sliders
 } from 'lucide-react';
 
+// Animation presets
+const fadeInUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (custom: number = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, delay: custom * 0.1, ease: "easeOut" }
+  })
+};
+
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.05
+    }
+  }
+};
+
+interface ProductShowcase {
+  id: string;
+  category: string;
+  name: string;
+  price: number;
+  tag: string;
+  image: string;
+  story: string;
+  colorScheme: {
+    accent: string;
+    pill: string;
+    bgGlow: string;
+  };
+}
+
+const SHOWCASE_PRODUCTS: ProductShowcase[] = [
+  {
+    id: 'perfume',
+    category: 'Haute Parfumerie',
+    name: 'Oud Royale & Smoked Amber',
+    price: 2899,
+    tag: 'Artisan Batch',
+    image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1000&q=85',
+    story: 'Pure hydro-distilled botanicals aged in French oak casks for 18-hour longevity.',
+    colorScheme: {
+      accent: '#09090B',
+      pill: 'bg-[#09090B] text-white',
+      bgGlow: 'from-stone-900/10 to-transparent'
+    }
+  },
+  {
+    id: 'streetwear',
+    category: 'Contemporary Streetwear',
+    name: 'Heavyweight Raw Fleece Hoodie',
+    price: 3499,
+    tag: 'Limited 150 Units',
+    image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=1000&q=85',
+    story: '500 GSM organic French terry cotton with structured boxy silhouette and custom metal aglets.',
+    colorScheme: {
+      accent: '#0071E3',
+      pill: 'bg-[#0071E3] text-white',
+      bgGlow: 'from-blue-600/10 to-transparent'
+    }
+  },
+  {
+    id: 'ceramics',
+    category: 'Artisanal Ceramics',
+    name: 'Wabi-Sabi Stoneware Vessel',
+    price: 1950,
+    tag: 'Hand Thrown',
+    image: 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=1000&q=85',
+    story: 'Wheel-thrown iron-rich clay finished with natural wood-ash glaze and matte texture.',
+    colorScheme: {
+      accent: '#047857',
+      pill: 'bg-[#047857] text-white',
+      bgGlow: 'from-emerald-600/10 to-transparent'
+    }
+  }
+];
+
+const LIVE_STREAM_ORDERS = [
+  { city: 'Mumbai', amount: '₹2,899', method: 'UPI Instant', time: 'Just now', item: 'Oud Royale' },
+  { city: 'Bengaluru', amount: '₹3,499', method: 'Google Pay', time: '12s ago', item: 'Fleece Hoodie' },
+  { city: 'Delhi NCR', amount: '₹1,950', method: 'PhonePe', time: '28s ago', item: 'Stoneware Vessel' },
+  { city: 'Hyderabad', amount: '₹5,798', method: 'NetBanking', time: '45s ago', item: 'Oud Royale (2x)' },
+];
+
 export const PlatformLandingPage: React.FC = () => {
-  const [activePreviewTab, setActivePreviewTab] = useState<'storefront' | 'admin' | 'checkout'>('storefront');
+  const [selectedProduct, setSelectedProduct] = useState<ProductShowcase>(SHOWCASE_PRODUCTS[0]);
+  const [phoneState, setPhoneState] = useState<'browsing' | 'cart' | 'success'>('browsing');
+  const [activeTab, setActiveTab] = useState<'customer' | 'owner'>('customer');
+  const [salesItems, setSalesItems] = useState(45);
+  const [avgPrice, setAvgPrice] = useState(2400);
+  const [activeLiveIndex, setActiveLiveIndex] = useState(0);
+
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Ticker for simulated real-time verified order feed
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveLiveIndex((prev) => (prev + 1) % LIVE_STREAM_ORDERS.length);
+    }, 3800);
+    return () => clearInterval(timer);
+  }, []);
+
+  const totalMonthlyEarnings = salesItems * avgPrice;
+
   return (
-    <div className="min-h-screen bg-[#fafaf9] text-stone-900 font-sans selection:bg-stone-900 selection:text-white antialiased">
+    <div
+      className="min-h-screen bg-[#FBFBFD] text-[#1D1D1F] antialiased selection:bg-[#0071E3]/15 selection:text-[#0071E3] relative"
+      style={{
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif',
+      }}
+    >
+      {/* Scroll Progress Bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-[2px] bg-[#0071E3] z-50 origin-left"
+        style={{ scaleX }}
+      />
+
       {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* ── 1. QUIET TOP NAVIGATION BAR ── */}
+      {/* ── 1. QUIET FROSTED HEADER ────────────────────────────────────────── */}
       {/* ══════════════════════════════════════════════════════════════════════ */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-[#fafaf9]/85 backdrop-blur-md border-b border-stone-200/80 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Brand Identity */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-stone-900 text-white flex items-center justify-center font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
-              <Store className="w-4 h-4" />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-serif font-black text-lg tracking-tight text-stone-950">
-                ORUFY
+      <header className="fixed top-0 inset-x-0 z-40 bg-[#FBFBFD]/85 backdrop-blur-xl border-b border-black/[0.05] transition-all">
+        <div className="max-w-[1160px] mx-auto px-5 sm:px-8 h-12 flex items-center justify-between">
+          {/* Brand Mark */}
+          <Link to="/" className="flex items-center gap-2 group">
+            <motion.div
+              whileHover={{ rotate: 5, scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-6 h-6 rounded-lg bg-[#09090B] text-white flex items-center justify-center text-[11px] font-semibold shadow-xs"
+            >
+              <Store className="w-3.5 h-3.5" strokeWidth={2} />
+            </motion.div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-[15px] tracking-[-0.02em] text-[#09090B]">
+                Orufy
               </span>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-stone-200/80 text-stone-700">
-                2.0
+              <span className="text-[10px] font-semibold text-[#86868B] px-1.5 py-0.5 rounded-full bg-black/[0.04]">
+                Commerce 2.0
               </span>
             </div>
           </Link>
 
-          {/* Center Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-stone-600">
-            <a href="#features" className="hover:text-stone-950 transition-colors">
-              Features
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center gap-7 text-[12px] font-medium text-[#1D1D1F]/75">
+            <a href="#showcase" className="hover:text-[#09090B] transition-colors">
+              Boutique Showcase
             </a>
-            <a href="#architecture" className="hover:text-stone-950 transition-colors">
-              Architecture
+            <a href="#interactive-demo" className="hover:text-[#09090B] transition-colors">
+              Live Phone Demo
             </a>
-            <a href="#showcase" className="hover:text-stone-950 transition-colors">
-              Showcase
+            <a href="#how-it-works" className="hover:text-[#09090B] transition-colors">
+              How It Works
             </a>
-            <a href="#security" className="hover:text-stone-950 transition-colors">
-              Enterprise Security
+            <a href="#calculator" className="hover:text-[#09090B] transition-colors">
+              Earnings Calculator
             </a>
           </nav>
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
             <Link
-              to="/store"
-              className="text-xs font-semibold text-stone-600 hover:text-stone-950 transition-colors hidden sm:flex items-center gap-1"
-            >
-              <span>Live Demo</span>
-              <ExternalLink className="w-3 h-3 text-stone-400" />
-            </Link>
-
-            <Link
               to="/auth"
-              className="text-xs font-semibold text-stone-700 hover:text-stone-950 transition-colors px-3 py-1.5 rounded-full hover:bg-stone-200/60"
+              className="text-[12px] font-medium text-[#1D1D1F]/80 hover:text-[#09090B] transition-colors px-3 py-1"
             >
               Sign In
             </Link>
 
-            <Link
-              to="/onboarding"
-              className="bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold px-4 py-2 rounded-full transition-all shadow-xs hover:shadow flex items-center gap-1.5 active:scale-95"
-            >
-              <span>Launch Store</span>
-              <ArrowRight className="w-3 h-3" />
-            </Link>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+              <Link
+                to="/onboarding"
+                className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full transition-all shadow-xs inline-flex items-center gap-1"
+              >
+                <span>Launch Store</span>
+                <ChevronRight className="w-3 h-3" strokeWidth={2.5} />
+              </Link>
+            </motion.div>
           </div>
         </div>
       </header>
 
-      <main className="pt-24 pb-20 overflow-hidden">
+      <main className="pt-20 pb-24 overflow-hidden">
         {/* ══════════════════════════════════════════════════════════════════════ */}
-        {/* ── 2. HERO SECTION: WHAT IT IS, WHO IT'S FOR, NEXT ACTION ─────────── */}
+        {/* ── 2. HERO: BESPOKE HIGH-IMPACT STATEMENT ─────────────────────────── */}
         {/* ══════════════════════════════════════════════════════════════════════ */}
-        <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20 sm:pt-20 sm:pb-28 text-center flex flex-col items-center">
-          {/* Eyebrow Pill */}
+        <section className="max-w-[1160px] mx-auto px-5 sm:px-8 pt-10 pb-14 sm:pt-16 sm:pb-20 text-center flex flex-col items-center relative">
+          {/* Subtle Ambient Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-blue-100/40 via-stone-100/30 to-amber-100/30 blur-3xl pointer-events-none -z-10 rounded-full" />
+
+          {/* Live Order Pulse Ribbon */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-200/70 border border-stone-300/60 text-stone-800 text-xs font-bold uppercase tracking-widest mb-8"
+            className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-black/[0.06] shadow-xs text-[12px] font-medium text-[#09090B] mb-7"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Next-Gen E-Commerce Engine</span>
+            <span className="text-[#86868B]">Live verified order:</span>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={activeLiveIndex}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.25 }}
+                className="font-semibold text-[#09090B]"
+              >
+                {LIVE_STREAM_ORDERS[activeLiveIndex].item} • {LIVE_STREAM_ORDERS[activeLiveIndex].amount} ({LIVE_STREAM_ORDERS[activeLiveIndex].city})
+              </motion.span>
+            </AnimatePresence>
           </motion.div>
 
-          {/* Headline */}
+          {/* Massive Kinetic Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-stone-950 tracking-tight leading-[1.04] font-serif max-w-5xl mb-6"
+            transition={{ duration: 0.6, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[44px] sm:text-[72px] md:text-[88px] leading-[1.02] font-semibold tracking-[-0.04em] text-[#09090B] max-w-5xl mx-auto mb-6"
           >
-            Commerce crafted <br className="hidden sm:inline" />
-            for distinction.
+            Sell with pure distinction. <br />
+            <span className="text-[#86868B]">Get paid straight to your bank.</span>
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-base sm:text-xl md:text-2xl text-stone-600 font-normal max-w-3xl leading-relaxed mb-10"
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[17px] sm:text-[21px] text-[#86868B] font-normal leading-[1.45] max-w-2xl mx-auto mb-9 tracking-tight"
           >
-            Deploy high-performance luxury storefronts in seconds. Powered by isolated multi-tenant PostgreSQL, sub-second checkout, and curated editorial themes. Zero plugin bloat. Pure craft.
+            Deploy an ultra-fast luxury storefront in 60 seconds. Share your store link on WhatsApp or Instagram, and let customers buy in 3 taps with UPI or Cash on Delivery.
           </motion.p>
 
-          {/* Primary Action Group */}
+          {/* Primary Action Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto"
           >
-            <Link
-              to="/onboarding"
-              className="w-full sm:w-auto bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm px-8 py-4 rounded-full transition-all shadow-md hover:shadow-xl inline-flex items-center justify-center gap-2 active:scale-98"
-            >
-              <span>Create Your Store in 60s</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-
-            <Link
-              to="/store"
-              className="w-full sm:w-auto bg-white hover:bg-stone-100 text-stone-900 border border-stone-300 font-bold text-sm px-8 py-4 rounded-full transition-all inline-flex items-center justify-center gap-2"
-            >
-              <span>Explore Live Demo</span>
-              <ExternalLink className="w-4 h-4 text-stone-500" />
-            </Link>
-          </motion.div>
-
-          {/* Architectural Metrics Ribbon */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.45 }}
-            className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 pt-8 border-t border-stone-200/80 w-full max-w-4xl text-left"
-          >
-            <div className="space-y-0.5">
-              <p className="text-xl sm:text-2xl font-bold font-serif text-stone-950">&lt; 100ms</p>
-              <p className="text-xs text-stone-500 font-medium">Edge API Latency</p>
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xl sm:text-2xl font-bold font-serif text-stone-950">100% Isolated</p>
-              <p className="text-xs text-stone-500 font-medium">PostgreSQL Multi-Tenant</p>
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xl sm:text-2xl font-bold font-serif text-stone-950">Zero Plugins</p>
-              <p className="text-xs text-stone-500 font-medium">Native Speed & Security</p>
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xl sm:text-2xl font-bold font-serif text-stone-950">1-Click SSL</p>
-              <p className="text-xs text-stone-500 font-medium">Custom Domain Routing</p>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════════════════════ */}
-        {/* ── 3. INTERACTIVE PRODUCT CANVAS MOCKUP ───────────────────────────── */}
-        {/* ══════════════════════════════════════════════════════════════════════ */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-28">
-          <div className="bg-white rounded-3xl sm:rounded-[36px] border border-stone-200/80 shadow-2xl overflow-hidden">
-            {/* Window Chrome */}
-            <div className="bg-stone-100 border-b border-stone-200 px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-400/80" />
-                <div className="w-3 h-3 rounded-full bg-amber-400/80" />
-                <div className="w-3 h-3 rounded-full bg-emerald-400/80" />
-                <div className="ml-3 hidden sm:flex items-center gap-1.5 px-3 py-1 bg-white rounded-lg border border-stone-200 text-[11px] font-mono text-stone-600">
-                  <Lock className="w-3 h-3 text-emerald-600" />
-                  <span>easyio.get-oru.com</span>
-                </div>
-              </div>
-
-              {/* View Switcher */}
-              <div className="flex items-center gap-1 bg-stone-200/80 p-1 rounded-xl">
-                <button
-                  onClick={() => setActivePreviewTab('storefront')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activePreviewTab === 'storefront' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-600 hover:text-stone-900'
-                  }`}
-                >
-                  Luxury Storefront
-                </button>
-                <button
-                  onClick={() => setActivePreviewTab('admin')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activePreviewTab === 'admin' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-600 hover:text-stone-900'
-                  }`}
-                >
-                  Merchant Hub
-                </button>
-                <button
-                  onClick={() => setActivePreviewTab('checkout')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activePreviewTab === 'checkout' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-600 hover:text-stone-900'
-                  }`}
-                >
-                  One-Page Checkout
-                </button>
-              </div>
-            </div>
-
-            {/* Canvas Interactive Screen */}
-            <div className="p-6 sm:p-10 bg-stone-50/50">
-              <AnimatePresence mode="wait">
-                {activePreviewTab === 'storefront' && (
-                  <motion.div
-                    key="storefront"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center"
-                  >
-                    <div className="md:col-span-6 space-y-4">
-                      <span className="text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-stone-200 text-stone-800">
-                        Editorial Presentation
-                      </span>
-                      <h3 className="text-2xl sm:text-4xl font-bold font-serif text-stone-950">
-                        Oud Royale & Rare Amber
-                      </h3>
-                      <p className="text-sm text-stone-600 leading-relaxed">
-                        Precision-crafted storefront with fluid typography, responsive slideovers, and instant cart updates.
-                      </p>
-                      <div className="pt-2 flex items-center gap-3">
-                        <span className="font-serif font-bold text-xl text-stone-950">₹3,499</span>
-                        <span className="px-5 py-2 rounded-full bg-stone-900 text-white font-bold text-xs">
-                          Add to Bag
-                        </span>
-                      </div>
-                    </div>
-                    <div className="md:col-span-6 aspect-video sm:aspect-[4/3] rounded-2xl overflow-hidden border border-stone-200 shadow-md">
-                      <img
-                        src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1200&q=80"
-                        alt="Product Showcase"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-
-                {activePreviewTab === 'admin' && (
-                  <motion.div
-                    key="admin"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="space-y-5"
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs">
-                        <p className="text-xs text-stone-500 font-semibold">Today's Revenue</p>
-                        <p className="text-2xl font-bold font-serif text-stone-950 mt-1">₹48,250</p>
-                        <p className="text-[11px] text-emerald-600 font-bold mt-1.5">↑ 24% vs last week</p>
-                      </div>
-                      <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs">
-                        <p className="text-xs text-stone-500 font-semibold">Active Orders</p>
-                        <p className="text-2xl font-bold font-serif text-stone-950 mt-1">19</p>
-                        <p className="text-[11px] text-stone-500 mt-1.5">All fulfilled in &lt; 2 hours</p>
-                      </div>
-                      <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs">
-                        <p className="text-xs text-stone-500 font-semibold">Conversion Rate</p>
-                        <p className="text-2xl font-bold font-serif text-stone-950 mt-1">4.8%</p>
-                        <p className="text-[11px] text-emerald-600 font-bold mt-1.5">Top 5% across commerce</p>
-                      </div>
-                    </div>
-                    <div className="p-4 bg-white rounded-2xl border border-stone-200 flex items-center justify-between text-xs font-semibold text-stone-700">
-                      <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        Razorpay Live Gateway Connected
-                      </span>
-                      <span className="text-stone-400">Merchant ID: mch_09a4f</span>
-                    </div>
-                  </motion.div>
-                )}
-
-                {activePreviewTab === 'checkout' && (
-                  <motion.div
-                    key="checkout"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center"
-                  >
-                    <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-4">
-                      <h4 className="font-serif font-bold text-base text-stone-950">Express Delivery</h4>
-                      <div className="space-y-2">
-                        <div className="h-9 bg-stone-100 rounded-xl px-3 flex items-center text-xs text-stone-600">
-                          Sarah Jenkins • sarah@example.com
-                        </div>
-                        <div className="h-9 bg-stone-100 rounded-xl px-3 flex items-center text-xs text-stone-600">
-                          104 Victoria Promenade, Suite 4B
-                        </div>
-                      </div>
-                      <div className="pt-2 flex gap-2">
-                        <span className="flex-1 py-2 text-center rounded-xl bg-stone-900 text-white font-bold text-xs">
-                          Pay with UPI / Card
-                        </span>
-                        <span className="flex-1 py-2 text-center rounded-xl bg-stone-100 text-stone-700 font-bold text-xs">
-                          Cash on Delivery
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <h4 className="font-serif font-bold text-lg text-stone-950">Zero-Friction Conversion</h4>
-                      <p className="text-xs text-stone-600 leading-relaxed">
-                        Single-page progressive checkout flow. Native auto-fill, address pin validation, and guaranteed instant confirmation.
-                      </p>
-                      <ul className="space-y-1.5 text-xs text-stone-700 font-medium">
-                        <li className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Razorpay instant verification
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Automated GST billing & PDF receipts
-                        </li>
-                      </ul>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════════════════════ */}
-        {/* ── 4. ARCHITECTURAL PILLARS (BENTO GRID) ──────────────────────────── */}
-        {/* ══════════════════════════════════════════════════════════════════════ */}
-        <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-stone-200/80">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-stone-200/70 text-stone-800">
-              The Orufy Architecture
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-bold font-serif text-stone-950 mt-4 leading-tight">
-              Engineered without compromise.
-            </h2>
-            <p className="text-sm sm:text-base text-stone-600 mt-3">
-              We eliminated the brittle plugin ecosystems and bloated architectures of legacy platforms.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            {/* Tile 1: Multi-Tenant PostgreSQL */}
-            <div className="md:col-span-7 bg-white p-8 sm:p-10 rounded-3xl border border-stone-200/80 shadow-xs flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-900">
-                  <Database className="w-6 h-6" />
-                </div>
-                <h3 className="text-2xl font-bold font-serif text-stone-950">
-                  Isolated Multi-Tenant PostgreSQL
-                </h3>
-                <p className="text-sm text-stone-600 leading-relaxed max-w-xl">
-                  Every store operates in a secure, isolated database context. Your orders, customers, inventory, and analytics are fortified with strict schema partitioning.
-                </p>
-              </div>
-              <div className="mt-8 pt-6 border-t border-stone-100 flex items-center gap-3 text-xs font-bold text-stone-900">
-                <Shield className="w-4 h-4 text-emerald-600" />
-                <span>Enterprise ACID Compliance • Zero Data Leaks</span>
-              </div>
-            </div>
-
-            {/* Tile 2: Sub-Second Speed */}
-            <div className="md:col-span-5 bg-stone-950 text-white p-8 sm:p-10 rounded-3xl shadow-lg flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400">
-                  <Zap className="w-6 h-6" />
-                </div>
-                <h3 className="text-2xl font-bold font-serif">
-                  Sub-Second Page Loads
-                </h3>
-                <p className="text-sm text-stone-300 leading-relaxed">
-                  Engineered with modern Vite bundling, Brotli compression, and zero heavy frameworks. Your customers never wait.
-                </p>
-              </div>
-              <div className="mt-8 pt-6 border-t border-white/10 flex items-center gap-2 text-xs font-semibold text-stone-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span>99+ Google Lighthouse Score</span>
-              </div>
-            </div>
-
-            {/* Tile 3: Curated Design Presets */}
-            <div className="md:col-span-4 bg-white p-8 rounded-3xl border border-stone-200/80 shadow-xs flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="w-11 h-11 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-900">
-                  <Layout className="w-5 h-5" />
-                </div>
-                <h3 className="text-xl font-bold font-serif text-stone-950">
-                  Curated Editorial Themes
-                </h3>
-                <p className="text-xs text-stone-600 leading-relaxed">
-                  Pre-configured typographic scales, obsidian dark accents, and fluid grid layouts that look iconic on first view.
-                </p>
-              </div>
-              <Link to="/store" className="mt-6 text-xs font-bold text-stone-900 hover:text-stone-700 flex items-center gap-1">
-                <span>View Themes</span> &rarr;
-              </Link>
-            </div>
-
-            {/* Tile 4: Custom Domains */}
-            <div className="md:col-span-4 bg-white p-8 rounded-3xl border border-stone-200/80 shadow-xs flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="w-11 h-11 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-900">
-                  <Globe className="w-5 h-5" />
-                </div>
-                <h3 className="text-xl font-bold font-serif text-stone-950">
-                  1-Click Custom Domains
-                </h3>
-                <p className="text-xs text-stone-600 leading-relaxed">
-                  Connect your own apex or subdomain with automatic SSL certificate issuance and edge routing.
-                </p>
-              </div>
-              <span className="mt-6 text-xs font-bold text-emerald-700 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Automated DNS Verification
-              </span>
-            </div>
-
-            {/* Tile 5: Native POS & Orders */}
-            <div className="md:col-span-4 bg-white p-8 rounded-3xl border border-stone-200/80 shadow-xs flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="w-11 h-11 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-900">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <h3 className="text-xl font-bold font-serif text-stone-950">
-                  Integrated POS & Payments
-                </h3>
-                <p className="text-xs text-stone-600 leading-relaxed">
-                  Seamless payment flow with Razorpay UPI, Cards, Netbanking, and Cash on Delivery with full ledger tracking.
-                </p>
-              </div>
-              <span className="mt-6 text-xs font-bold text-stone-500">
-                Direct Merchant Settlement
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════════════════════ */}
-        {/* ── 5. COMPARISON SECTION: LEGACY CMS VS ORUFY ─────────────────────── */}
-        {/* ══════════════════════════════════════════════════════════════════════ */}
-        <section id="architecture" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-stone-200/80">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold font-serif text-stone-950">
-              The standard for modern commerce.
-            </h2>
-            <p className="text-sm text-stone-600 mt-2">
-              Why leading brands are switching from bloated legacy builders to Orufy.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-stone-200/80 overflow-hidden shadow-xs">
-            <div className="grid grid-cols-3 bg-stone-100/80 p-4 sm:p-5 border-b border-stone-200 font-serif font-bold text-xs sm:text-sm text-stone-900">
-              <div>Capability</div>
-              <div className="text-stone-500">Legacy Builders</div>
-              <div className="text-stone-950 font-black">Orufy Commerce</div>
-            </div>
-
-            <div className="divide-y divide-stone-100 text-xs sm:text-sm">
-              <div className="grid grid-cols-3 p-4 sm:p-5 items-center">
-                <div className="font-semibold text-stone-900">Page Speed</div>
-                <div className="text-stone-500">2.5s – 4.2s (Bloated)</div>
-                <div className="text-emerald-700 font-bold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> &lt; 0.8s (Edge Optimized)
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 p-4 sm:p-5 items-center">
-                <div className="font-semibold text-stone-900">Plugins Required</div>
-                <div className="text-stone-500">20+ brittle plugins</div>
-                <div className="text-emerald-700 font-bold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> 0 plugins (Native stack)
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 p-4 sm:p-5 items-center">
-                <div className="font-semibold text-stone-900">Database Security</div>
-                <div className="text-stone-500">Shared MySQL tables</div>
-                <div className="text-emerald-700 font-bold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> Isolated PostgreSQL context
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 p-4 sm:p-5 items-center">
-                <div className="font-semibold text-stone-900">Checkout Flow</div>
-                <div className="text-stone-500">Multi-step page reloads</div>
-                <div className="text-emerald-700 font-bold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> Instant single-page modal
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════════════════════ */}
-        {/* ── 6. FINAL HIGH-IMPACT CTA ───────────────────────────────────────── */}
-        {/* ══════════════════════════════════════════════════════════════════════ */}
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-          <div className="bg-stone-950 text-white rounded-3xl sm:rounded-[40px] p-10 sm:p-16 text-center space-y-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-stone-800/20 rounded-full blur-3xl pointer-events-none" />
-
-            <span className="text-[11px] font-bold uppercase tracking-widest px-3.5 py-1 rounded-full bg-white/10 text-stone-300 inline-block border border-white/15">
-              Launch Today
-            </span>
-
-            <h2 className="text-3xl sm:text-5xl md:text-6xl font-bold font-serif tracking-tight leading-tight max-w-2xl mx-auto">
-              Your brand deserves more than generic templates.
-            </h2>
-
-            <p className="text-sm sm:text-base text-stone-400 max-w-xl mx-auto leading-relaxed">
-              Join discerning merchants who demand speed, security, and pure editorial design.
-            </p>
-
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
               <Link
                 to="/onboarding"
-                className="w-full sm:w-auto bg-white hover:bg-stone-100 text-stone-950 font-bold text-sm px-9 py-4 rounded-full transition-all shadow-lg active:scale-98 inline-flex items-center justify-center gap-2"
+                className="w-full sm:w-auto bg-[#0071E3] hover:bg-[#0077ED] text-white text-[15px] font-semibold px-8 py-3.5 rounded-full transition-all shadow-md flex items-center justify-center gap-2 group"
               >
-                <span>Launch Your Store Now</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Open Your Online Store</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
+              </Link>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+              <a
+                href="#interactive-demo"
+                className="w-full sm:w-auto bg-white hover:bg-[#F5F5F7] text-[#09090B] border border-black/[0.08] text-[15px] font-medium px-6 py-3.5 rounded-full transition-colors flex items-center justify-center gap-2 shadow-xs"
+              >
+                <Smartphone className="w-4 h-4 text-[#0071E3]" strokeWidth={2} />
+                <span>Test Interactive Demo</span>
+              </a>
+            </motion.div>
+          </motion.div>
+
+          {/* 3 Metric Cards */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="mt-14 pt-8 border-t border-black/[0.06] grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-3xl text-left"
+          >
+            <motion.div variants={fadeInUp} custom={1} className="flex items-center gap-3.5">
+              <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
+                <Banknote className="w-4 h-4" strokeWidth={2} />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-[#09090B]">100% Direct Payouts</p>
+                <p className="text-[11px] text-[#86868B]">Settled straight to your UPI / Bank</p>
+              </div>
+            </motion.div>
+
+            <motion.div variants={fadeInUp} custom={2} className="flex items-center gap-3.5">
+              <div className="w-9 h-9 rounded-2xl bg-blue-50 text-[#0071E3] flex items-center justify-center shrink-0 border border-blue-100">
+                <Zap className="w-4 h-4" strokeWidth={2} />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-[#09090B]">Sub-Second Mobile Speed</p>
+                <p className="text-[11px] text-[#86868B]">Opens in 0.5s inside Instagram chats</p>
+              </div>
+            </motion.div>
+
+            <motion.div variants={fadeInUp} custom={3} className="flex items-center gap-3.5">
+              <div className="w-9 h-9 rounded-2xl bg-stone-100 text-stone-700 flex items-center justify-center shrink-0 border border-stone-200">
+                <ShieldCheck className="w-4 h-4" strokeWidth={2} />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-[#09090B]">Private Database Safe</p>
+                <p className="text-[11px] text-[#86868B]">Dedicated tenant data isolation</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        {/* ── 3. INTERACTIVE BOUTIQUE SHOWCASE (CATEGORY EXPLORER) ───────────── */}
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        <section id="showcase" className="max-w-[1160px] mx-auto px-5 sm:px-8 py-12 mb-12">
+          <div className="text-center max-w-xl mx-auto mb-8">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-full inline-block mb-2">
+              Curated Storefront Aesthetics
+            </span>
+            <h2 className="text-[28px] sm:text-[38px] font-semibold tracking-[-0.03em] text-[#09090B]">
+              Designed for high-craft brands.
+            </h2>
+            <p className="text-[14px] text-[#86868B] mt-1.5">
+              Select a store aesthetic below to see how your catalog comes to life.
+            </p>
+          </div>
+
+          {/* Interactive Category Tabs */}
+          <div className="flex flex-wrap justify-center gap-2 mb-8">
+            {SHOWCASE_PRODUCTS.map((prod) => (
+              <button
+                key={prod.id}
+                onClick={() => {
+                  setSelectedProduct(prod);
+                  setPhoneState('browsing');
+                }}
+                className={`px-4 py-2 rounded-full text-[13px] font-medium transition-all cursor-pointer flex items-center gap-2 ${
+                  selectedProduct.id === prod.id
+                    ? 'bg-[#09090B] text-white shadow-xs scale-105'
+                    : 'bg-white text-[#1D1D1F] border border-black/[0.08] hover:bg-[#F5F5F7]'
+                }`}
+              >
+                <span>{prod.category}</span>
+                {selectedProduct.id === prod.id && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Stage Display Card with Smooth Transitions */}
+          <motion.div
+            key={selectedProduct.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="bg-white rounded-[32px] border border-black/[0.08] p-6 sm:p-10 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 items-center"
+          >
+            <div className="lg:col-span-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#F5F5F7] text-[#09090B]">
+                  {selectedProduct.tag}
+                </span>
+                <span className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+                  <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Instant Checkout Enabled</span>
+                </span>
+              </div>
+
+              <h3 className="text-[26px] sm:text-[38px] font-semibold tracking-[-0.03em] text-[#09090B] leading-tight">
+                {selectedProduct.name}
+              </h3>
+
+              <p className="text-[14px] sm:text-[15px] text-[#86868B] leading-relaxed">
+                {selectedProduct.story}
+              </p>
+
+              <div className="pt-2 flex items-center gap-4">
+                <span className="text-[24px] font-semibold text-[#09090B]">
+                  ₹{selectedProduct.price.toLocaleString()}
+                </span>
+                <Link
+                  to="/onboarding"
+                  className="px-6 py-2.5 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white text-[13px] font-semibold transition-all shadow-xs inline-flex items-center gap-1.5"
+                >
+                  <span>Build This Store</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="lg:col-span-6 aspect-[4/3] rounded-[24px] overflow-hidden border border-black/[0.06] shadow-sm relative group bg-[#FAFAFC]">
+              <img
+                src={selectedProduct.image}
+                alt={selectedProduct.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        {/* ── 4. INTERACTIVE PHONE SIMULATOR (TOUCH & FEEL IT) ───────────────── */}
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        <section id="interactive-demo" className="max-w-[1160px] mx-auto px-5 sm:px-8 py-10 mb-16">
+          <div className="text-center max-w-xl mx-auto mb-10">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-full inline-block mb-3">
+              Live Phone Simulator
+            </span>
+            <h2 className="text-[28px] sm:text-[40px] font-semibold tracking-[-0.03em] text-[#09090B] leading-tight">
+              Test how your buyers shop.
+            </h2>
+            <p className="text-[15px] text-[#86868B] mt-2">
+              Tap the interactive screen inside the phone to test the instant buyer journey.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white p-6 sm:p-10 rounded-[32px] border border-black/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.03)]">
+            {/* Left Controls & Flow Steps */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Mode Control */}
+              <div className="bg-[#F5F5F7] p-1 rounded-2xl flex gap-1 text-[13px]">
+                <button
+                  onClick={() => setActiveTab('customer')}
+                  className={`flex-1 py-2 rounded-xl font-medium transition-all cursor-pointer ${
+                    activeTab === 'customer'
+                      ? 'bg-white text-[#09090B] shadow-xs'
+                      : 'text-[#86868B] hover:text-[#09090B]'
+                  }`}
+                >
+                  Customer's Mobile
+                </button>
+                <button
+                  onClick={() => setActiveTab('owner')}
+                  className={`flex-1 py-2 rounded-xl font-medium transition-all cursor-pointer ${
+                    activeTab === 'owner'
+                      ? 'bg-white text-[#09090B] shadow-xs'
+                      : 'text-[#86868B] hover:text-[#09090B]'
+                  }`}
+                >
+                  Merchant Order Alert
+                </button>
+              </div>
+
+              {/* 3 Steps */}
+              <div className="space-y-4 pt-2">
+                <motion.div
+                  whileHover={{ x: 3 }}
+                  className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">
+                    1
+                  </div>
+                  <div>
+                    <h4 className="text-[14px] font-semibold text-[#09090B]">Customer taps your link</h4>
+                    <p className="text-[12px] text-[#86868B] mt-0.5">Loads in 0.5s directly inside Instagram bio, WhatsApp, or browser.</p>
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  whileHover={{ x: 3 }}
+                  className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="text-[14px] font-semibold text-[#09090B]">1-Tap Instant Checkout</h4>
+                    <p className="text-[12px] text-[#86868B] mt-0.5">Address and phone auto-filled. No account creation password hurdles.</p>
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  whileHover={{ x: 3 }}
+                  className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="text-[14px] font-semibold text-[#09090B]">Direct Bank Settlement</h4>
+                    <p className="text-[12px] text-[#86868B] mt-0.5">100% of money credited straight to your UPI / Bank account.</p>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Right Titanium Device Frame */}
+            <div className="lg:col-span-7 flex justify-center">
+              <div className="w-[320px] sm:w-[350px] bg-[#121214] rounded-[46px] p-3 shadow-2xl border-4 border-[#2A2A2E] relative">
+                {/* Dynamic Island */}
+                <div className="absolute top-5 inset-x-0 mx-auto w-24 h-4 bg-black rounded-full z-30" />
+
+                {/* Inner Screen */}
+                <div className="w-full bg-[#FBFBFD] rounded-[38px] overflow-hidden min-h-[580px] flex flex-col justify-between p-4 pt-7 relative border border-black/10">
+                  {/* Top Store Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-md bg-[#09090B] text-white flex items-center justify-center text-[9px] font-bold">
+                        A
+                      </div>
+                      <span className="font-semibold text-[13px] text-[#09090B]">
+                        Aura Atelier
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setPhoneState(phoneState === 'browsing' ? 'cart' : 'browsing')}
+                        className="relative p-1.5 rounded-full bg-black/[0.04] text-[#09090B] cursor-pointer"
+                        aria-label="Cart"
+                      >
+                        <ShoppingBag className="w-4 h-4" strokeWidth={2} />
+                        {phoneState !== 'browsing' && (
+                          <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#0071E3] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                            1
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Screen Content */}
+                  <div className="my-auto py-2">
+                    {activeTab === 'customer' ? (
+                      <>
+                        {phoneState === 'browsing' && (
+                          <motion.div
+                            key="browsing"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="space-y-3"
+                          >
+                            <div className="aspect-square rounded-2xl overflow-hidden border border-black/[0.06] shadow-2xs relative bg-white">
+                              <img
+                                src={selectedProduct.image}
+                                alt={selectedProduct.name}
+                                className="w-full h-full object-cover"
+                              />
+                              <span className="absolute top-2.5 left-2.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-xs text-[#09090B]">
+                                {selectedProduct.tag}
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <h5 className="font-semibold text-[15px] text-[#09090B]">
+                                {selectedProduct.name}
+                              </h5>
+                              <p className="text-[11px] text-[#86868B] line-clamp-2">
+                                {selectedProduct.story}
+                              </p>
+                              <div className="pt-1 flex items-center justify-between">
+                                <span className="font-semibold text-[17px] text-[#09090B]">
+                                  ₹{selectedProduct.price.toLocaleString()}
+                                </span>
+                                <span className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+                                  <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>In Stock</span>
+                                </span>
+                              </div>
+                            </div>
+
+                            <motion.button
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => setPhoneState('cart')}
+                              className="w-full py-3 rounded-full bg-[#09090B] text-white text-[13px] font-semibold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                            >
+                              <span>Tap to Buy Now</span>
+                              <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
+                            </motion.button>
+                          </motion.div>
+                        )}
+
+                        {phoneState === 'cart' && (
+                          <motion.div
+                            key="cart"
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="space-y-3 bg-white p-3.5 rounded-2xl border border-black/[0.06] shadow-xs"
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-black/[0.04]">
+                              <span className="text-[12px] font-semibold text-[#09090B]">Instant 1-Tap Checkout</span>
+                              <button
+                                onClick={() => setPhoneState('browsing')}
+                                className="text-[10px] text-[#86868B] hover:text-[#09090B]"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <div className="w-full bg-[#F5F5F7] text-[11px] font-medium text-[#09090B] px-2.5 py-2 rounded-lg">
+                                Rahul Sharma • 9876543210
+                              </div>
+                              <div className="w-full bg-[#F5F5F7] text-[11px] font-medium text-[#09090B] px-2.5 py-2 rounded-lg">
+                                B-402 Palm Heights, Mumbai, 400050
+                              </div>
+                            </div>
+
+                            <div className="p-2 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center justify-between text-[11px] text-blue-900 font-medium">
+                              <span>Total to Pay:</span>
+                              <span className="font-bold text-[13px]">₹{selectedProduct.price.toLocaleString()}</span>
+                            </div>
+
+                            <motion.button
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => setPhoneState('success')}
+                              className="w-full py-2.5 rounded-xl bg-[#0071E3] text-white text-[12px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                            >
+                              <Zap className="w-3.5 h-3.5" strokeWidth={2} />
+                              <span>Pay with UPI / Google Pay</span>
+                            </motion.button>
+                          </motion.div>
+                        )}
+
+                        {phoneState === 'success' && (
+                          <motion.div
+                            key="success"
+                            initial={{ opacity: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="text-center py-6 space-y-3 bg-white p-4 rounded-2xl border border-black/[0.06]"
+                          >
+                            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                              <Check className="w-6 h-6" strokeWidth={2.5} />
+                            </div>
+                            <h5 className="font-semibold text-[15px] text-[#09090B]">
+                              Payment Confirmed
+                            </h5>
+                            <p className="text-[11px] text-[#86868B] leading-relaxed">
+                              ₹{selectedProduct.price.toLocaleString()} received. Order confirmation & live tracking dispatched via WhatsApp.
+                            </p>
+                            <button
+                              onClick={() => setPhoneState('browsing')}
+                              className="px-4 py-1.5 rounded-full bg-[#F5F5F7] text-[#09090B] text-[11px] font-medium hover:bg-stone-200"
+                            >
+                              Reset Demo
+                            </button>
+                          </motion.div>
+                        )}
+                      </>
+                    ) : (
+                      /* Shop Owner's Live Alert Mode */
+                      <motion.div
+                        key="owner"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="space-y-3 bg-white p-4 rounded-2xl border border-black/[0.06] shadow-xs text-left"
+                      >
+                        <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full text-[10px] font-semibold w-fit">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          New Order Verified
+                        </div>
+                        <div>
+                          <p className="text-[18px] font-semibold text-[#09090B]">₹{selectedProduct.price.toLocaleString()}.00</p>
+                          <p className="text-[11px] text-[#86868B]">Directly credited to your registered bank</p>
+                        </div>
+                        <div className="pt-2 border-t border-black/[0.04] space-y-1 text-[11px] text-[#09090B]">
+                          <p><strong>Customer:</strong> Rahul Sharma</p>
+                          <p><strong>Destination:</strong> Mumbai, 400050</p>
+                          <p><strong>Product:</strong> {selectedProduct.name} (1x)</p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('customer')}
+                          className="w-full py-2 rounded-xl bg-[#09090B] text-white text-[11px] font-medium"
+                        >
+                          Print Shipping Invoice / Fulfill
+                        </button>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Security Footnote */}
+                  <div className="pt-2 border-t border-black/[0.04] flex items-center justify-center gap-1 text-[10px] text-[#86868B]">
+                    <Lock className="w-3 h-3 text-[#86868B]" />
+                    <span>Protected by Orufy Secure Core</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        {/* ── 5. REVENUE CALCULATOR (TRANSPARENT SLIDERS) ────────────────────── */}
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        <section id="calculator" className="max-w-[920px] mx-auto px-5 sm:px-8 py-16 border-t border-black/[0.06]">
+          <div className="bg-white rounded-[28px] border border-black/[0.08] p-8 sm:p-12 shadow-xs space-y-8">
+            <div className="text-center max-w-xl mx-auto space-y-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-full inline-block">
+                Transparent Cashflow
+              </span>
+              <h3 className="text-[26px] sm:text-[34px] font-semibold tracking-[-0.03em] text-[#09090B]">
+                Calculate your monthly income
+              </h3>
+              <p className="text-[14px] text-[#86868B]">
+                See the exact revenue retained when selling directly to your audience without marketplace penalties.
+              </p>
+            </div>
+
+            {/* Sliders */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4">
+              <div className="space-y-3">
+                <div className="flex justify-between text-[13px] font-semibold text-[#09090B]">
+                  <span>Monthly Orders:</span>
+                  <span className="text-[#0071E3] font-bold">{salesItems} items</span>
+                </div>
+                <input
+                  type="range"
+                  min="5"
+                  max="200"
+                  step="5"
+                  value={salesItems}
+                  onChange={(e) => setSalesItems(Number(e.target.value))}
+                  className="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#0071E3]"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between text-[13px] font-semibold text-[#09090B]">
+                  <span>Average Item Price:</span>
+                  <span className="text-[#0071E3] font-bold">₹{avgPrice.toLocaleString()}</span>
+                </div>
+                <input
+                  type="range"
+                  min="300"
+                  max="10000"
+                  step="100"
+                  value={avgPrice}
+                  onChange={(e) => setAvgPrice(Number(e.target.value))}
+                  className="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#0071E3]"
+                />
+              </div>
+            </div>
+
+            {/* Result Box */}
+            <div className="p-6 rounded-2xl bg-[#F5F5F7] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+              <div>
+                <p className="text-[12px] text-[#86868B] font-medium">Your Projected Monthly Revenue:</p>
+                <p className="text-[32px] sm:text-[40px] font-bold tracking-tight text-[#09090B]">
+                  ₹{totalMonthlyEarnings.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <Link
+                  to="/onboarding"
+                  className="bg-[#0071E3] hover:bg-[#0077ED] active:scale-[0.98] text-white text-[14px] font-semibold px-6 py-3 rounded-full transition-all inline-flex items-center gap-1.5 shadow-xs"
+                >
+                  <span>Start Selling Now</span>
+                  <ArrowRight className="w-4 h-4" strokeWidth={2} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        {/* ── 6. FINAL CONVERSION CALLOUT ────────────────────────────────────── */}
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        <section className="max-w-[1160px] mx-auto px-5 sm:px-8 pt-6">
+          <div className="bg-white border border-black/[0.08] rounded-[28px] sm:rounded-[36px] p-10 sm:p-16 text-center space-y-5 shadow-xs">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-full inline-block">
+              Launch in 60 Seconds
+            </span>
+
+            <h2 className="text-[32px] sm:text-[46px] font-semibold tracking-[-0.03em] text-[#09090B] leading-tight max-w-xl mx-auto">
+              Ready to launch your digital store?
+            </h2>
+
+            <p className="text-[16px] text-[#86868B] max-w-lg mx-auto leading-relaxed">
+              No credit card required. Launch directly from your phone in under two minutes.
+            </p>
+
+            <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                to="/onboarding"
+                className="w-full sm:w-auto bg-[#0071E3] hover:bg-[#0077ED] active:scale-[0.98] text-white text-[15px] font-medium px-8 py-3.5 rounded-full transition-all shadow-sm inline-flex items-center justify-center gap-1.5"
+              >
+                <span>Create Your Store Free</span>
+                <ArrowRight className="w-4 h-4" strokeWidth={2} />
               </Link>
               <Link
                 to="/store"
-                className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white font-bold text-sm px-8 py-4 rounded-full transition-colors border border-white/20"
+                className="w-full sm:w-auto bg-[#F5F5F7] hover:bg-[#EBEBEF] text-[#09090B] text-[15px] font-medium px-6 py-3.5 rounded-full transition-colors"
               >
-                View Live Demo Store
+                Explore Live Store
               </Link>
             </div>
           </div>
@@ -555,28 +830,28 @@ export const PlatformLandingPage: React.FC = () => {
       </main>
 
       {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* ── 7. QUIET MINIMALIST FOOTER ─────────────────────────────────────── */}
+      {/* ── 7. MINIMAL LUXURY FOOTER ───────────────────────────────────────── */}
       {/* ══════════════════════════════════════════════════════════════════════ */}
-      <footer className="border-t border-stone-200/80 bg-white py-12 text-stone-500 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <span className="font-serif font-black text-stone-900 text-sm">ORUFY</span>
-            <span className="text-stone-400">•</span>
-            <span>© {new Date().getFullYear()} Orufy Commerce Inc. All rights reserved.</span>
+      <footer className="border-t border-black/[0.06] bg-[#FBFBFD] py-10 text-[12px] text-[#86868B]">
+        <div className="max-w-[1160px] mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-[#09090B]">Orufy</span>
+            <span>•</span>
+            <span>Enterprise Commerce Engine</span>
           </div>
 
-          <div className="flex items-center gap-6 font-medium">
-            <Link to="/privacy-policy" className="hover:text-stone-900 transition-colors">
+          <div className="flex items-center gap-5">
+            <Link to="/privacy-policy" className="hover:text-[#09090B] transition-colors">
               Privacy Policy
             </Link>
-            <Link to="/terms-of-service" className="hover:text-stone-900 transition-colors">
-              Terms of Service
+            <Link to="/terms-of-service" className="hover:text-[#09090B] transition-colors">
+              Terms of Use
             </Link>
-            <Link to="/refund-policy" className="hover:text-stone-900 transition-colors">
-              Refund Policy
+            <Link to="/refund-policy" className="hover:text-[#09090B] transition-colors">
+              Refunds
             </Link>
-            <Link to="/shipping-policy" className="hover:text-stone-900 transition-colors">
-              Shipping Policy
+            <Link to="/shipping-policy" className="hover:text-[#09090B] transition-colors">
+              Shipping
             </Link>
           </div>
         </div>

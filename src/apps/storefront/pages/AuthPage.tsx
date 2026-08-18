@@ -335,8 +335,18 @@ const AuthPage: React.FC = () => {
                   {authMutation.isError && (
                     <div className="bg-red-50 border border-red-200/80 rounded-xl px-4 py-3 flex items-start gap-2.5">
                       <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-                      <div className="text-xs">
-                        <p className="text-red-800 font-medium">{authMutation.error instanceof Error ? authMutation.error.message : 'An error occurred during authentication.'}</p>
+                      <div className="text-xs space-y-1.5 flex-1">
+                        <p className="text-red-800 font-medium">
+                          {authMutation.error instanceof Error ? authMutation.error.message : 'An error occurred during authentication.'}
+                        </p>
+                        {(authMutation.error as any)?.data?.storeUrl && (
+                          <a
+                            href={(authMutation.error as any).data.storeUrl}
+                            className="inline-flex items-center gap-1 font-bold text-stone-900 underline hover:text-stone-700 mt-1"
+                          >
+                            <span>Go to {(authMutation.error as any).data.storeName || 'your store'} sign in &rarr;</span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   )}

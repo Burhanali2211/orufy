@@ -36,15 +36,17 @@ const handleSignup = async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await new Argon2id().hash(password);
+    const isPlatform = res.locals.isPlatform || !res.locals.storeId;
     
     // Begin transaction for signup
     const newUser = await db.transaction(async (tx) => {
-      const userRole = role || (res.locals.storeId ? "customer" : "merchant");
+      // Platform signups are always merchants; Storefront signups are always customers
+      const userRole = role || (isPlatform ? "merchant" : "customer");
 
       const [user] = await tx.insert(profiles).values({
         email: email.trim().toLowerCase(),
         password_hash: hashedPassword,
-        full_name: full_name || 'User',
+        full_name: full_name || (isPlatform ? 'Store Owner' : 'Customer'),
         phone: req.body.phone || null,
         role: userRole,
       }).returning();
@@ -54,7 +56,7 @@ const handleSignup = async (req: Request, res: Response) => {
         await tx.insert(store_members).values({
           store_id: res.locals.storeId,
           user_id: user.id,
-          role: userRole === "merchant" ? "owner" : "customer"
+          role: userRole === "merchant" || userRole === "admin" ? "owner" : "customer"
         });
       }
       
@@ -102,11 +104,53 @@ authRouter.post("/login", async (req, res) => {
     try {
       validPassword = await new Argon2id().verify(existingUser.password_hash, password);
     } catch (e) {
-      validPassword = false; // Gracefully handle invalid hash formats (e.g. from migrations)
+      validPassword = false; // Gracefully handle invalid hash formats
     }
     
     if (!validPassword) {
       return res.status(400).json({ error: "Incorrect email or password" });
+    }
+
+    const isPlatform = res.locals.isPlatform || !res.locals.storeId;
+
+    // ── Architectural Security Guard: Prevent Storefront Customers from Logging into Platform ──
+    if (isPlatform) {
+      // Check if this user has any merchant/admin store roles
+      const merchantMemberships = await db
+        .select({
+          store_id: store_members.store_id,
+          role: store_members.role,
+        })
+        .from(store_members)
+        .where(
+          and(
+            eq(store_members.user_id, existingUser.id),
+            inArray(store_members.role, ['owner', 'admin', 'member'])
+          )
+        );
+
+      const isMerchantOrAdmin = existingUser.role === 'merchant' || existingUser.role === 'admin' || existingUser.role === 'seller' || merchantMemberships.length > 0;
+
+      if (!isMerchantOrAdmin && existingUser.role === 'customer') {
+        // Find their registered storefront to provide a helpful redirect
+        const [customerStore] = await db
+          .select({
+            store_name: stores.name,
+            store_hostname: stores.hostname
+          })
+          .from(store_members)
+          .innerJoin(stores, eq(stores.id, store_members.store_id))
+          .where(eq(store_members.user_id, existingUser.id))
+          .limit(1);
+
+        return res.status(403).json({
+          error: "CUSTOMER_ACCOUNT_ON_PLATFORM",
+          message: "This is the Merchant Platform portal. You have a customer account. Please log in directly on your store's website.",
+          storeName: customerStore?.store_name || "your store",
+          storeHostname: customerStore?.store_hostname || null,
+          storeUrl: customerStore?.store_hostname ? `https://${customerStore.store_hostname}/auth` : null
+        });
+      }
     }
     
     // Auto-associate or verify store membership if logging in on a specific store tenant domain

@@ -11,7 +11,21 @@ const storeCache = new LRUCache<string, any>({
   ttl: 1000 * 60 * 5, // 5 minutes TTL
 });
 
-const RESERVED_SUBDOMAINS = ["www", "app", "api", "admin"];
+export const RESERVED_SUBDOMAINS = [
+  "www", "app", "api", "admin", "test", "demo", "staging", "dev", "mail", "ftp", "portal",
+  "get-oru", "orufy", "support", "help", "billing", "auth", "login", "signup", "dashboard",
+  "status", "assets", "static", "cdn", "webhook", "webhooks", "account", "shop", "store",
+  "null", "undefined", "system", "root", "bot", "secure", "pay", "payments", "checkout"
+];
+
+export const invalidateStoreCache = (hostname?: string) => {
+  if (hostname) {
+    storeCache.delete(hostname.toLowerCase());
+  } else {
+    storeCache.clear();
+  }
+};
+
 const getPlatformDomain = () => {
   if (process.env.PLATFORM_DOMAIN) return process.env.PLATFORM_DOMAIN.toLowerCase();
   if (process.env.FRONTEND_URL) {
@@ -80,6 +94,14 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
       }
     }
 
+    // If it's a platform domain and no explicit store header is specified, resolve as PLATFORM context
+    if (isPlatformReserved && !explicitHost) {
+      res.locals.storeId = null;
+      res.locals.store = null;
+      res.locals.isPlatform = true;
+      return next();
+    }
+
     // Check Cache
     if (storeCache.has(host)) {
       const cachedStore = storeCache.get(host);
@@ -120,7 +142,7 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
       resolvedStore = platformStore || null;
     }
     
-    // 3. If still not resolved, check first active store or auto-create default store
+    // 3. If still not resolved on tenant host, check first active store or auto-create default store
     if (!resolvedStore) {
       resolvedStore = await getOrCreateDefaultStore();
     }

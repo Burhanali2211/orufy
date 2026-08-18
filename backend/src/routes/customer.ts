@@ -30,8 +30,8 @@ customerRouter.get('/stats', requireAuth, async (req: Request, res: Response) =>
     const userId = res.locals.user.id;
     const storeId = await resolveStoreId(req, res);
 
-    const userOrders = await db.select().from(orders).where(eq(orders.user_id, userId));
-    const userReviews = await db.select().from(reviews).where(eq(reviews.user_id, userId));
+    const userOrders = await db.select().from(orders).where(and(eq(orders.user_id, userId), eq(orders.store_id, storeId)));
+    const userReviews = await db.select().from(reviews).where(and(eq(reviews.user_id, userId), eq(reviews.store_id, storeId)));
 
     const totalOrders = userOrders.length;
     const totalSpent = userOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);

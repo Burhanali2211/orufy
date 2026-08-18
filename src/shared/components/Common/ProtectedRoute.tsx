@@ -63,21 +63,28 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Enforce onboarding for merchants without a store
-  // NOTE: We check 'useAuth().store' indirectly via useAuth export
+  // Check host domain context
+  const host = typeof window !== 'undefined' ? window.location.hostname : '';
+  const baseDomain = import.meta.env.VITE_SITE_URL ? new URL(import.meta.env.VITE_SITE_URL).hostname : 'get-oru.com';
+  const isPlatformDomain = host === baseDomain || host === 'localhost' || host === '127.0.0.1';
+
+  // Enforce onboarding for merchants without a store on the platform
   const { store } = useAuth();
   if (user.role === 'merchant' && !store && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
 
+  // Prevent storefront customers from accessing platform-level dashboards
+  if (isPlatformDomain && user.role === 'customer' && location.pathname.startsWith('/dashboard')) {
+    return <Navigate to="/store" replace />;
+  }
+
   // Check for required role
   if (requiredRole && user.role !== requiredRole) {
-    // User is authenticated but doesn't have the required role
-    // Redirect to appropriate dashboard or home
     if (user.role === 'admin') {
       return <Navigate to="/admin" replace />;
-    } else if (user.role === 'seller') {
-      return <Navigate to="/dashboard" replace />;
+    } else if (user.role === 'seller' || user.role === 'merchant') {
+      return <Navigate to={store ? "/admin" : "/onboarding"} replace />;
     } else {
       return <Navigate to="/dashboard" replace />;
     }
