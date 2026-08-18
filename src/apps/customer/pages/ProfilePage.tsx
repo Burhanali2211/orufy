@@ -8,36 +8,39 @@ import {
   Calendar,
   Shield,
   CheckCircle,
-  AlertCircle,
-  Package,
-  Star
+  Bell,
+  RefreshCw,
+  Lock
 } from 'lucide-react';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
-import { useCustomerStats } from '@/shared/hooks/customer/useCustomerStats';
 import { useCustomerProfile } from '@/shared/hooks/customer/useCustomerProfile';
 
 export const ProfilePage: React.FC = () => {
   const { user } = useAuth();
-  const { showError } = useNotification();
-  const { data: statsData } = useCustomerStats();
-  const { 
-    updateProfile, 
-    isUpdating: loading, 
-    uploadAvatar, 
-    isUploadingAvatar: avatarUploading 
+  const { showSuccess, showError } = useNotification();
+  const {
+    updateProfile,
+    isUpdating: loading,
+    uploadAvatar,
+    isUploadingAvatar: avatarUploading
   } = useCustomerProfile();
-  
-  const stats = statsData || { orders: 0, reviews: 0 };
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  
+
   const [profileData, setProfileData] = useState({
     fullName: '',
     email: '',
     phone: '',
     dateOfBirth: '',
     gender: ''
+  });
+
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    orderUpdates: true,
+    emailReceipts: true,
+    promotions: false
   });
 
   const [originalData, setOriginalData] = useState(profileData);
@@ -66,18 +69,20 @@ export const ProfilePage: React.FC = () => {
     setProfileData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = async () => {
-    await updateProfile({
-      fullName: profileData.fullName,
-      phone: profileData.phone || undefined,
-      dateOfBirth: profileData.dateOfBirth || undefined,
-      gender: profileData.gender || undefined
-    });
-    setOriginalData(profileData);
-  };
-
-  const handleCancel = () => {
-    setProfileData(originalData);
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateProfile({
+        fullName: profileData.fullName,
+        phone: profileData.phone || undefined,
+        dateOfBirth: profileData.dateOfBirth || undefined,
+        gender: profileData.gender || undefined
+      });
+      setOriginalData(profileData);
+      showSuccess('Profile updated', 'Your account details have been saved.');
+    } catch (err: any) {
+      showError('Update failed', err?.message || 'Could not update profile');
+    }
   };
 
   const handleAvatarButtonClick = () => {
@@ -96,302 +101,178 @@ export const ProfilePage: React.FC = () => {
 
     try {
       await uploadAvatar(file);
+      showSuccess('Avatar updated', 'Your profile picture has been updated.');
+    } catch (err: any) {
+      showError('Upload failed', err?.message || 'Could not upload avatar');
     } finally {
       if (event.target) event.target.value = '';
     }
   };
 
   const getInitials = () => {
-    if (profileData.fullName) {
-      return profileData.fullName
+    if (user?.fullName) {
+      return user.fullName
         .split(' ')
         .map(n => n[0])
         .join('')
         .toUpperCase()
         .slice(0, 2);
     }
-    return 'U';
-  };
-
-  const getMembershipDuration = () => {
-    if (user?.createdAt) {
-      const created = new Date(user.createdAt);
-      const now = new Date();
-      const months = (now.getFullYear() - created.getFullYear()) * 12 + 
-                     (now.getMonth() - created.getMonth());
-      if (months < 1) return 'New';
-      if (months < 12) return `${months}m`;
-      return `${Math.floor(months / 12)}y`;
-    }
-    return 'New';
+    return user?.email?.charAt(0).toUpperCase() || 'U';
   };
 
   return (
-    <CustomerDashboardLayout title="Profile" subtitle="Manage your personal information">
-      <div className="max-w-3xl space-y-6">
-        {/* Profile Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Header with Avatar */}
-          <div className="relative h-32 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700">
-            <div className="absolute -bottom-12 left-6">
-              <div className="relative">
-                <div className="w-24 h-24 bg-white rounded-2xl shadow-lg flex items-center justify-center border-4 border-white">
-                  {user?.avatar ? (
-                    <img 
-                      src={user.avatar} 
-                      alt={profileData.fullName}
-                      className="w-full h-full rounded-xl object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-purple-400 to-indigo-600 rounded-xl flex items-center justify-center">
-                      <span className="text-2xl font-bold text-white">{getInitials()}</span>
-                    </div>
-                  )}
-                </div>
-                  <button
-                    type="button"
-                    onClick={handleAvatarButtonClick}
-                    disabled={avatarUploading}
-                    className="absolute -bottom-1 -right-1 p-2 bg-purple-600 text-white rounded-lg shadow-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-                  >
-                    {avatarUploading ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full hidden" />
-                    ) : (
-                      <Camera className="w-4 h-4" />
-                    )}
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                  />
-              </div>
-            </div>
-          </div>
-
-          {/* Info Section */}
-          <div className="pt-16 pb-6 px-6">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">
-                  {profileData.fullName || 'Your Name'}
-                </h2>
-                <p className="text-gray-500 flex items-center gap-2 mt-1">
-                  <Mail className="w-4 h-4" />
-                  {profileData.email}
-                </p>
-              </div>
-              {user?.emailVerified ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">Verified</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg">
-                  <AlertCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">Unverified</span>
-                </div>
-              )}
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Package className="w-4 h-4 text-purple-600" />
-                  <p className="text-2xl font-bold text-gray-900">{stats.orders}</p>
-                </div>
-                <p className="text-sm text-gray-500">Orders</p>
-              </div>
-              <div className="text-center border-x border-gray-200">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Star className="w-4 h-4 text-yellow-500" />
-                  <p className="text-2xl font-bold text-gray-900">{stats.reviews}</p>
-                </div>
-                <p className="text-sm text-gray-500">Reviews</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900">{getMembershipDuration()}</p>
-                <p className="text-sm text-gray-500">Member</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Personal Information Form */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
-              <p className="text-sm text-gray-500 mt-1">Update your personal details</p>
-            </div>
-            {hasChanges && (
-              <div className="flex items-center gap-2 text-amber-600 text-sm">
-                <AlertCircle className="w-4 h-4" />
-                Unsaved changes
-              </div>
-            )}
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Full Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name *
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={profileData.fullName}
-                  onChange={(e) => handleChange('fullName', e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                  placeholder="Enter your full name"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Email (Read-only) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  value={profileData.email}
-                  disabled
-                  className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <Shield className="w-5 h-5 text-green-500" />
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Email cannot be changed for security reasons</p>
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="tel"
-                  value={profileData.phone}
-                  onChange={(e) => handleChange('phone', e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                  placeholder="+91 98765 43210"
-                />
-              </div>
-            </div>
-
-            {/* Date of Birth */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date of Birth
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="date"
-                  value={profileData.dateOfBirth}
-                  onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Gender */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Gender
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {['male', 'female', 'other', 'prefer-not-to-say'].map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => handleChange('gender', option)}
-                    className={`py-3 px-4 rounded-xl border-2 font-medium text-sm transition-all ${
-                      profileData.gender === option
-                        ? 'border-purple-500 bg-purple-50 text-purple-700'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                    }`}
-                  >
-                    {option === 'prefer-not-to-say' ? 'Prefer not to say' : option.charAt(0).toUpperCase() + option.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          {hasChanges && (
-            <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-100">
-              <button
-                onClick={handleCancel}
-                disabled={loading}
-                className="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full hidden" />
+    <CustomerDashboardLayout title="Profile & Settings" subtitle="Manage your personal details and security">
+      <div className="space-y-6 max-w-3xl">
+        {/* ── Avatar / Account Card ── */}
+        <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-2xl bg-stone-900 text-white flex items-center justify-center font-bold text-lg shadow-xs overflow-hidden border border-stone-200">
+                {(user?.avatar || (user as any)?.avatarUrl) ? (
+                  <img src={user?.avatar || (user as any)?.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <Save className="w-5 h-5" />
+                  getInitials()
                 )}
-                Save Changes
+              </div>
+              <button
+                type="button"
+                onClick={handleAvatarButtonClick}
+                disabled={avatarUploading}
+                className="absolute -bottom-1 -right-1 p-1.5 rounded-lg bg-white border border-stone-200 text-stone-700 hover:text-stone-900 shadow-xs transition-colors cursor-pointer"
+                title="Upload Photo"
+              >
+                {avatarUploading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
             </div>
-          )}
+
+            <div>
+              <h3 className="font-bold text-base text-stone-900">{profileData.fullName || 'Customer'}</h3>
+              <p className="text-xs text-stone-500">{profileData.email}</p>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mt-1">
+                <CheckCircle className="w-3 h-3" /> Verified Member
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Security Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Security</h3>
-          <p className="text-sm text-gray-500 mb-6">Manage your account security settings</p>
+        {/* ── Personal Info Form ── */}
+        <form onSubmit={handleSave} className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs space-y-5">
+          <div className="border-b border-stone-100 pb-3">
+            <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider">Personal Information</h3>
+            <p className="text-xs text-stone-500 mt-0.5">Your official account details</p>
+          </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Password</p>
-                  <p className="text-sm text-gray-500">Security and account access</p>
-                </div>
-              </div>
-              <button className="px-4 py-2 text-purple-600 font-medium hover:bg-purple-50 rounded-lg transition-colors">
-                Manage
-              </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">Full Legal Name</label>
+              <input
+                type="text"
+                required
+                value={profileData.fullName}
+                onChange={(e) => handleChange('fullName', e.target.value)}
+                className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900"
+              />
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Account Status</p>
-                  <p className="text-sm text-gray-500">Your account is active and secure</p>
-                </div>
-              </div>
-              <div className="px-4 py-2 bg-green-100 text-green-700 font-medium rounded-lg">
-                Active
-              </div>
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">Email Address</label>
+              <input
+                type="email"
+                disabled
+                value={profileData.email}
+                className="w-full px-3.5 py-2 bg-stone-100/80 border border-stone-200 rounded-xl text-xs font-medium text-stone-500 cursor-not-allowed"
+              />
             </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">Phone Number</label>
+              <input
+                type="tel"
+                value={profileData.phone}
+                onChange={(e) => handleChange('phone', e.target.value)}
+                placeholder="+91 9876543210"
+                className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">Gender</label>
+              <select
+                value={profileData.gender}
+                onChange={(e) => handleChange('gender', e.target.value)}
+                className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900"
+              >
+                <option value="">Prefer not to say</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">Date of Birth</label>
+              <input
+                type="date"
+                value={profileData.dateOfBirth}
+                onChange={(e) => handleChange('dateOfBirth', e.target.value)}
+                className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900"
+              />
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-stone-100 flex items-center justify-end">
+            <button
+              type="submit"
+              disabled={loading || !hasChanges}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              <span>Save Changes</span>
+            </button>
+          </div>
+        </form>
+
+        {/* ── Notification Preferences ── */}
+        <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="border-b border-stone-100 pb-3">
+            <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider">Notification Preferences</h3>
+            <p className="text-xs text-stone-500 mt-0.5">Control order status alerts and store messages</p>
+          </div>
+
+          <div className="space-y-3">
+            <label className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200/80 cursor-pointer">
+              <div>
+                <p className="text-xs font-bold text-stone-900">Order & Shipping Alerts</p>
+                <p className="text-[11px] text-stone-500">Receive live tracking updates via email</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={notificationPrefs.orderUpdates}
+                onChange={(e) => setNotificationPrefs({ ...notificationPrefs, orderUpdates: e.target.checked })}
+                className="w-4 h-4 accent-stone-900"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200/80 cursor-pointer">
+              <div>
+                <p className="text-xs font-bold text-stone-900">Digital Invoices & Receipts</p>
+                <p className="text-[11px] text-stone-500">Send PDF receipts automatically upon completed transactions</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={notificationPrefs.emailReceipts}
+                onChange={(e) => setNotificationPrefs({ ...notificationPrefs, emailReceipts: e.target.checked })}
+                className="w-4 h-4 accent-stone-900"
+              />
+            </label>
           </div>
         </div>
       </div>

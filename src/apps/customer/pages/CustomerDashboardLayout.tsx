@@ -4,17 +4,15 @@ import {
   LayoutDashboard,
   Package,
   MapPin,
-  CreditCard,
   User,
-  Bell,
   Heart,
-  Settings,
   LogOut,
   Menu,
   X,
   ChevronRight,
-  Home,
-  ShoppingBag
+  ArrowLeft,
+  ShoppingBag,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSettings } from '@/shared/contexts/SettingsContext';
@@ -30,17 +28,15 @@ interface NavItem {
   name: string;
   path: string;
   icon: React.ElementType;
-  badge?: number;
+  exact?: boolean;
 }
 
 const navItems: NavItem[] = [
-  { name: 'Overview', path: '/dashboard', icon: LayoutDashboard },
+  { name: 'Overview', path: '/dashboard', icon: LayoutDashboard, exact: true },
   { name: 'My Orders', path: '/dashboard/orders', icon: Package },
-  { name: 'Wishlist', path: '/wishlist', icon: Heart },
+  { name: 'Wishlist', path: '/dashboard/wishlist', icon: Heart },
   { name: 'Addresses', path: '/dashboard/addresses', icon: MapPin },
-  { name: 'Payment Methods', path: '/dashboard/payments', icon: CreditCard },
-  { name: 'Profile', path: '/dashboard/profile', icon: User },
-  { name: 'Notifications', path: '/dashboard/notifications', icon: Bell },
+  { name: 'Profile & Settings', path: '/dashboard/profile', icon: User },
 ];
 
 export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = ({
@@ -50,27 +46,27 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
 }) => {
   const { user, logout } = useAuth();
   const { settings, getSiteSetting } = useSettings();
-  const logoUrl = normalizeImageUrl(getSiteSetting('logo_url'));
-  const siteName = getSiteSetting('site_name') || 'AligarhAttarHouse';
+  const logoUrl = normalizeImageUrl(getSiteSetting('logo_url') || (settings as any)?.site_logo);
+  const siteName = getSiteSetting('site_name') || (settings as any)?.site_name || 'Store';
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Close sidebar when route changes on mobile
+  // Close sidebar on route change
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
 
   const handleLogout = async () => {
     await logout();
-    navigate('/');
+    navigate('/store');
   };
 
-  const isActive = (path: string) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/dashboard';
+  const isActive = (item: NavItem) => {
+    if (item.exact) {
+      return location.pathname === item.path;
     }
-    return location.pathname.startsWith(path);
+    return location.pathname.startsWith(item.path);
   };
 
   const getInitials = () => {
@@ -86,195 +82,199 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
-      {/* Mobile Header */}
-      <header className="lg:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-gray-200/50">
-        <div className="flex items-center justify-between px-4 py-3">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors"
-            aria-label="Open menu"
-          >
-            <Menu className="w-6 h-6 text-gray-700" />
-          </button>
+    <div className="min-h-screen bg-stone-50/60 pb-16">
+      {/* ── Sub-header / Breadcrumbs bar ── */}
+      <div className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-2xs">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* Mobile menu trigger */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer"
+              aria-label="Toggle navigation menu"
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
 
-          <div className="flex items-center gap-2">
-            <Link to="/" className="flex items-center gap-2">
-              {logoUrl && isValidImageUrl(logoUrl) ? (
-                <img src={logoUrl} alt="Logo" className="h-8 w-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              ) : (
-                <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  {siteName}
-                </span>
+            {/* Breadcrumb path */}
+            <nav className="flex items-center gap-2 text-xs font-semibold text-stone-500">
+              <Link to="/store" className="hover:text-stone-900 transition-colors flex items-center gap-1">
+                <span>Store</span>
+              </Link>
+              <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
+              <Link to="/dashboard" className="hover:text-stone-900 transition-colors">
+                Account
+              </Link>
+              {location.pathname !== '/dashboard' && (
+                <>
+                  <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
+                  <span className="text-stone-900 font-bold">{title}</span>
+                </>
               )}
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/products"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-900 text-xs font-bold transition-colors"
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>Shop Catalog</span>
             </Link>
           </div>
-
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-            <span className="text-white text-sm font-semibold">{getInitials()}</span>
-          </div>
         </div>
-      </header>
+      </div>
 
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 z-50 h-full w-72 bg-white shadow-2xl transform transition-transform duration-300 ease-out lg:translate-x-0 lg:shadow-none lg:border-r lg:border-gray-200/50 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-      >
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <Link to="/" className="flex items-center gap-3">
-            {logoUrl && isValidImageUrl(logoUrl) ? (
-              <img src={logoUrl} alt="Logo" className="h-10 w-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            ) : (
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                <ShoppingBag className="w-5 h-5 text-white" />
+      {/* ── Main Layout Container ── */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* ── Desktop Sidebar (lg:col-span-3) ── */}
+          <aside className="hidden lg:block lg:col-span-3 space-y-4 sticky top-20">
+            {/* User Identity Card */}
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-stone-900 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
+                {getInitials()}
               </div>
-            )}
-            <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              {siteName || 'My Account'}
-            </span>
-          </Link>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="p-2 rounded-xl hover:bg-gray-100 transition-colors lg:hidden"
-            aria-label="Close menu"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-
-        {/* User Profile Card */}
-        <div className="p-4">
-          <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl p-4 text-white">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <span className="text-lg font-bold">{getInitials()}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">
-                  {user?.fullName || 'Welcome!'}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-stone-900 truncate">
+                  {user?.fullName || 'Customer'}
                 </p>
-                <p className="text-sm text-purple-200 truncate">
+                <p className="text-xs font-medium text-stone-500 truncate mt-0.5">
                   {user?.email}
                 </p>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
+            {/* Navigation Menu */}
+            <nav className="bg-white border border-stone-200 rounded-2xl p-2 shadow-xs space-y-1">
+              {navItems.map((item) => {
+                const active = isActive(item);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      active
+                        ? 'bg-stone-900 text-white shadow-xs'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-stone-500'}`} />
+                      <span>{item.name}</span>
+                    </div>
+                    {active && <ChevronRight className="w-3.5 h-3.5 text-stone-400" />}
+                  </Link>
+                );
+              })}
 
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${active
-                    ? 'bg-purple-50 text-purple-700 shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-              >
-                <Icon className={`w-5 h-5 transition-colors ${active ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-600'
-                  }`} />
-                <span className="font-medium">{item.name}</span>
-                {item.badge && item.badge > 0 && (
-                  <span className="ml-auto bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    {item.badge}
-                  </span>
-                )}
-                <ChevronRight className={`w-4 h-4 ml-auto transition-opacity ${active ? 'opacity-100 text-purple-400' : 'opacity-0 group-hover:opacity-50'
-                  }`} />
-              </Link>
-            );
-          })}
-        </nav>
+              <div className="pt-2 mt-2 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left"
+                >
+                  <LogOut className="w-4 h-4 text-rose-600" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </nav>
+          </aside>
 
-        {/* Bottom Actions */}
-        <div className="p-3 border-t border-gray-100 space-y-1">
-          <Link
-            to="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-          >
-            <Home className="w-5 h-5 text-gray-400" />
-            <span className="font-medium">Back to Shop</span>
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Sign Out</span>
-          </button>
-        </div>
-      </aside>
+          {/* ── Mobile Sidebar Drawer ── */}
+          {sidebarOpen && (
+            <div className="fixed inset-0 z-50 lg:hidden">
+              <div
+                className="fixed inset-0 bg-stone-900/50 backdrop-blur-xs transition-opacity"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-white shadow-2xl z-50 p-6 flex flex-col justify-between">
+                <div className="space-y-6">
+                  {/* Drawer Header */}
+                  <div className="flex items-center justify-between pb-4 border-b border-stone-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-stone-900 text-white flex items-center justify-center font-bold text-xs">
+                        {getInitials()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-stone-900 truncate">{user?.fullName || 'Customer'}</p>
+                        <p className="text-[11px] text-stone-500 truncate">{user?.email}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setSidebarOpen(false)}
+                      className="p-1.5 rounded-lg text-stone-400 hover:text-stone-900 hover:bg-stone-100"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
 
-      {/* Main Content */}
-      <main className="lg:ml-72 min-h-screen">
-        {/* Desktop Header */}
-        <header className="hidden lg:block sticky top-0 z-30 bg-white/80 backdrop-blur-lg border-b border-gray-200/50">
-          <div className="flex items-center justify-between px-8 py-4">
-            <div>
-              <nav className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                <Link to="/" className="hover:text-purple-600 transition-colors">Home</Link>
-                <ChevronRight className="w-4 h-4" />
-                <span className="text-gray-900 font-medium">{title}</span>
-              </nav>
-              <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-              {subtitle && (
-                <p className="text-gray-500 mt-1">{subtitle}</p>
-              )}
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Link
-                to="/"
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
-              >
-                <Home className="w-5 h-5" />
-                <span className="font-medium">Back to Shop</span>
-              </Link>
-
-              <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{user?.fullName || 'Customer'}</p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
+                  {/* Navigation Links */}
+                  <nav className="space-y-1">
+                    {navItems.map((item) => {
+                      const active = isActive(item);
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+                            active
+                              ? 'bg-stone-900 text-white shadow-xs'
+                              : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-stone-500'}`} />
+                            <span>{item.name}</span>
+                          </div>
+                          {active && <ChevronRight className="w-3.5 h-3.5 text-stone-400" />}
+                        </Link>
+                      );
+                    })}
+                  </nav>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">{getInitials()}</span>
+
+                <div className="pt-4 border-t border-stone-200">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 text-rose-600" />
+                    <span>Sign Out</span>
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        </header>
-
-        {/* Mobile Title */}
-        <div className="lg:hidden px-4 py-4 bg-white border-b border-gray-100">
-          <h1 className="text-xl font-bold text-gray-900">{title}</h1>
-          {subtitle && (
-            <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
           )}
-        </div>
 
-        {/* Page Content */}
-        <div className="p-4 lg:p-8">
-          {children}
+          {/* ── Main Content Area (lg:col-span-9) ── */}
+          <main className="lg:col-span-9 space-y-6">
+            {/* View Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200/80 pb-4">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 font-serif">
+                  {title}
+                </h1>
+                {subtitle && (
+                  <p className="text-xs sm:text-sm font-medium text-stone-500 mt-0.5">
+                    {subtitle}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* View Body */}
+            <div>{children}</div>
+          </main>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
 
 export default CustomerDashboardLayout;
-
