@@ -184,6 +184,12 @@ function App() {
                 } 
               />
 
+              {/* Standalone Order Confirmation (No Storefront Header/Footer) */}
+              <Route 
+                path="/order-confirmation/:orderId" 
+                element={<OrderConfirmationPage />} 
+              />
+
               {/* Regular routes - WITH Layout wrapper */}
               <Route path="/*" element={
                 <Layout>
@@ -249,14 +255,6 @@ function App() {
                             <CheckoutPage />
                           </ProtectedRoute>
                         } 
-                      />
-                      <Route
-                        path="/order-confirmation/:orderId"
-                        element={
-                          <ProtectedRoute>
-                            <OrderConfirmationPage />
-                          </ProtectedRoute>
-                        }
                       />
                       <Route
                         path="/track-order/:orderId"
