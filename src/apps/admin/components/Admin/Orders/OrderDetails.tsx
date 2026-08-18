@@ -72,21 +72,21 @@ const SectionCard: React.FC<{
   title: string;
   children: React.ReactNode;
 }> = ({ icon, iconBg, title, children }) => (
-  <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-    <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
-      <div className={`w-9 h-9 ${iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+  <div className="bg-white border border-stone-200 rounded-2xl shadow-xs overflow-hidden">
+    <div className="flex items-center gap-3 px-6 py-4 border-b border-stone-100">
+      <div className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
         {icon}
       </div>
-      <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+      <h2 className="text-base font-bold text-stone-900">{title}</h2>
     </div>
-    <div className="p-5">{children}</div>
+    <div className="p-6">{children}</div>
   </div>
 );
 
 const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div>
-    <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-    <div className="text-sm font-medium text-gray-900">{value}</div>
+    <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">{label}</p>
+    <div className="text-sm font-bold text-stone-900">{value}</div>
   </div>
 );
 
@@ -292,26 +292,26 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
       </div>
 
       {/* Main layout: left (items + customer + payment) + right (manage) */}
-      <div className="grid lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 space-y-5">
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
 
           {/* Order Items */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
-              <div className="w-9 h-9 bg-amber-100 rounded-lg flex items-center justify-center">
-                <Package className="w-4 h-4 text-amber-600" />
+          <div className="bg-white border border-stone-200 rounded-2xl shadow-xs overflow-hidden">
+            <div className="flex items-center gap-3 px-6 py-4 border-b border-stone-100">
+              <div className="w-9 h-9 bg-stone-100 rounded-xl flex items-center justify-center">
+                <Package className="w-4 h-4 text-stone-700" />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-gray-900">Order Items</h2>
-                <p className="text-xs text-gray-500">{order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'items'}</p>
+                <h2 className="text-base font-bold text-stone-900">Order Items</h2>
+                <p className="text-xs text-stone-400 font-medium">{order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'items'}</p>
               </div>
             </div>
 
             {/* Items list */}
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-stone-100">
               {(order.items || []).map((item) => (
-                <div key={item.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-                  <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 border border-gray-200">
+                <div key={item.id} className="flex items-center gap-4 px-6 py-4 hover:bg-stone-50/60 transition-colors">
+                  <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 border border-stone-200">
                     <img
                       src={item.product_image || '/placeholder.png'}
                       alt={item.product_name}
@@ -320,52 +320,52 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-gray-900 truncate">{item.product_name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="font-bold text-sm text-stone-900 truncate">{item.product_name}</p>
+                    <p className="text-xs text-stone-500 mt-0.5">
                       {fmt(item.unit_price)} × {item.quantity}
                     </p>
                   </div>
-                  <p className="font-semibold text-sm text-amber-600 flex-shrink-0">{fmt(item.total_price)}</p>
+                  <p className="font-bold text-sm text-stone-900 flex-shrink-0">{fmt(item.total_price)}</p>
                 </div>
               ))}
             </div>
 
             {/* Summary */}
-            <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 space-y-2">
-              <div className="flex justify-between text-sm text-gray-600">
+            <div className="px-6 py-5 border-t border-stone-100 bg-stone-50/50 space-y-2.5">
+              <div className="flex justify-between text-sm text-stone-600">
                 <span>Subtotal</span>
-                <span className="font-medium text-gray-900">{fmt(order.subtotal)}</span>
+                <span className="font-semibold text-stone-900">{fmt(order.subtotal)}</span>
               </div>
               {Number(order.discount_amount) > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Discount</span>
-                  <span className="font-medium text-emerald-600">−{fmt(order.discount_amount)}</span>
+                  <span className="text-stone-600">Discount</span>
+                  <span className="font-semibold text-emerald-600">−{fmt(order.discount_amount)}</span>
                 </div>
               )}
               {Number(order.tax_amount) > 0 && (
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Tax</span>
-                  <span className="font-medium text-gray-900">{fmt(order.tax_amount)}</span>
+                <div className="flex justify-between text-sm text-stone-600">
+                  <span>Tax (GST)</span>
+                  <span className="font-semibold text-stone-900">{fmt(order.tax_amount)}</span>
                 </div>
               )}
               {Number(order.shipping_amount) > 0 && (
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-stone-600">
                   <span>Shipping</span>
-                  <span className="font-medium text-gray-900">{fmt(order.shipping_amount)}</span>
+                  <span className="font-semibold text-stone-900">{fmt(order.shipping_amount)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-base font-bold pt-2 border-t border-gray-200">
-                <span className="text-gray-900">Total</span>
-                <span className="text-amber-600">{fmt(order.total_amount)}</span>
+              <div className="flex justify-between text-base font-bold pt-3 border-t border-stone-200">
+                <span className="text-stone-900">Total Charged</span>
+                <span className="text-stone-900">{fmt(order.total_amount)}</span>
               </div>
             </div>
           </div>
 
           {/* Customer Info */}
           <SectionCard
-            icon={<User className="w-4 h-4 text-blue-600" />}
-            iconBg="bg-blue-50"
-            title="Customer"
+            icon={<User className="w-4 h-4 text-stone-700" />}
+            iconBg="bg-stone-100"
+            title="Customer Profile"
           >
             <div className="space-y-3">
               <InfoRow label="Name" value={order.customer_name} />

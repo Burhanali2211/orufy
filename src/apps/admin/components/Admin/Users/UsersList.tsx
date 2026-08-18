@@ -1,6 +1,6 @@
 import { apiClient } from '@/shared/lib/apiClient';
 import React, { useEffect, useRef, useState } from 'react';
-import { Plus, Search, Edit, Trash2, Power, Users as UsersIcon, X, ChevronLeft, ChevronRight, Shield, ShoppingBag } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Power, Users as UsersIcon, X, ChevronLeft, ChevronRight, ShieldCheck, ShoppingBag, UserCheck } from 'lucide-react';
 import { ConfirmModal } from '@/shared/components/Common/Modal';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { UserForm } from './UserForm';
@@ -18,18 +18,15 @@ interface User {
 }
 
 const getRoleBadge = (role: string) => {
-  const map: Record<string, string> = {
-    admin: 'bg-purple-50 text-purple-600 border-purple-200',
-    seller: 'bg-blue-50 text-blue-600 border-blue-100',
-    customer: 'bg-green-50 text-green-700 border-green-200',
-  };
-  return map[role] || 'bg-gray-100 text-gray-600 border-gray-200';
+  if (role === 'admin' || role === 'merchant') {
+    return 'bg-stone-900 text-white font-bold';
+  }
+  return 'bg-stone-100 text-stone-700 border border-stone-200';
 };
 
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
 
-// Module-level cache – survives SPA navigation, cleared on hard refresh
 let _usersCache: { users: User[]; totalItems: number; totalPages: number } | null = null;
 
 export const UsersList: React.FC = () => {
@@ -48,7 +45,7 @@ export const UsersList: React.FC = () => {
   const { showSuccess, showError } = useNotification();
   const isFirstMount = useRef(true);
 
-  const pageSize = 10;
+  const pageSize = 12;
 
   useEffect(() => {
     const background = isFirstMount.current && _usersCache !== null;
@@ -75,16 +72,20 @@ export const UsersList: React.FC = () => {
       }
       
       const rows = data.map((p: User) => ({
-        id: p.id, email: p.email || '', full_name: p.full_name || '',
-        role: p.role || 'customer', is_active: p.is_active !== false,
-        email_verified: true, created_at: p.created_at, 
-        order_count: p.order_count || 0, total_spent: p.total_spent || '0'
+        id: p.id,
+        email: p.email || '',
+        full_name: p.full_name || '',
+        role: p.role || 'customer',
+        is_active: p.is_active !== false,
+        email_verified: true,
+        created_at: p.created_at || new Date().toISOString(), 
+        order_count: p.order_count || 0,
+        total_spent: p.total_spent || '0'
       }));
       
       const ti = rows.length;
       const tp = Math.max(1, Math.ceil(ti / pageSize));
       
-      // Client-side pagination
       const from = (currentPage - 1) * pageSize;
       const paginatedRows = rows.slice(from, from + pageSize);
       
@@ -96,7 +97,7 @@ export const UsersList: React.FC = () => {
         _usersCache = { users: paginatedRows, totalItems: ti, totalPages: tp };
       }
     } catch (error: any) {
-      if (!background) showError('Error', error?.message || 'Failed to load users');
+      if (!background) showError(error?.message || 'Failed to load users');
     } finally {
       if (!background) setLoading(false);
     }
@@ -108,12 +109,12 @@ export const UsersList: React.FC = () => {
       setDeleteLoading(true);
       await apiClient.put(`/profiles/${selectedUser.id}`, { is_active: false });
       
-      showSuccess('Done', 'User deactivated successfully');
+      showSuccess('User status updated');
       setShowDeleteModal(false);
       setSelectedUser(null);
       fetchUsers();
     } catch (error: any) {
-      showError('Error', error?.message || 'Failed to deactivate user');
+      showError(error?.message || 'Failed to deactivate user');
     } finally {
       setDeleteLoading(false);
     }
@@ -122,252 +123,187 @@ export const UsersList: React.FC = () => {
   const handleToggleStatus = async (user: User) => {
     try {
       await apiClient.put(`/profiles/${user.id}`, { is_active: !user.is_active });
-      
-      showSuccess('Updated', `User ${user.is_active ? 'deactivated' : 'activated'} successfully`);
-      fetchUsers();
+      showSuccess('Updated', `User ${user.is_active ? 'deactivated' : 'activated'}`);
+      fetchUsers(true);
     } catch (error: any) {
       showError('Error', error?.message || 'Failed to update user status');
     }
   };
 
-  const clearFilters = () => { setSearchTerm(''); setRoleFilter(''); setStatusFilter(''); setCurrentPage(1); };
-  const hasActiveFilters = searchTerm || roleFilter || statusFilter;
+  const clearFilters = () => {
+    setSearchTerm('');
+    setRoleFilter('');
+    setStatusFilter('');
+    setCurrentPage(1);
+  };
 
-  const activeCount = users.filter(u => u.is_active).length;
-  const adminCount = users.filter(u => u.role === 'admin').length;
+  const hasActiveFilters = !!(searchTerm || roleFilter || statusFilter);
 
-  const statCards = [
-    { label: 'Total Users', value: totalItems, icon: UsersIcon, iconCls: 'text-gray-600', bg: 'bg-gray-50', valCls: 'text-gray-900' },
-    { label: 'Active', value: activeCount, icon: UsersIcon, iconCls: 'text-green-700', bg: 'bg-green-50', valCls: 'text-green-700' },
-    { label: 'Admins', value: adminCount, icon: Shield, iconCls: 'text-purple-600', bg: 'bg-purple-50', valCls: 'text-purple-600' },
-  ];
-
-  const Pagination = () => (
-    totalPages > 1 ? (
-      <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <p className="text-sm text-gray-600">
-          Showing <span className="font-medium text-gray-900">{(currentPage - 1) * pageSize + 1}</span>–<span className="font-medium text-gray-900">{Math.min(currentPage * pageSize, totalItems)}</span> of <span className="font-medium text-gray-900">{totalItems}</span>
-        </p>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}
-            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <div className="flex gap-1">
-            {[...Array(totalPages)].map((_, i) => {
-              const p = i + 1;
-              if (p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)) {
-                return (
-                  <button key={p} onClick={() => setCurrentPage(p)}
-                    className={`min-w-[32px] h-8 rounded-full text-sm font-medium transition-colors ${p === currentPage ? 'bg-stone-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
-                    {p}
-                  </button>
-                );
-              }
-              if (p === currentPage - 2 || p === currentPage + 2) return <span key={p} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">…</span>;
-              return null;
-            })}
-          </div>
-          <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}
-            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-    ) : null
-  );
+  const activeCount = users.filter((u) => u.is_active).length;
+  const adminCount = users.filter((u) => u.role === 'admin' || u.role === 'merchant').length;
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-            <UsersIcon className="w-6 h-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Users</h1>
-            <p className="text-sm text-gray-600 font-medium">Manage user accounts and permissions</p>
-          </div>
+    <div className="space-y-6">
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900 font-serif">Customer Accounts & Users</h1>
+          <p className="text-stone-500 text-sm mt-0.5">Manage customer profiles, store roles, permissions, and purchase histories.</p>
         </div>
         <button
           onClick={() => { setSelectedUser(null); setShowFormModal(true); }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl font-medium transition-colors min-h-11 shadow-sm text-sm"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs cursor-pointer"
         >
-          <Plus className="h-5 w-5" />
-          <span className="hidden sm:inline">Add User</span>
-          <span className="sm:hidden">Add</span>
+          <Plus className="w-4 h-4" />
+          <span>Add User</span>
         </button>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {statCards.map((s) => (
-          <div key={s.label} className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-sm transition-shadow">
-            <div className={`w-10 h-10 ${s.bg} rounded-full flex items-center justify-center mb-3`}>
-              <s.icon className={`w-5 h-5 ${s.iconCls}`} />
-            </div>
-            <p className="text-sm text-gray-600 font-medium">{s.label}</p>
-            <p className={`text-[28px] font-normal ${s.valCls}`}>{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-600" />
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 text-sm text-gray-900 placeholder-gray-500 bg-gray-50 hover:bg-gray-100 focus:bg-white transition-all"
-            />
-          </div>
-          <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setCurrentPage(1); }}
-            className="px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 text-sm text-gray-900 bg-gray-50 hover:bg-gray-100 focus:bg-white transition-all appearance-none pr-10"
-            style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}>
-            <option value="">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="customer">Customer</option>
-          </select>
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-            className="px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 text-sm text-gray-900 bg-gray-50 hover:bg-gray-100 focus:bg-white transition-all appearance-none pr-10"
-            style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}>
-            <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-          {hasActiveFilters && (
-            <button onClick={clearFilters} className="flex items-center gap-1.5 px-5 py-3 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-full transition-colors">
-              <X className="w-4 h-4" /> Clear
-            </button>
-          )}
+      {/* ── Stat Cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
+          <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">Total Users</p>
+          <p className="text-2xl font-bold text-stone-900 mt-2">{totalItems}</p>
+        </div>
+        <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
+          <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Active Customers</p>
+          <p className="text-2xl font-bold text-emerald-700 mt-2">{activeCount}</p>
+        </div>
+        <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
+          <p className="text-xs font-bold text-stone-700 uppercase tracking-wider">Admin Staff</p>
+          <p className="text-2xl font-bold text-stone-900 mt-2">{adminCount}</p>
+        </div>
+        <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
+          <p className="text-xs font-bold text-stone-700 uppercase tracking-wider">Verified</p>
+          <p className="text-2xl font-bold text-stone-900 mt-2">{totalItems}</p>
         </div>
       </div>
 
-      {/* Content */}
-      {loading ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-gray-600">Loading users...</p>
+      {/* ── Filters ── */}
+      <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <input
+            type="text"
+            placeholder="Search users by name or email..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium text-stone-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900 transition-all placeholder:text-stone-400"
+          />
         </div>
-      ) : users.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center">
-          <UsersIcon className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-600">No users found</p>
-          {hasActiveFilters && <p className="text-sm text-gray-600 mt-1">Try adjusting your filters</p>}
-        </div>
-      ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          {/* Mobile Cards */}
-          <div className="md:hidden divide-y divide-[#e8eaed]">
-            {users.map((user) => (
-              <div key={user.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-base font-semibold text-gray-600">
-                        {(user.full_name || user.email).charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-base text-gray-900 truncate">{user.full_name || '—'}</p>
-                      <p className="text-sm text-gray-600 truncate">{user.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button onClick={() => handleToggleStatus(user)}
-                      className={`p-2 rounded-full transition-colors ${user.is_active ? 'text-yellow-600 hover:bg-yellow-50' : 'text-green-700 hover:bg-green-50'}`}
-                      title={user.is_active ? 'Deactivate' : 'Activate'}>
-                      <Power className="h-4 w-4" />
-                    </button>
-                    <button onClick={() => { setSelectedUser(user); setShowFormModal(true); }}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors">
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button onClick={() => { setSelectedUser(user); setShowDeleteModal(true); }}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`px-2.5 py-1 text-[12px] font-medium rounded-full border ${getRoleBadge(user.role)}`}>
-                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                  </span>
-                  <span className={`px-2.5 py-1 text-[12px] font-medium rounded-full border ${user.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                    {user.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                  <span className="text-[12px] text-gray-600 ml-auto">{formatDate(user.created_at)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+        <select
+          value={roleFilter}
+          onChange={(e) => { setRoleFilter(e.target.value); setCurrentPage(1); }}
+          className="px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium text-stone-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900 transition-all cursor-pointer"
+        >
+          <option value="">All Roles</option>
+          <option value="admin">Admin</option>
+          <option value="customer">Customer</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+          className="px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium text-stone-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900 transition-all cursor-pointer"
+        >
+          <option value="">All Statuses</option>
+          <option value="active">Active Only</option>
+          <option value="inactive">Inactive Only</option>
+        </select>
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="px-4 py-2.5 text-xs font-bold text-stone-700 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
 
-          {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto">
+      {/* ── Table ── */}
+      <div className="bg-white border border-stone-200 rounded-2xl shadow-xs overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center">
+            <div className="w-8 h-8 border-2 border-stone-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs text-stone-500 font-medium">Loading user profiles...</p>
+          </div>
+        ) : users.length === 0 ? (
+          <div className="p-16 text-center">
+            <UsersIcon className="w-12 h-12 text-stone-300 mx-auto mb-3" />
+            <h3 className="text-base font-bold text-stone-900">No users found</h3>
+            <p className="text-xs text-stone-500 mt-1">Customers who create accounts during checkout will appear here.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-sm font-semibold text-gray-600 uppercase tracking-wide px-6 py-4">User</th>
-                  <th className="text-sm font-semibold text-gray-600 uppercase tracking-wide px-6 py-4">Role</th>
-                  <th className="text-sm font-semibold text-gray-600 uppercase tracking-wide px-6 py-4">Orders</th>
-                  <th className="text-sm font-semibold text-gray-600 uppercase tracking-wide px-6 py-4">Spent</th>
-                  <th className="text-sm font-semibold text-gray-600 uppercase tracking-wide px-6 py-4">Status</th>
-                  <th className="text-sm font-semibold text-gray-600 uppercase tracking-wide px-6 py-4">Joined</th>
-                  <th className="text-right text-sm font-semibold text-gray-600 uppercase tracking-wide px-6 py-4">Actions</th>
+                <tr className="border-b border-stone-200 bg-stone-50/50 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                  <th className="py-3.5 px-5">Customer Profile</th>
+                  <th className="py-3.5 px-5">Role</th>
+                  <th className="py-3.5 px-5">Orders</th>
+                  <th className="py-3.5 px-5">Total Spent</th>
+                  <th className="py-3.5 px-5">Status</th>
+                  <th className="py-3.5 px-5">Joined</th>
+                  <th className="py-3.5 px-5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#e8eaed]">
+              <tbody className="divide-y divide-stone-100 text-sm">
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm font-semibold text-gray-600">
-                            {(user.full_name || user.email).charAt(0).toUpperCase()}
-                          </span>
+                  <tr key={user.id} className="hover:bg-stone-50/60 transition-colors group">
+                    <td className="py-3.5 px-5">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center font-bold text-stone-700 text-xs flex-shrink-0">
+                          {(user.full_name || user.email).charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-sm text-gray-900 truncate">{user.full_name || '—'}</p>
-                          <p className="text-[12px] text-gray-600 truncate">{user.email}</p>
+                          <p className="font-bold text-stone-900 truncate max-w-xs">{user.full_name || 'Customer'}</p>
+                          <p className="text-xs text-stone-400 truncate max-w-xs">{user.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 text-[12px] font-medium rounded-full border ${getRoleBadge(user.role)}`}>
+                    <td className="py-3.5 px-5">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full ${getRoleBadge(user.role)}`}>
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{user.order_count || 0}</td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-gray-900">
-                        ₹{Number(user.total_spent || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                      </span>
+                    <td className="py-3.5 px-5 font-bold text-stone-900">
+                      {user.order_count || 0}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 text-[12px] font-medium rounded-full border ${user.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </span>
+                    <td className="py-3.5 px-5 font-bold text-stone-900">
+                      ₹{Number(user.total_spent || 0).toLocaleString('en-IN')}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{formatDate(user.created_at)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 justify-end">
-                        <button onClick={() => handleToggleStatus(user)}
-                          className={`p-2 rounded-full transition-colors min-h-10 min-w-10 flex items-center justify-center ${user.is_active ? 'text-yellow-600 hover:bg-yellow-50' : 'text-green-700 hover:bg-green-50'}`}
-                          title={user.is_active ? 'Deactivate' : 'Activate'}>
-                          <Power className="h-4 w-4" />
+                    <td className="py-3.5 px-5">
+                      <button
+                        onClick={() => handleToggleStatus(user)}
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        title="Click to toggle status"
+                      >
+                        <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full ${
+                          user.is_active
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-stone-100 text-stone-500 border border-stone-200'
+                        }`}>
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </button>
+                    </td>
+                    <td className="py-3.5 px-5 text-xs text-stone-500 font-medium">
+                      {formatDate(user.created_at)}
+                    </td>
+                    <td className="py-3.5 px-5 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => { setSelectedUser(user); setShowFormModal(true); }}
+                          className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
+                          title="Edit user"
+                        >
+                          <Edit className="w-4 h-4" />
                         </button>
-                        <button onClick={() => { setSelectedUser(user); setShowFormModal(true); }}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors min-h-10 min-w-10 flex items-center justify-center" title="Edit">
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => { setSelectedUser(user); setShowDeleteModal(true); }}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors min-h-10 min-w-10 flex items-center justify-center" title="Delete">
-                          <Trash2 className="h-4 w-4" />
+                        <button
+                          onClick={() => { setSelectedUser(user); setShowDeleteModal(true); }}
+                          className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                          title="Deactivate user"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -376,12 +312,38 @@ export const UsersList: React.FC = () => {
               </tbody>
             </table>
           </div>
+        )}
 
-          <Pagination />
-        </div>
-      )}
+        {/* ── Pagination ── */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-stone-200 bg-stone-50/50">
+            <p className="text-xs font-semibold text-stone-500">
+              Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalItems)} of {totalItems} users
+            </p>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-xl text-stone-600 hover:bg-stone-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="px-3 text-xs font-bold text-stone-900">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="p-2 rounded-xl text-stone-600 hover:bg-stone-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* User Form Modal */}
+      {/* ── User Form Modal ── */}
       {showFormModal && (
         <UserForm
           user={selectedUser}
@@ -390,17 +352,23 @@ export const UsersList: React.FC = () => {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* ── Delete/Deactivate Confirmation Modal ── */}
       <ConfirmModal
         isOpen={showDeleteModal}
-        onClose={() => { setShowDeleteModal(false); setSelectedUser(null); }}
-        onConfirm={handleDelete}
-        title="Deactivate User"
-        message={`Are you sure you want to deactivate "${selectedUser?.full_name}"?`}
-        confirmText="Deactivate"
+        title="Deactivate User Account"
+        message={`Are you sure you want to deactivate ${selectedUser?.full_name || selectedUser?.email}? They will no longer be able to log in.`}
+        confirmText="Deactivate Account"
+        cancelText="Cancel"
         variant="danger"
         loading={deleteLoading}
+        onConfirm={handleDelete}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+        }}
       />
     </div>
   );
 };
+
+export default UsersList;

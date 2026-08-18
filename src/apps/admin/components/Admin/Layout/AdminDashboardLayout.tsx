@@ -60,7 +60,7 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen font-sans antialiased" style={{ background: '#f8f9fa', color: '#202124' }}>
+    <div className="min-h-screen font-sans antialiased bg-stone-50/60 text-stone-900">
       <MobileHeader 
         setSidebarOpen={setSidebarOpen} 
         title={title} 
@@ -70,7 +70,7 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-stone-900/30 backdrop-blur-xs z-50 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-stone-900/40 backdrop-blur-xs z-50 lg:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -78,10 +78,9 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 shadow-none transform transition-transform duration-250 ease-in-out flex flex-col lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 shadow-xl lg:shadow-none transform transition-transform duration-250 ease-in-out flex flex-col lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ background: '#fff', borderRight: '1px solid #e8eaed' }}
       >
         <Sidebar 
           user={user}
@@ -105,7 +104,7 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
         />
 
         {/* Page Content */}
-        <div className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
+        <div className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

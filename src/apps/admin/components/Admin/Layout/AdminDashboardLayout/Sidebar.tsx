@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { X, ExternalLink, LogOut, LayoutDashboard, Store, ChevronRight } from 'lucide-react';
+import { X, ExternalLink, LogOut, LayoutDashboard, Store } from 'lucide-react';
 import { NavItem } from './types';
 import { User } from '@/shared/types';
 import { useAuth } from '@/shared/contexts/AuthContext';
@@ -36,28 +36,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const storeUrl = `https://${computedHostname}`;
 
   return (
-    <aside className="flex flex-col h-full select-none" style={{ background: '#fff', borderRight: '1px solid #e8eaed' }}>
+    <aside className="flex flex-col h-full bg-white border-r border-stone-200 select-none">
 
       {/* ── Brand / App header ── */}
-      <div className="flex items-center justify-between px-4 h-16 flex-shrink-0" style={{ borderBottom: '1px solid #e8eaed' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: '#1a73e8' }}>
-            <LayoutDashboard className="w-4 h-4 text-white" />
+      <div className="flex items-center justify-between px-5 h-16 border-b border-stone-200 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-stone-900 text-white flex items-center justify-center flex-shrink-0 shadow-xs font-bold text-xs">
+            {store?.name ? store.name.charAt(0).toUpperCase() : 'O'}
           </div>
-          <div>
-            <p className="text-[13px] font-semibold leading-tight" style={{ color: '#202124', fontFamily: "'Google Sans', Inter, sans-serif" }}>
-              {store?.name || 'EasyIO'}
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-stone-900 leading-tight truncate">
+              {store?.name || 'My Store'}
             </p>
-            <p className="text-[10px] leading-tight" style={{ color: '#5f6368' }}>Admin Console</p>
+            <p className="text-[11px] font-medium text-stone-500 leading-tight">Admin Console</p>
           </div>
         </div>
         <button
           onClick={() => setSidebarOpen(false)}
-          className="lg:hidden p-1.5 rounded-full transition-colors"
-          style={{ color: '#5f6368' }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          className="lg:hidden p-1.5 rounded-xl text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors"
           aria-label="Close menu"
         >
           <X className="w-4 h-4" />
@@ -66,25 +62,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* ── Live store chip ── */}
       {storeUrl && (
-        <div className="px-3 pt-3 pb-1 flex-shrink-0">
+        <div className="px-3 pt-3.5 pb-1 flex-shrink-0">
           <a
             href={storeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-2 rounded-full text-[12px] font-medium transition-colors"
-            style={{ background: '#e8f0fe', color: '#1a73e8' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#d2e3fc')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#e8f0fe')}
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-800 text-xs font-semibold border border-stone-200 transition-all group"
           >
-            <Store className="w-3.5 h-3.5 flex-shrink-0" />
+            <Store className="w-4 h-4 text-stone-600 group-hover:text-stone-900 flex-shrink-0" />
             <span className="truncate flex-1">{computedHostname}</span>
-            <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-60" />
+            <ExternalLink className="w-3.5 h-3.5 text-stone-400 group-hover:text-stone-700 flex-shrink-0" />
           </a>
         </div>
       )}
 
-      {/* ── Navigation ── */}
-      <nav className="flex-1 px-2 py-2 overflow-y-auto">
+      {/* ── Navigation Items ── */}
+      <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -93,59 +86,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Link
               key={item.path}
               to={item.path}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-full text-[13px] font-medium transition-all duration-100 min-h-[40px] mb-0.5"
-              style={{
-                background: active ? '#e8f0fe' : 'transparent',
-                color: active ? '#1a73e8' : '#3c4043',
-                fontFamily: "'Google Sans', Inter, sans-serif",
-                fontWeight: active ? 600 : 500,
-              }}
-              onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#f1f3f4'; }}
-              onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                active
+                  ? 'bg-stone-900 text-white shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+              }`}
             >
-              <Icon
-                className="w-[18px] h-[18px] flex-shrink-0"
-                style={{ color: active ? '#1a73e8' : '#5f6368' }}
-              />
-              <span className="flex-1 tracking-[0.01em]">{item.name}</span>
-              {active && <div className="w-1 h-4 rounded-full flex-shrink-0" style={{ background: '#1a73e8' }} />}
+              <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-stone-500'}`} />
+              <span className="flex-1">{item.name}</span>
             </Link>
           );
         })}
       </nav>
 
       {/* ── User Footer ── */}
-      <div className="flex-shrink-0 px-3 py-3" style={{ borderTop: '1px solid #e8eaed' }}>
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl mb-1"
-          style={{ background: '#f8f9fa' }}>
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0"
-            style={{ background: '#1a73e8' }}
-          >
+      <div className="flex-shrink-0 px-3 py-3 border-t border-stone-200">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-stone-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
             {getInitials()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-semibold truncate" style={{ color: '#202124' }}>{user?.fullName || 'Admin'}</p>
-            <p className="text-[10px] truncate" style={{ color: '#5f6368' }}>{user?.email}</p>
+            <p className="text-xs font-bold text-stone-900 truncate">{user?.fullName || 'Admin'}</p>
+            <p className="text-[10px] text-stone-500 truncate">{user?.email}</p>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-[13px] font-medium transition-colors"
-          style={{ color: '#5f6368' }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = '#fce8e6';
-            e.currentTarget.style.color = '#d93025';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = '#5f6368';
-          }}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
-          <span>Sign out</span>
+          <span>Sign Out</span>
         </button>
       </div>
     </aside>
   );
 };
+
+export default Sidebar;

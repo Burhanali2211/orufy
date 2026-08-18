@@ -1,6 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, Store } from 'lucide-react';
+import { Menu, Store, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/shared/contexts/AuthContext';
 
 interface MobileHeaderProps {
@@ -14,50 +13,40 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   title,
 }) => {
   const { store } = useAuth();
+  const storeUrl = store?.hostname && store.hostname !== 'get-oru.com' ? `https://${store.hostname}` : `https://${store?.slug || 'easyio'}.get-oru.com`;
 
   return (
-    <header
-      className="lg:hidden sticky top-0 z-40"
-      style={{ background: '#fff', borderBottom: '1px solid #e8eaed' }}
-    >
-      <div className="flex items-center justify-between px-3 h-14">
+    <header className="lg:hidden sticky top-0 z-40 bg-white border-b border-stone-200">
+      <div className="flex items-center justify-between px-4 h-14">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-          style={{ color: '#5f6368' }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-stone-700 hover:bg-stone-100 transition-colors"
           aria-label="Open menu"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-2">
-          <div
-            className="w-6 h-6 rounded flex items-center justify-center"
-            style={{ background: '#1a73e8' }}
-          >
-            <div className="w-3 h-3 rounded-sm" style={{ background: '#fff', opacity: 0.9 }} />
+          <div className="w-6 h-6 rounded-lg bg-stone-900 text-white flex items-center justify-center font-bold text-[10px]">
+            {store?.name ? store.name.charAt(0).toUpperCase() : 'O'}
           </div>
-          <span
-            className="text-[14px] font-semibold"
-            style={{ color: '#202124', fontFamily: "'Google Sans', Inter, sans-serif" }}
-          >
+          <span className="text-sm font-bold text-stone-900 truncate">
             {title || store?.name || 'Admin'}
           </span>
         </div>
 
         <a
-          href={store?.hostname && store.hostname !== 'get-oru.com' ? `https://${store.hostname}` : `https://${store?.slug || 'easyio'}.get-oru.com`}
+          href={storeUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-          style={{ color: '#5f6368' }}
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-stone-700 hover:bg-stone-100 transition-colors"
           aria-label="View store"
         >
-          <Store className="w-5 h-5" />
+          <Store className="w-4 h-4" />
         </a>
       </div>
     </header>
   );
 };
+
+export default MobileHeader;

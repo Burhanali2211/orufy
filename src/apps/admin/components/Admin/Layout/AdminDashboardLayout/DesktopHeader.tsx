@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, HelpCircle, Settings, Bell, LogOut, User as UserIcon } from 'lucide-react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { Settings, LogOut, User as UserIcon, Store, ExternalLink } from 'lucide-react';
 import { User } from '@/shared/types';
 import { useAuth } from '@/shared/contexts/AuthContext';
 
@@ -11,10 +11,13 @@ interface DesktopHeaderProps {
   getInitials: () => string;
 }
 
-// Google-style breadcrumb from path
-function buildBreadcrumb(pathname: string): string[] {
+function buildBreadcrumbs(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
-  return segments.map(s => s.charAt(0).toUpperCase() + s.slice(1));
+  return segments.map((s, i) => ({
+    label: s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' '),
+    path: '/' + segments.slice(0, i + 1).join('/'),
+    isLast: i === segments.length - 1,
+  }));
 }
 
 export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
@@ -25,13 +28,19 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
   const { store, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const crumbs = buildBreadcrumb(location.pathname);
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const crumbs = buildBreadcrumbs(location.pathname);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  const computedHostname = (() => {
+    if (store?.hostname && store.hostname !== 'get-oru.com' && store.hostname !== 'www.get-oru.com') {
+      return store.hostname;
+    }
+    const sub = store?.slug || (store?.name ? store.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'easyio');
+    return `${sub}.get-oru.com`;
+  })();
+  const storeUrl = `https://${computedHostname}`;
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -48,116 +57,60 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
     navigate('/');
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      // In a real app, you would navigate to a search results page or filter the current view
-      console.log('Searching for:', searchQuery);
-      alert(`Search feature coming soon! (Query: ${searchQuery})`);
-    }
-  };
-
   return (
-    <header
-      className="hidden lg:flex items-center justify-between sticky top-0 z-30 px-6 h-16"
-      style={{
-        background: '#fff',
-        borderBottom: '1px solid #e8eaed',
-      }}
-    >
-      {/* ── Breadcrumbs ── */}
-      <div className="flex items-center gap-1.5 min-w-0">
+    <header className="hidden lg:flex items-center justify-between sticky top-0 z-30 px-8 h-16 bg-white/95 backdrop-blur-md border-b border-stone-200">
+      {/* ── Breadcrumb Hierarchy ── */}
+      <nav aria-label="Breadcrumbs" className="flex items-center gap-2 min-w-0">
         {crumbs.map((crumb, i) => (
-          <React.Fragment key={i}>
-            {i > 0 && (
-              <span className="text-[13px]" style={{ color: '#bdc1c6' }}>/</span>
+          <React.Fragment key={crumb.path}>
+            {i > 0 && <span className="text-xs text-stone-300 font-medium">/</span>}
+            {crumb.isLast ? (
+              <span className="text-sm font-semibold text-stone-900 truncate">
+                {crumb.label}
+              </span>
+            ) : (
+              <Link
+                to={crumb.path}
+                className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors truncate"
+              >
+                {crumb.label}
+              </Link>
             )}
-            <span
-              className="text-[13px] font-medium"
-              style={{
-                color: i === crumbs.length - 1 ? '#202124' : '#5f6368',
-                fontFamily: "'Google Sans', Inter, sans-serif",
-              }}
-            >
-              {crumb}
-            </span>
           </React.Fragment>
         ))}
-      </div>
+      </nav>
 
-      {/* ── Search bar (Google style) ── */}
-      <div className="flex-1 max-w-md mx-8">
-        <form
-          onSubmit={handleSearch}
-          className="flex items-center gap-3 px-4 py-2 rounded-full transition-all duration-150"
-          style={{
-            background: searchFocused ? '#fff' : '#f1f3f4',
-            border: searchFocused ? '1px solid #1a73e8' : '1px solid transparent',
-            boxShadow: searchFocused ? '0 1px 6px rgba(32,33,36,.28)' : 'none',
-          }}
+      {/* ── Right Actions ── */}
+      <div className="flex items-center gap-3 relative" ref={dropdownRef}>
+        {/* Quick View Live Store Link */}
+        <a
+          href={storeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-xl border border-stone-200 transition-colors"
+          title="Open live storefront in new tab"
         >
-          <Search className="w-4 h-4 flex-shrink-0" style={{ color: '#5f6368' }} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search orders, products, customers..."
-            className="flex-1 bg-transparent text-[13px] outline-none"
-            style={{ color: '#202124', fontFamily: "'Google Sans', Inter, sans-serif" }}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-          />
-        </form>
-      </div>
+          <Store className="w-3.5 h-3.5 text-stone-600" />
+          <span>View Storefront</span>
+          <ExternalLink className="w-3 h-3 text-stone-400" />
+        </a>
 
-      {/* ── Right actions ── */}
-      <div className="flex items-center gap-1 relative" ref={dropdownRef}>
-        {/* Help */}
-        <button
-          onClick={() => window.open('https://help.orufy.com', '_blank')}
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-          style={{ color: '#5f6368' }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          title="Help"
-        >
-          <HelpCircle className="w-5 h-5" />
-        </button>
-
-        {/* Settings */}
+        {/* Settings button */}
         <button
           onClick={() => navigate('/admin/settings')}
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-          style={{ color: '#5f6368' }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer"
           title="Settings"
         >
-          <Settings className="w-5 h-5" />
-        </button>
-
-        {/* Notifications */}
-        <button
-          onClick={() => alert('No new notifications')}
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors relative"
-          style={{ color: '#5f6368' }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          title="Notifications"
-        >
-          <Bell className="w-5 h-5" />
-          {/* Unread badge indicator */}
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white hidden" />
+          <Settings className="w-4 h-4" />
         </button>
 
         {/* Divider */}
-        <div className="w-px h-5 mx-2" style={{ background: '#e8eaed' }} />
+        <div className="w-px h-5 bg-stone-200 mx-1" />
 
         {/* User avatar / Dropdown Toggle */}
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0 transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          style={{ background: '#1a73e8' }}
+          className="w-9 h-9 rounded-xl bg-stone-900 text-white flex items-center justify-center text-xs font-bold transition-all hover:bg-stone-800 cursor-pointer shadow-xs"
           title={user?.fullName || 'Account'}
         >
           {getInitials()}
@@ -165,31 +118,29 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
 
         {/* User Dropdown Menu */}
         {isDropdownOpen && (
-          <div 
-            className="absolute top-12 right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
-          >
-            <div className="px-4 py-3 border-b border-gray-100 mb-1">
-              <p className="text-sm font-semibold text-gray-900 truncate">{user?.fullName || 'Admin User'}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+          <div className="absolute top-12 right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="px-4 py-3 border-b border-stone-100 mb-1">
+              <p className="text-sm font-bold text-stone-900 truncate">{user?.fullName || 'Admin User'}</p>
+              <p className="text-xs text-stone-500 truncate mt-0.5">{user?.email}</p>
             </div>
-            
+
             <button
               onClick={() => {
                 setIsDropdownOpen(false);
                 navigate('/admin/settings');
               }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors text-left cursor-pointer"
             >
-              <UserIcon className="w-4 h-4 text-gray-400" />
-              Profile & Settings
+              <UserIcon className="w-4 h-4 text-stone-400" />
+              Profile & Store Settings
             </button>
-            
+
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors text-left font-medium mt-1"
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer mt-1"
             >
               <LogOut className="w-4 h-4 text-red-500" />
-              Sign out
+              Sign Out
             </button>
           </div>
         )}
@@ -197,3 +148,5 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
     </header>
   );
 };
+
+export default DesktopHeader;
