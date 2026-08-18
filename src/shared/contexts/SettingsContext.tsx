@@ -10,10 +10,14 @@ export interface HeroSlide {
   ctaLink?: string;
   secondaryCta?: string;
   secondaryCtaLink?: string;
+  buttonBgColor?: string;
+  buttonTextColor?: string;
+  accentColor?: string;
+  overlayOpacity?: number;
 }
 
 export interface StorefrontHero {
-  layout: 'carousel' | 'split' | 'minimal' | 'immersive';
+  layout?: 'carousel' | 'split' | 'minimal' | 'immersive';
   topTitle?: string;
   titleMain?: string;
   subtitle?: string;
@@ -23,6 +27,19 @@ export interface StorefrontHero {
   secondaryCtaLink?: string;
   backgroundImage?: string;
   slides?: HeroSlide[];
+  intervalSeconds?: number;
+  transitionEffect?: 'slide' | 'fade' | 'zoom' | 'parallax';
+  fontFamily?: string;
+  fontSizeScale?: 'compact' | 'standard' | 'large' | 'massive';
+  contentAlign?: 'left' | 'center' | 'right';
+  contentPosition?: 'center-left' | 'center' | 'bottom-left' | 'top-left';
+  buttonShape?: 'sharp' | 'subtle' | 'rounded' | 'pill';
+  buttonSize?: 'sm' | 'md' | 'lg' | 'xl';
+  buttonStyle?: 'solid' | 'glass' | 'gradient' | 'outline' | 'tonal';
+  overlayPreset?: 'dark_gradient' | 'light_gradient' | 'radial_spotlight' | 'glass_frost' | 'none';
+  overlayOpacity?: number;
+  blendMode?: 'normal' | 'multiply' | 'overlay' | 'soft-light';
+  pauseOnHover?: boolean;
 }
 
 export interface ThemeSection {
@@ -141,6 +158,7 @@ interface SettingsContextType {
   getSiteSetting: (key: string) => string | undefined;
   getSiteSettingsByCategory: (category: string) => SiteSetting[];
   refetch: () => Promise<void>;
+  refreshSettings: () => Promise<void>;
 }
 
 export const DEFAULT_THEME_STUDIO: StorefrontThemeStudio = {
@@ -455,6 +473,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         getSiteSetting,
         getSiteSettingsByCategory,
         refetch,
+        refreshSettings: refetch,
       }}
     >
       {children}

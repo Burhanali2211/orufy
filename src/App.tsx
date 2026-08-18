@@ -40,6 +40,7 @@ const ShippingPolicyPage = React.lazy(() => import('@/apps/storefront/pages/Ship
 
 // Heavy admin/dashboard pages - loaded only when needed
 const AdminDashboard = React.lazy(() => import('@/apps/admin/pages/AdminDashboard'));
+const HeroStudioPage = React.lazy(() => import('@/apps/admin/pages/HeroStudioPage'));
 const CustomerDashboard = React.lazy(() => import('@/apps/customer/pages/CustomerDashboard'));
 const CheckoutPage = React.lazy(() => import('@/apps/storefront/pages/CheckoutPage'));
 const OrderTrackingPage = React.lazy(() => import('@/apps/storefront/pages/OrderTrackingPage'));
@@ -181,7 +182,16 @@ function App() {
                 } 
               />
 
-              {/* Standalone Order Confirmation (No Storefront Header/Footer) */}
+              {/* Standalone Full-Screen Studio Editors (Zero Sidebar Clutter) */}
+              <Route 
+                path="/admin/hero-studio" 
+                element={
+                  <ProtectedRoute>
+                    <HeroStudioPage />
+                  </ProtectedRoute>
+                } 
+              />
+
               {/* Standalone Distraction-Free Checkout & Order Confirmation */}
               <Route 
                 path="/checkout" 

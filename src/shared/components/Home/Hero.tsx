@@ -65,7 +65,7 @@ export const Hero: React.FC = memo(() => {
     ? hero.slides
     : [
         {
-          image: hero.backgroundImage || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80',
+          image: hero.backgroundImage || 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1600&q=80',
           topTitle: hero.topTitle || 'New Collection',
           titleMain: hero.titleMain || `${config?.identity?.siteName || 'Premium'} Curated Essentials`,
           subtitle: hero.subtitle || 'Showcase your best products with beautiful, high-resolution imagery',
@@ -75,7 +75,7 @@ export const Hero: React.FC = memo(() => {
           secondaryCtaLink: hero.secondaryCtaLink,
         },
         {
-          image: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1600&q=80',
+          image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=1600&q=80',
           topTitle: 'Featured Items',
           titleMain: 'Exclusive Deals',
           subtitle: 'Highlight your top selling items and promotions right here',
@@ -91,12 +91,42 @@ export const Hero: React.FC = memo(() => {
     setPage([page + newDirection, newDirection]);
   }, [page]);
 
+  const intervalDuration = (hero.intervalSeconds || 7) * 1000;
+
   useEffect(() => {
-    if (activeSlides.length > 1 && hero.layout === 'carousel') {
-      const id = setInterval(() => paginate(1), 7000);
+    if (activeSlides.length > 1 && (hero.layout === 'carousel' || !hero.layout)) {
+      const id = setInterval(() => paginate(1), intervalDuration);
       return () => clearInterval(id);
     }
-  }, [paginate, activeSlides.length, hero.layout]);
+  }, [paginate, activeSlides.length, hero.layout, intervalDuration]);
+
+  // ── Style Mappers ──
+  const buttonRadiusClass =
+    hero.buttonShape === 'sharp'
+      ? 'rounded-none'
+      : hero.buttonShape === 'subtle'
+      ? 'rounded-lg'
+      : hero.buttonShape === 'rounded'
+      ? 'rounded-2xl'
+      : 'rounded-full';
+
+  const buttonSizeClass =
+    hero.buttonSize === 'sm'
+      ? 'px-5 py-2.5 text-xs'
+      : hero.buttonSize === 'lg'
+      ? 'px-9 py-4 text-base font-bold'
+      : hero.buttonSize === 'xl'
+      ? 'px-11 py-4.5 text-lg font-bold'
+      : 'px-8 py-3.5 text-sm font-semibold';
+
+  const headlineSizeClass =
+    hero.fontSizeScale === 'compact'
+      ? 'text-3xl sm:text-5xl'
+      : hero.fontSizeScale === 'large'
+      ? 'text-4xl sm:text-6xl lg:text-7xl'
+      : hero.fontSizeScale === 'massive'
+      ? 'text-5xl sm:text-7xl lg:text-8xl'
+      : 'text-4xl sm:text-6xl';
 
   const currentSlide = activeSlides[current] || activeSlides[0];
 
@@ -250,12 +280,16 @@ export const Hero: React.FC = memo(() => {
             )}
             
             {/* Massive Display Headline */}
-            <motion.h1 variants={itemVariants} className="text-stone-900 text-4xl sm:text-6xl font-black leading-[1.1] mb-6 tracking-tight">
+            <motion.h1
+              variants={itemVariants}
+              style={{ fontFamily: hero.fontFamily }}
+              className={`text-stone-900 font-black leading-[1.08] mb-6 tracking-tight ${headlineSizeClass}`}
+            >
               {currentSlide.titleMain}
             </motion.h1>
 
             {/* Subtitle / Body Copy */}
-            <motion.p variants={itemVariants} className="text-base sm:text-lg text-stone-600 font-normal mb-8 leading-relaxed">
+            <motion.p variants={itemVariants} className="text-base sm:text-lg text-stone-600 font-normal mb-8 leading-relaxed max-w-xl">
               {currentSlide.subtitle}
             </motion.p>
 
@@ -263,24 +297,29 @@ export const Hero: React.FC = memo(() => {
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
               <Link
                 to={currentSlide.ctaLink || '/products'}
-                className="bg-stone-900 text-white px-8 py-3.5 rounded-full font-bold text-sm hover:bg-stone-800 transition-all shadow-md hover:shadow-lg w-full sm:w-auto text-center inline-flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: currentSlide.buttonBgColor || '#09090b',
+                  color: currentSlide.buttonTextColor || '#ffffff',
+                }}
+                className={`font-bold transition-all shadow-md hover:shadow-lg w-full sm:w-auto text-center inline-flex items-center justify-center gap-2 ${buttonRadiusClass} ${buttonSizeClass}`}
               >
-                {currentSlide.cta || 'Shop Now'} <ArrowRight className="w-4 h-4" />
+                <span>{currentSlide.cta || 'Shop Now'}</span>
+                <ArrowRight className="w-4 h-4" />
               </Link>
               
               {currentSlide.secondaryCta ? (
                 <Link
                   to={currentSlide.secondaryCtaLink || '/products'}
-                  className="bg-white border border-stone-200 text-stone-900 px-8 py-3.5 rounded-full font-bold text-sm hover:bg-stone-100 transition-colors w-full sm:w-auto text-center"
+                  className={`bg-white border border-stone-200 text-stone-900 font-bold hover:bg-stone-100 transition-colors w-full sm:w-auto text-center inline-flex items-center justify-center ${buttonRadiusClass} ${buttonSizeClass}`}
                 >
-                  {currentSlide.secondaryCta}
+                  <span>{currentSlide.secondaryCta}</span>
                 </Link>
               ) : (
                 <Link
                   to="/products"
-                  className="bg-white/80 backdrop-blur-sm border border-stone-200 text-stone-900 px-8 py-3.5 rounded-full font-bold text-sm hover:bg-white transition-colors w-full sm:w-auto text-center"
+                  className={`bg-white/80 backdrop-blur-sm border border-stone-200 text-stone-900 font-bold hover:bg-white transition-colors w-full sm:w-auto text-center inline-flex items-center justify-center ${buttonRadiusClass} ${buttonSizeClass}`}
                 >
-                  View Catalog
+                  <span>View Catalog</span>
                 </Link>
               )}
             </motion.div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/lib/apiClient';
 import { useNotification } from '@/shared/contexts/NotificationContext';
@@ -410,6 +411,16 @@ export const ThemeStudio: React.FC = () => {
               <span>Mobile</span>
             </button>
           </div>
+
+          {/* Launch Full-Screen Hero Studio */}
+          <Link
+            to="/admin/hero-studio"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition-colors cursor-pointer"
+            title="Launch Full-Screen Hero Visual Studio (Elementor Pro Mode)"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span className="hidden sm:inline">Hero Studio ↗</span>
+          </Link>
 
           {/* Publish Live CTA */}
           <button
