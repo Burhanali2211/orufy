@@ -10,13 +10,14 @@ import {
   Menu,
   X,
   ChevronRight,
-  ArrowLeft,
   ShoppingBag,
-  ExternalLink
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSettings } from '@/shared/contexts/SettingsContext';
-import { normalizeImageUrl, isValidImageUrl } from '@/shared/utils/imageUrlUtils';
+import { useWishlist } from '@/shared/contexts/WishlistContext';
+import { useCustomerStats } from '@/shared/hooks/customer/useCustomerStats';
+import { normalizeImageUrl } from '@/shared/utils/imageUrlUtils';
 
 interface CustomerDashboardLayoutProps {
   children: React.ReactNode;
@@ -29,15 +30,8 @@ interface NavItem {
   path: string;
   icon: React.ElementType;
   exact?: boolean;
+  badge?: number | string;
 }
-
-const navItems: NavItem[] = [
-  { name: 'Overview', path: '/dashboard', icon: LayoutDashboard, exact: true },
-  { name: 'My Orders', path: '/dashboard/orders', icon: Package },
-  { name: 'Wishlist', path: '/dashboard/wishlist', icon: Heart },
-  { name: 'Addresses', path: '/dashboard/addresses', icon: MapPin },
-  { name: 'Profile & Settings', path: '/dashboard/profile', icon: User },
-];
 
 export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = ({
   children,
@@ -46,6 +40,9 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
 }) => {
   const { user, logout } = useAuth();
   const { settings, getSiteSetting } = useSettings();
+  const { items: wishlistItems } = useWishlist();
+  const { data: stats } = useCustomerStats();
+
   const logoUrl = normalizeImageUrl(getSiteSetting('logo_url') || (settings as any)?.site_logo);
   const siteName = getSiteSetting('site_name') || (settings as any)?.site_name || 'Store';
   const location = useLocation();
@@ -62,6 +59,24 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
     navigate('/store');
   };
 
+  const navItems: NavItem[] = [
+    { name: 'Overview', path: '/dashboard', icon: LayoutDashboard, exact: true },
+    {
+      name: 'My Orders',
+      path: '/dashboard/orders',
+      icon: Package,
+      badge: (stats as any)?.activeOrders && (stats as any).activeOrders > 0 ? (stats as any).activeOrders : undefined
+    },
+    {
+      name: 'Wishlist',
+      path: '/dashboard/wishlist',
+      icon: Heart,
+      badge: wishlistItems?.length && wishlistItems.length > 0 ? wishlistItems.length : undefined
+    },
+    { name: 'Addresses', path: '/dashboard/addresses', icon: MapPin },
+    { name: 'Profile & Settings', path: '/dashboard/profile', icon: User },
+  ];
+
   const isActive = (item: NavItem) => {
     if (item.exact) {
       return location.pathname === item.path;
@@ -69,10 +84,14 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
     return location.pathname.startsWith(item.path);
   };
 
+  const userAvatar = user?.avatar || (user as any)?.avatar_url || (user as any)?.avatarUrl;
+
   const getInitials = () => {
-    if (user?.fullName) {
-      return user.fullName
+    if (user?.fullName || user?.name) {
+      const name = user.fullName || user.name || '';
+      return name
         .split(' ')
+        .filter(Boolean)
         .map(n => n[0])
         .join('')
         .toUpperCase()
@@ -133,12 +152,16 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
           <aside className="hidden lg:block lg:col-span-3 space-y-4 sticky top-20">
             {/* User Identity Card */}
             <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-stone-900 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
-                {getInitials()}
+              <div className="w-12 h-12 rounded-2xl bg-stone-900 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0 overflow-hidden border border-stone-200">
+                {userAvatar ? (
+                  <img src={userAvatar} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  getInitials()
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-stone-900 truncate">
-                  {user?.fullName || 'Customer'}
+                  {user?.fullName || user?.name || 'Customer'}
                 </p>
                 <p className="text-xs font-medium text-stone-500 truncate mt-0.5">
                   {user?.email}
@@ -165,7 +188,17 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
                       <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-stone-500'}`} />
                       <span>{item.name}</span>
                     </div>
-                    {active && <ChevronRight className="w-3.5 h-3.5 text-stone-400" />}
+
+                    <div className="flex items-center gap-1.5">
+                      {item.badge !== undefined && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                          active ? 'bg-stone-800 text-stone-200' : 'bg-stone-100 text-stone-700'
+                        }`}>
+                          {item.badge}
+                        </span>
+                      )}
+                      {active && <ChevronRight className="w-3.5 h-3.5 text-stone-400" />}
+                    </div>
                   </Link>
                 );
               })}
@@ -195,11 +228,15 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
                   {/* Drawer Header */}
                   <div className="flex items-center justify-between pb-4 border-b border-stone-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-stone-900 text-white flex items-center justify-center font-bold text-xs">
-                        {getInitials()}
+                      <div className="w-10 h-10 rounded-xl bg-stone-900 text-white flex items-center justify-center font-bold text-xs overflow-hidden border border-stone-200">
+                        {userAvatar ? (
+                          <img src={userAvatar} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          getInitials()
+                        )}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-stone-900 truncate">{user?.fullName || 'Customer'}</p>
+                        <p className="text-xs font-bold text-stone-900 truncate">{user?.fullName || user?.name || 'Customer'}</p>
                         <p className="text-[11px] text-stone-500 truncate">{user?.email}</p>
                       </div>
                     </div>

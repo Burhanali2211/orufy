@@ -10,12 +10,15 @@ import {
   CheckCircle,
   Bell,
   RefreshCw,
-  Lock
+  Lock,
+  Sparkles,
+  Check
 } from 'lucide-react';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { useCustomerProfile } from '@/shared/hooks/customer/useCustomerProfile';
+import { apiClient } from '@/shared/lib/apiClient';
 
 export const ProfilePage: React.FC = () => {
   const { user } = useAuth();
@@ -36,6 +39,13 @@ export const ProfilePage: React.FC = () => {
     dateOfBirth: '',
     gender: ''
   });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const [notificationPrefs, setNotificationPrefs] = useState({
     orderUpdates: true,
@@ -79,7 +89,6 @@ export const ProfilePage: React.FC = () => {
         gender: profileData.gender || undefined
       });
       setOriginalData(profileData);
-      showSuccess('Profile updated', 'Your account details have been saved.');
     } catch (err: any) {
       showError('Update failed', err?.message || 'Could not update profile');
     }
@@ -95,13 +104,12 @@ export const ProfilePage: React.FC = () => {
     if (!file || !user) return;
 
     if (!file.type.startsWith('image/')) {
-      showError('Invalid file', 'Please select an image file');
+      showError('Invalid file', 'Please select an image file (JPG, PNG, WebP)');
       return;
     }
 
     try {
       await uploadAvatar(file);
-      showSuccess('Avatar updated', 'Your profile picture has been updated.');
     } catch (err: any) {
       showError('Upload failed', err?.message || 'Could not upload avatar');
     } finally {
@@ -109,10 +117,38 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showError('Mismatch', 'New password and confirm password do not match');
+      return;
+    }
+    if (passwordData.newPassword.length < 6) {
+      showError('Too short', 'New password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await apiClient.post('/auth/change-password', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      showSuccess('Password Changed', 'Your security credentials have been updated.');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err: any) {
+      showError('Change Failed', err?.message || 'Could not change password. Please verify current password.');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const getInitials = () => {
-    if (user?.fullName) {
-      return user.fullName
+    if (user?.fullName || user?.name) {
+      const name = user.fullName || user.name || '';
+      return name
         .split(' ')
+        .filter(Boolean)
         .map(n => n[0])
         .join('')
         .toUpperCase()
@@ -121,16 +157,18 @@ export const ProfilePage: React.FC = () => {
     return user?.email?.charAt(0).toUpperCase() || 'U';
   };
 
+  const userAvatar = user?.avatar || (user as any)?.avatar_url || (user as any)?.avatarUrl;
+
   return (
     <CustomerDashboardLayout title="Profile & Settings" subtitle="Manage your personal details and security">
       <div className="space-y-6 max-w-3xl">
-        {/* ── Avatar / Account Card ── */}
+        {/* ── Avatar / Account Identity Card ── */}
         <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="relative">
               <div className="w-16 h-16 rounded-2xl bg-stone-900 text-white flex items-center justify-center font-bold text-lg shadow-xs overflow-hidden border border-stone-200">
-                {(user?.avatar || (user as any)?.avatarUrl) ? (
-                  <img src={user?.avatar || (user as any)?.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                {userAvatar ? (
+                  <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
                   getInitials()
                 )}
@@ -157,9 +195,21 @@ export const ProfilePage: React.FC = () => {
               <h3 className="font-bold text-base text-stone-900">{profileData.fullName || 'Customer'}</h3>
               <p className="text-xs text-stone-500">{profileData.email}</p>
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mt-1">
-                <CheckCircle className="w-3 h-3" /> Verified Member
+                <CheckCircle className="w-3 h-3" /> Verified Customer Account
               </span>
             </div>
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={handleAvatarButtonClick}
+              disabled={avatarUploading}
+              className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Camera className="w-3.5 h-3.5 text-stone-600" />
+              <span>Change Photo</span>
+            </button>
           </div>
         </div>
 
@@ -235,7 +285,62 @@ export const ProfilePage: React.FC = () => {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              <span>Save Changes</span>
+              <span>Save Details</span>
+            </button>
+          </div>
+        </form>
+
+        {/* ── Security / Password Update Form ── */}
+        <form onSubmit={handleChangePassword} className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="border-b border-stone-100 pb-3">
+            <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider flex items-center gap-2">
+              <Lock className="w-4 h-4 text-stone-700" />
+              <span>Account Password</span>
+            </h3>
+            <p className="text-xs text-stone-500 mt-0.5">Update your password to keep your account secure</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">Current Password</label>
+              <input
+                type="password"
+                required
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">New Password</label>
+              <input
+                type="password"
+                required
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">Confirm New Password</label>
+              <input
+                type="password"
+                required
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                className="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900"
+              />
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-stone-100 flex items-center justify-end">
+            <button
+              type="submit"
+              disabled={changingPassword || !passwordData.newPassword}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+            >
+              {changingPassword ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
+              <span>Update Password</span>
             </button>
           </div>
         </form>
@@ -243,8 +348,11 @@ export const ProfilePage: React.FC = () => {
         {/* ── Notification Preferences ── */}
         <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs space-y-4">
           <div className="border-b border-stone-100 pb-3">
-            <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider">Notification Preferences</h3>
-            <p className="text-xs text-stone-500 mt-0.5">Control order status alerts and store messages</p>
+            <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider flex items-center gap-2">
+              <Bell className="w-4 h-4 text-stone-700" />
+              <span>Notification Preferences</span>
+            </h3>
+            <p className="text-xs text-stone-500 mt-0.5">Control order status alerts and digital invoices</p>
           </div>
 
           <div className="space-y-3">

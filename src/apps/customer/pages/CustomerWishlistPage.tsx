@@ -4,14 +4,15 @@ import {
   Heart,
   ShoppingCart,
   Trash2,
-  ArrowRight,
   Package,
-  ShoppingBag
+  ShoppingBag,
+  ArrowRight
 } from 'lucide-react';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
 import { useWishlist } from '@/shared/contexts/WishlistContext';
 import { useCart } from '@/shared/contexts/CartContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
+import { normalizeImageUrl } from '@/shared/utils/imageUrlUtils';
 
 const fmt = (n: number | string) => {
   const v = typeof n === 'string' ? parseFloat(n) : n;
@@ -28,6 +29,23 @@ export const CustomerWishlistPage: React.FC = () => {
     addItem(product, 1);
     removeItem(product.id);
     showSuccess('Moved to cart', `${product.name} has been added to your shopping cart.`);
+  };
+
+  const getProductImage = (product: any): string => {
+    if (!product) return '';
+    let raw: any = null;
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      raw = product.images[0];
+    } else if (typeof product.images === 'string') {
+      raw = product.images;
+    } else if (product.image) {
+      raw = product.image;
+    } else if (product.thumbnail) {
+      raw = product.thumbnail;
+    } else if (product.product_image) {
+      raw = product.product_image;
+    }
+    return normalizeImageUrl(raw) || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80';
   };
 
   return (
@@ -51,29 +69,32 @@ export const CustomerWishlistPage: React.FC = () => {
 
         {items.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {items.map((product: any) => {
+            {items.map((item: any, idx: number) => {
+              // Handle both { product: Product } wrapper and direct Product objects
+              const product = item?.product || item;
+              if (!product || !product.id) return null;
+
               const inStock = product.stock === undefined || product.stock > 0;
+              const imageUrl = getProductImage(product);
+
               return (
                 <div
-                  key={product.id}
+                  key={product.id || idx}
                   className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs hover:border-stone-300 transition-all flex flex-col justify-between group"
                 >
                   <div className="space-y-3">
                     <div className="aspect-square rounded-xl bg-stone-100 overflow-hidden relative border border-stone-200/80">
-                      {product.images?.[0] ? (
-                        <img
-                          src={product.images[0]}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package className="w-8 h-8 text-stone-400" />
-                        </div>
-                      )}
+                      <img
+                        src={imageUrl}
+                        alt={product.name || 'Product Image'}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80';
+                        }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                       <button
                         onClick={() => removeItem(product.id)}
-                        className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-white/90 text-stone-600 hover:text-rose-600 shadow-xs transition-colors"
+                        className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-white/90 text-stone-600 hover:text-rose-600 shadow-xs transition-colors cursor-pointer"
                         title="Remove from wishlist"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

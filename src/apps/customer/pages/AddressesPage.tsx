@@ -8,10 +8,14 @@ import {
   Home,
   Building,
   Phone,
-  X
+  X,
+  Navigation,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
 import { useAuth } from '@/shared/contexts/AuthContext';
+import { useNotification } from '@/shared/contexts/NotificationContext';
 import { useCustomerAddresses } from '@/shared/hooks/customer/useCustomerAddresses';
 
 interface Address {
@@ -50,10 +54,12 @@ const INDIAN_STATES = [
 
 export const AddressesPage: React.FC = () => {
   const { user } = useAuth();
+  const { showSuccess, showError, showInfo } = useNotification();
   const { data: addresses = [], isLoading: loading, createAddress, updateAddress, deleteAddress, setDefaultAddress, isSaving } = useCustomerAddresses();
   const [showModal, setShowModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [formData, setFormData] = useState(initialFormData);
+  const [locating, setLocating] = useState(false);
 
   const handleOpenModal = (address?: Address) => {
     if (address) {
@@ -73,7 +79,7 @@ export const AddressesPage: React.FC = () => {
       setEditingAddress(null);
       setFormData({
         ...initialFormData,
-        fullName: user?.fullName || '',
+        fullName: user?.fullName || user?.name || '',
         phone: user?.phone || '',
       });
     }
@@ -93,6 +99,75 @@ export const AddressesPage: React.FC = () => {
 
   const handleSetDefault = async (id: string) => {
     await setDefaultAddress(id);
+  };
+
+  const handleDetectLocation = async () => {
+    if (!('geolocation' in navigator)) {
+      showError('Not Supported', 'Geolocation is not supported by your browser.');
+      return;
+    }
+
+    try {
+      setLocating(true);
+      showInfo('Detecting location...', 'Please allow browser location permission if prompted.');
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+            );
+            const data = await res.json();
+
+            if (data && data.address) {
+              const addr = data.address;
+              const road = addr.road || addr.suburb || addr.neighbourhood || addr.residential || '';
+              const house = addr.house_number ? `${addr.house_number}, ` : '';
+              const detectedStreet = `${house}${road}`.trim() || data.display_name?.split(',')[0] || '';
+              const detectedCity = addr.city || addr.town || addr.village || addr.city_district || addr.county || '';
+              const detectedState = addr.state || '';
+              const detectedPostcode = addr.postcode || '';
+
+              // Match with nearest Indian State from list
+              const matchedState = INDIAN_STATES.find(
+                s => s.toLowerCase() === detectedState.toLowerCase() || detectedState.toLowerCase().includes(s.toLowerCase())
+              ) || detectedState;
+
+              setFormData(prev => ({
+                ...prev,
+                streetAddress: detectedStreet || prev.streetAddress,
+                city: detectedCity || prev.city,
+                state: matchedState || prev.state,
+                postalCode: detectedPostcode || prev.postalCode,
+                country: addr.country || 'India'
+              }));
+
+              showSuccess('Location detected', 'Address fields populated from your GPS location.');
+            } else {
+              showError('Location lookup failed', 'Could not resolve address from coordinates.');
+            }
+          } catch (fetchErr) {
+            console.error('Reverse geocode error:', fetchErr);
+            showError('Lookup Error', 'Unable to fetch street details for your coordinates.');
+          } finally {
+            setLocating(false);
+          }
+        },
+        (geoErr) => {
+          setLocating(false);
+          if (geoErr.code === geoErr.PERMISSION_DENIED) {
+            showError('Permission Denied', 'Please allow location permission in your browser settings to use auto-fill.');
+          } else {
+            showError('Location Error', geoErr.message || 'Unable to retrieve location.');
+          }
+        },
+        { timeout: 10000, enableHighAccuracy: true }
+      );
+    } catch (err: any) {
+      setLocating(false);
+      showError('Error', err.message || 'Failed to detect location');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -224,8 +299,25 @@ export const AddressesPage: React.FC = () => {
                 <h3 className="text-sm font-bold text-stone-900 font-serif">
                   {editingAddress ? 'Edit Shipping Address' : 'Add New Shipping Address'}
                 </h3>
-                <button onClick={handleCloseModal} className="p-1 rounded-lg text-stone-400 hover:text-stone-900">
+                <button onClick={handleCloseModal} className="p-1 rounded-lg text-stone-400 hover:text-stone-900 cursor-pointer">
                   <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* GPS Auto-Fill Button */}
+              <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-stone-600">
+                  <Navigation className="w-4 h-4 text-stone-900 flex-shrink-0" />
+                  <span>Auto-detect your current live address</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDetectLocation}
+                  disabled={locating}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer flex-shrink-0 shadow-2xs"
+                >
+                  {locating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Navigation className="w-3.5 h-3.5" />}
+                  <span>{locating ? 'Detecting...' : 'Use My GPS'}</span>
                 </button>
               </div>
 
@@ -322,14 +414,14 @@ export const AddressesPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleCloseModal}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 transition-colors"
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50"
+                    className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                   >
                     {isSaving ? 'Saving...' : 'Save Address'}
                   </button>

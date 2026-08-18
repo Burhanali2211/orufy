@@ -1,6 +1,5 @@
 import { apiClient } from '@/shared/lib/apiClient';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { User } from '../../types';
@@ -26,16 +25,20 @@ export const useCustomerProfile = () => {
     }
   });
 
-  // Upload avatar mutation — sends as multipart form to backend
+  // Upload avatar mutation — converts file to base64 and saves to backend
   const uploadAvatarMutation = useMutation({
     mutationFn: async (file: File) => {
       if (!user) throw new Error('User not authenticated');
 
-      const formData = new FormData();
-      formData.append('avatar', file);
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-      const result = await apiClient.upload('/profiles/avatar', formData);
-      const publicUrl = result?.url || result?.publicUrl;
+      const result = await apiClient.post<any>('/customer/profiles/avatar', { data: dataUrl });
+      const publicUrl = result?.url || result?.publicUrl || dataUrl;
 
       await authUpdateProfile({ avatar: publicUrl });
       return publicUrl;
