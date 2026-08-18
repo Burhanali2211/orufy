@@ -332,11 +332,6 @@ adminSettingsRouter.post('/footer/batch-delete', requireAuth, requireStore, asyn
   }
 });
 
-// --- Hero Section Settings ---
-adminSettingsRouter.get('/hero', requireAuth, requireStore, async (req: Request, res: Response) => {
-  try {
-    const storeId = getStoreId(req, res);
-    const [heroRow] = await withStoreContext(storeId, () =>
 // --- Hero Settings ---
 adminSettingsRouter.get('/hero', requireAuth, requireStore, async (req: Request, res: Response) => {
   try {
