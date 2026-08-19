@@ -1,23 +1,24 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { custom_domains, stores, store_members } from '../db/schema';
-import { eq, and, sql, lte } from 'drizzle-orm';
+import { eq, and, sql, lte, inArray } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth';
 import { normalizeHostname, generateVerificationToken, verifyDnsTxtRecord } from '../lib/domainUtils';
 import { provisionSslCertificate } from '../lib/sslManager';
 import { withStoreContext, withUserContext } from '../db/utils';
+import { invalidateStoreCache } from '../middleware/storeResolver';
 
 export const domainsRouter = Router();
 
 const TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-// Helper: Ensure user is authorized merchant for store
+// Helper: Ensure user is authorized merchant for store (owner or admin)
 async function getMerchantStore(userId: string) {
   return await withUserContext(userId, async (tx) => {
     const [membership] = await tx
       .select()
       .from(store_members)
-      .where(and(eq(store_members.user_id, userId), eq(store_members.role, 'owner')));
+      .where(and(eq(store_members.user_id, userId), inArray(store_members.role, ['owner', 'admin'])));
 
     if (!membership) {
       return null;
@@ -279,6 +280,10 @@ domainsRouter.post('/:id/activate-ssl', requireAuth, async (req: Request, res: R
       return up;
     }, userId);
 
+    if (updated?.hostname) {
+      invalidateStoreCache(updated.hostname);
+    }
+
     return res.status(200).json({
       success: true,
       domain: updated,
@@ -325,6 +330,10 @@ domainsRouter.post('/:id/set-primary', requireAuth, async (req: Request, res: Re
 
       return up;
     }, userId);
+
+    if (updated?.hostname) {
+      invalidateStoreCache(updated.hostname);
+    }
 
     return res.status(200).json({
       success: true,
@@ -439,6 +448,10 @@ domainsRouter.delete('/:id', requireAuth, async (req: Request, res: Response) =>
 
     if (!deleted) {
       return res.status(404).json({ error: 'Domain not found or unauthorized' });
+    }
+
+    if (deleted?.hostname) {
+      invalidateStoreCache(deleted.hostname);
     }
 
     return res.status(200).json({

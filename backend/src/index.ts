@@ -236,18 +236,17 @@ app.get(['/affiliate-onboarding.html', '/affiliate-onboarding', '/affiliate'], (
   return res.redirect(301, `${baseUrl}/onboarding`);
 });
 
-import { startReservationExpiryWorker } from './workers/reservationExpiryWorker';
-
 const server = app.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   if (process.env.NODE_ENV !== 'test') {
-    startReservationExpiryWorker(30000);
+    WorkerManager.startAll();
   }
 });
 
 // Graceful shutdown
 const handleShutdown = (signal: string) => {
   console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+  WorkerManager.stopAll();
   server.close(() => {
     console.log('✅ HTTP server closed. Process terminating cleanly.');
     process.exit(0);

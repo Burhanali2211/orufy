@@ -26,6 +26,8 @@ services:
       - PORT=3001
       - DATABASE_URL=postgres://platform_app:password@postgres:5432/platform_db
       - PLATFORM_DOMAIN=get-oru.com
+    volumes:
+      - uploads_data:/app/uploads
     # NO PORTS EXPOSED OUTSIDE. Only reachable via Nginx on the internal network.
     depends_on:
       - postgres
@@ -63,3 +65,4 @@ networks:
 
 volumes:
   postgres_data:
+  uploads_data:

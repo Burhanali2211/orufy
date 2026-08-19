@@ -608,10 +608,22 @@ export async function processWebhookBusinessEvent(event: any, tx: any): Promise<
       const transferId = transferEntity.id;
       const recipientAccountId = transferEntity.recipient;
 
-      const [matchedOrder] = await tx
-        .select()
-        .from(orders)
-        .where(eq(orders.id, 'order_1'));
+      let matchedOrder = null;
+      if (rzpPaymentId) {
+        const [ord] = await tx
+          .select()
+          .from(orders)
+          .where(eq(orders.razorpay_payment_id, rzpPaymentId));
+        matchedOrder = ord;
+      }
+
+      if (!matchedOrder && transferEntity.notes?.order_number) {
+        const [ord] = await tx
+          .select()
+          .from(orders)
+          .where(eq(orders.order_number, transferEntity.notes.order_number));
+        matchedOrder = ord;
+      }
 
       if (matchedOrder) {
         const [store] = await tx
@@ -619,7 +631,7 @@ export async function processWebhookBusinessEvent(event: any, tx: any): Promise<
           .from(stores)
           .where(eq(stores.id, matchedOrder.store_id));
 
-        if (store && store.razorpay_linked_account_id !== recipientAccountId) {
+        if (store && store.razorpay_linked_account_id && store.razorpay_linked_account_id !== recipientAccountId) {
           throw new Error('Transfer recipient mismatch');
         }
 
@@ -632,7 +644,8 @@ export async function processWebhookBusinessEvent(event: any, tx: any): Promise<
             linked_account_id: recipientAccountId,
             amount_paise: transferEntity.amount,
             transfer_status: 'PROCESSED',
-          });
+          })
+          .onConflictDoNothing();
 
         await tx
           .update(orders)
@@ -665,13 +678,18 @@ export async function processWebhookBusinessEvent(event: any, tx: any): Promise<
     }
 
     case 'refund.created': {
-      await tx
-        .update(orders)
-        .set({
-          refund_status: 'REQUESTED',
-          status: 'REFUND_REQUESTED',
-          updated_at: sql`now()`,
-        })
+      const refundEntity = event.payload.refund?.entity;
+      const rzpPaymentId = refundEntity?.payment_id;
+      if (rzpPaymentId) {
+        await tx
+          .update(orders)
+          .set({
+            refund_status: 'REQUESTED',
+            status: 'REFUND_REQUESTED',
+            updated_at: sql`now()`,
+          })
+          .where(eq(orders.razorpay_payment_id, rzpPaymentId));
+      }
       break;
     }
 
@@ -698,18 +716,24 @@ export async function processWebhookBusinessEvent(event: any, tx: any): Promise<
             refund_status: isFullRefund ? 'FULL' : 'PARTIAL',
             status: isFullRefund ? 'REFUNDED' : 'PARTIALLY_REFUNDED',
             updated_at: sql`now()`,
-          });
+          })
+          .where(eq(orders.id, matchedOrder.id));
       }
       break;
     }
 
     case 'refund.failed': {
-      await tx
-        .update(orders)
-        .set({
-          refund_status: 'FAILED',
-          updated_at: sql`now()`,
-        });
+      const refundEntity = event.payload.refund?.entity;
+      const rzpPaymentId = refundEntity?.payment_id;
+      if (rzpPaymentId) {
+        await tx
+          .update(orders)
+          .set({
+            refund_status: 'FAILED',
+            updated_at: sql`now()`,
+          })
+          .where(eq(orders.razorpay_payment_id, rzpPaymentId));
+      }
       break;
     }
 

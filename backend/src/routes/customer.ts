@@ -2,8 +2,9 @@ import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { addresses, payment_methods, notification_preferences, orders, reviews, profiles, stores } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
+import path from 'path';
 import { requireAuth, optionalAuth } from '../middleware/auth';
-import { optimizeImageBuffer } from '../services/imageOptimizer';
+import { optimizeImageBuffer, saveOptimizedImage } from '../services/imageOptimizer';
 
 export const customerRouter = Router();
 
@@ -426,15 +427,16 @@ customerRouter.post('/profiles/avatar', requireAuth, async (req: Request, res: R
     const userId = res.locals.user.id;
     let avatarUrl = req.body?.url;
 
-    // If a base64 image data payload is sent, optimize it to WebP with Sharp
+    // If a base64 image data payload is sent, optimize and persist to disk
     if (req.body?.data && typeof req.body.data === 'string' && req.body.data.startsWith('data:image')) {
       try {
         const base64Data = req.body.data.split(',')[1];
         const buffer = Buffer.from(base64Data, 'base64');
-        const optimized = await optimizeImageBuffer(buffer, { maxWidth: 400, maxHeight: 400, quality: 85, format: 'webp' });
-        avatarUrl = `data:image/webp;base64,${optimized.toString('base64')}`;
+        const uploadDir = path.join(process.cwd(), 'uploads');
+        const saved = await saveOptimizedImage(buffer, uploadDir, `avatar_${userId}`);
+        avatarUrl = saved.url;
       } catch (optErr) {
-        console.warn('Sharp optimization fallback:', optErr);
+        console.warn('Image optimization fallback:', optErr);
         avatarUrl = req.body.data;
       }
     }

@@ -142,8 +142,9 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
       resolvedStore = platformStore || null;
     }
     
-    // 3. If still not resolved on tenant host, check first active store or auto-create default store
-    if (!resolvedStore) {
+    // 3. Fallback to default store ONLY on localhost or platform domain when explicitly developing
+    const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+    if (!resolvedStore && isLocalhost) {
       resolvedStore = await getOrCreateDefaultStore();
     }
 
@@ -167,14 +168,18 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
 
 export const requireStore = async (req: Request, res: Response, next: NextFunction) => {
   if (!res.locals.storeId || !res.locals.store) {
-    const fallback = await getOrCreateDefaultStore();
-    if (fallback) {
-      res.locals.storeId = fallback.id;
-      res.locals.store = fallback;
-      res.locals.isPlatform = false;
-      return next();
+    // If running on localhost in development, try resolving default store
+    const host = (req.headers.host || req.hostname || "").toString().toLowerCase();
+    if (host.includes('localhost') || host.includes('127.0.0.1')) {
+      const fallback = await getOrCreateDefaultStore();
+      if (fallback) {
+        res.locals.storeId = fallback.id;
+        res.locals.store = fallback;
+        res.locals.isPlatform = false;
+        return next();
+      }
     }
-    return res.status(400).json({ error: "STORE_REQUIRED", message: "This endpoint requires a valid store context." });
+    return res.status(404).json({ error: "STORE_NOT_FOUND", message: "This endpoint requires a valid active store." });
   }
   next();
 };

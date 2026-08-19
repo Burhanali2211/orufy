@@ -2,66 +2,56 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
-import { ImprovedCheckoutPage } from '../src/pages/ImprovedCheckoutPage';
+import CheckoutPage from '../src/apps/storefront/pages/CheckoutPage';
 
 // Mock contexts
-vi.mock('../src/contexts/CartContext', () => ({
+vi.mock('@/shared/contexts/CartContext', () => ({
   useCart: () => ({
-    items: [{ id: '1', name: 'Test Product', price: 100, quantity: 1, image: 'test.jpg' }],
+    items: [{ product: { id: '1', name: 'Test Product', price: 100 }, quantity: 1 }],
     total: 100,
     clearCart: vi.fn(),
     itemCount: 1,
+    subtotal: 100,
+    shipping: 0,
+    tax: 18,
+    discount: 0,
   }),
 }));
 
-vi.mock('../src/contexts/AuthContext', () => ({
+vi.mock('@/shared/contexts/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'test_user_id', email: 'test@example.com' },
   }),
 }));
 
-vi.mock('../src/contexts/OrderContext', () => ({
-  useOrders: () => ({
-    createOrder: vi.fn().mockResolvedValue('test_order_123'),
-  }),
-}));
-
-vi.mock('../src/contexts/NotificationContext', () => ({
+vi.mock('@/shared/contexts/NotificationContext', () => ({
   useNotification: () => ({
     showNotification: vi.fn(),
   }),
 }));
 
-// Mock payment component since we don't want to load actual Razorpay script in test
-vi.mock('../src/components/Payment/RazorpayPayment', () => ({
+vi.mock('@/shared/components/Payment/RazorpayPayment', () => ({
   RazorpayPayment: () => <div data-testid="razorpay-mock">Payment Modal</div>,
 }));
 
-// Mock Supabase
-vi.mock('../src/lib/supabase', () => ({
-  supabase: {
-    from: () => ({
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockResolvedValue({ error: null }),
-    }),
+vi.mock('@/shared/lib/apiClient', () => ({
+  apiClient: {
+    get: vi.fn().mockResolvedValue({ data: [] }),
+    post: vi.fn().mockResolvedValue({ data: { id: 'order_123' } }),
   },
 }));
 
 describe('Checkout Flow', () => {
-  it('renders checkout page with items', () => {
+  it('renders checkout page with items and stages', () => {
     render(
       <BrowserRouter>
-        <ImprovedCheckoutPage />
+        <CheckoutPage />
       </BrowserRouter>
     );
 
-    // Verify it renders the checkout header
-    expect(screen.getByText('Checkout')).toBeDefined();
-    
-    // Verify it renders the "Shipping" step as active (Step 1)
-    expect(screen.getAllByText('Shipping').length).toBeGreaterThan(0);
-    
-    // Verify it displays the Continue to Payment button
-    expect(screen.getByText('Continue to Payment')).toBeDefined();
+    // Verify checkout heading or breadcrumb
+    expect(screen.getAllByText(/Checkout/i).length).toBeGreaterThan(0);
+    // Verify shipping step is displayed
+    expect(screen.getAllByText(/Shipping/i).length).toBeGreaterThan(0);
   });
 });

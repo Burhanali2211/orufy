@@ -33,7 +33,7 @@ async function resolveMerchantStore(req: Request, res: Response) {
   return store;
 }
 
-// Helper: Ensure user is authorized merchant (owner/admin) for the store
+// Helper: Ensure user is authorized merchant (owner/admin/seller) for the store
 async function verifyMerchantAccess(userId: string, storeId: string, userRole?: string) {
   if (userRole === 'admin') return true;
 
@@ -48,22 +48,12 @@ async function verifyMerchantAccess(userId: string, storeId: string, userRole?: 
     );
 
   if (!membership) {
-    if (userRole === 'seller' || userRole === 'admin') {
-      try {
-        await db.insert(store_members).values({
-          store_id: storeId,
-          user_id: userId,
-          role: 'owner',
-        }).onConflictDoNothing();
-        return true;
-      } catch (_) {}
-    }
     return false;
   }
-  return membership.role === 'owner' || membership.role === 'admin';
+  return membership.role === 'owner' || membership.role === 'admin' || membership.role === 'seller';
 }
 
-// 0. Get Customers List for Merchant & Admin Dashboard
+// 0. Get Customers List for Merchant & Admin Dashboard (Strictly scoped to current store)
 merchantOrdersRouter.get('/customers/list', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = res.locals.user;
@@ -78,41 +68,46 @@ merchantOrdersRouter.get('/customers/list', requireAuth, async (req: Request, re
       return res.status(403).json({ error: 'Forbidden: Merchant access required' });
     }
 
-    // Query profiles
-    const customerProfiles = await db
-      .select({
-        id: profiles.id,
-        email: profiles.email,
-        full_name: profiles.full_name,
-        role: profiles.role,
-        avatar_url: profiles.avatar_url,
-        created_at: profiles.created_at,
-      })
-      .from(profiles)
-      .orderBy(desc(profiles.created_at));
+    const storeCustomers = await withStoreContext(store.id, async (tx) => {
+      const orderRows = await tx
+        .select({
+          id: profiles.id,
+          email: profiles.email,
+          full_name: profiles.full_name,
+          role: profiles.role,
+          avatar_url: profiles.avatar_url,
+          created_at: profiles.created_at,
+          order_id: orders.id,
+          order_amount: orders.total_amount,
+        })
+        .from(orders)
+        .innerJoin(profiles, eq(orders.user_id, profiles.id))
+        .where(eq(orders.store_id, store.id));
 
-    const customersWithMetrics = await Promise.all(
-      customerProfiles.map(async (cust) => {
-        const custOrders = await db
-          .select({
-            id: orders.id,
-            total_amount: orders.total_amount,
-          })
-          .from(orders)
-          .where(and(eq(orders.user_id, cust.id), eq(orders.store_id, store.id)));
+      const customerMap = new Map<string, any>();
+      for (const row of orderRows) {
+        if (!customerMap.has(row.id)) {
+          customerMap.set(row.id, {
+            id: row.id,
+            email: row.email,
+            full_name: row.full_name,
+            role: row.role,
+            avatar_url: row.avatar_url,
+            created_at: row.created_at,
+            is_active: true,
+            order_count: 0,
+            total_spent: 0,
+          });
+        }
+        const record = customerMap.get(row.id);
+        record.order_count += 1;
+        record.total_spent += (row.order_amount || 0);
+      }
 
-        const totalSpent = custOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+      return Array.from(customerMap.values()).sort((a, b) => b.total_spent - a.total_spent);
+    }, user.id);
 
-        return {
-          ...cust,
-          is_active: true,
-          order_count: custOrders.length,
-          total_spent: totalSpent,
-        };
-      })
-    );
-
-    return res.status(200).json(customersWithMetrics);
+    return res.status(200).json(storeCustomers);
   } catch (error) {
     console.error('Error fetching merchant customers list:', error);
     return res.status(500).json({ error: 'Failed to fetch customer list' });

@@ -1,9 +1,18 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { db } from '../db/db';
-import { admin_dashboard_settings, site_settings, contact_information, social_media_accounts, business_hours, footer_links, stores } from '../db/schema';
+import {
+  admin_dashboard_settings,
+  site_settings,
+  contact_information,
+  social_media_accounts,
+  business_hours,
+  footer_links,
+  stores,
+  store_members
+} from '../db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth';
-import { requireStore } from '../middleware/storeResolver';
+import { requireStore, invalidateStoreCache } from '../middleware/storeResolver';
 import { withStoreContext } from '../db/utils';
 
 export const adminSettingsRouter = Router();
@@ -12,12 +21,45 @@ const getStoreId = (req: Request, res: Response): string => {
   return res.locals.storeId || res.locals.store?.id || (req as any).store?.id;
 };
 
+// Middleware: Verify caller is owner or admin of the resolved store
+const requireStoreAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  const user = res.locals.user;
+  const storeId = getStoreId(req, res);
+
+  if (!user || !storeId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  if (user.role === 'admin') {
+    return next();
+  }
+
+  const [membership] = await db
+    .select()
+    .from(store_members)
+    .where(
+      and(
+        eq(store_members.store_id, storeId),
+        eq(store_members.user_id, user.id),
+        inArray(store_members.role, ['owner', 'admin'])
+      )
+    );
+
+  if (!membership) {
+    return res.status(403).json({ error: 'Forbidden: Store admin or owner access required' });
+  }
+
+  next();
+};
+
 // --- Admin Dashboard Settings ---
-adminSettingsRouter.get('/dashboard', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.get('/dashboard', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const settings = await withStoreContext(storeId, () => 
-      db.select().from(admin_dashboard_settings).where(eq(admin_dashboard_settings.store_id, storeId))
+    const userId = res.locals.user?.id;
+    const settings = await withStoreContext(storeId, async (tx) => 
+      tx.select().from(admin_dashboard_settings).where(eq(admin_dashboard_settings.store_id, storeId)),
+      userId
     );
     res.json(settings);
   } catch (error) {
@@ -26,7 +68,7 @@ adminSettingsRouter.get('/dashboard', requireAuth, requireStore, async (req: Req
   }
 });
 
-adminSettingsRouter.post('/dashboard', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.post('/dashboard', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
     const { setting_key, setting_value, setting_type, category, description, is_active } = req.body;
@@ -35,31 +77,31 @@ adminSettingsRouter.post('/dashboard', requireAuth, requireStore, async (req: Re
       return res.status(400).json({ error: 'setting_key is required' });
     }
 
-    const userId = res.locals.user?.id || (req as any).user?.id || req.body.updated_by;
+    const userId = res.locals.user?.id;
 
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.insert(admin_dashboard_settings).values({
+    await withStoreContext(storeId, async (tx) => 
+      tx.insert(admin_dashboard_settings).values({
         store_id: storeId,
         setting_key,
         setting_value,
-        setting_type,
-        category,
+        setting_type: setting_type || 'text',
+        category: category || 'dashboard',
         description,
-        is_active,
+        is_active: is_active ?? true,
         updated_by: userId
       }).onConflictDoUpdate({
         target: [admin_dashboard_settings.store_id, admin_dashboard_settings.setting_key],
         set: {
           setting_value,
-          setting_type,
-          category,
+          setting_type: setting_type || 'text',
+          category: category || 'dashboard',
           description,
-          is_active,
+          is_active: is_active ?? true,
           updated_by: userId,
           updated_at: new Date()
         }
-      })
+      }),
+      userId
     );
     
     res.json({ success: true });
@@ -73,8 +115,10 @@ adminSettingsRouter.post('/dashboard', requireAuth, requireStore, async (req: Re
 adminSettingsRouter.get('/site', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const settings = await withStoreContext(storeId, () => 
-      db.select().from(site_settings).where(eq(site_settings.store_id, storeId))
+    const userId = res.locals.user?.id;
+    const settings = await withStoreContext(storeId, async (tx) => 
+      tx.select().from(site_settings).where(eq(site_settings.store_id, storeId)),
+      userId
     );
     res.json(settings);
   } catch (error) {
@@ -83,24 +127,29 @@ adminSettingsRouter.get('/site', requireStore, async (req: Request, res: Respons
   }
 });
 
-adminSettingsRouter.post('/site', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.post('/site', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
     const { setting_key, setting_value, category, description } = req.body;
-    const userId = res.locals.user?.id || (req as any).user?.id;
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.insert(site_settings).values({
+    const userId = res.locals.user?.id;
+
+    if (!setting_key) {
+      return res.status(400).json({ error: 'setting_key is required' });
+    }
+
+    await withStoreContext(storeId, async (tx) => 
+      tx.insert(site_settings).values({
         store_id: storeId,
         setting_key,
         setting_value,
-        category,
+        category: category || 'general',
         description,
         updated_by: userId
       }).onConflictDoUpdate({
         target: [site_settings.store_id, site_settings.setting_key],
-        set: { setting_value, category, description, updated_by: userId, updated_at: new Date() }
-      })
+        set: { setting_value, category: category || 'general', description, updated_by: userId, updated_at: new Date() }
+      }),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -113,8 +162,10 @@ adminSettingsRouter.post('/site', requireAuth, requireStore, async (req: Request
 adminSettingsRouter.get('/contact', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const info = await withStoreContext(storeId, () => 
-      db.select().from(contact_information).where(eq(contact_information.store_id, storeId))
+    const userId = res.locals.user?.id;
+    const info = await withStoreContext(storeId, async (tx) => 
+      tx.select().from(contact_information).where(eq(contact_information.store_id, storeId)),
+      userId
     );
     res.json(info);
   } catch (error) {
@@ -123,22 +174,27 @@ adminSettingsRouter.get('/contact', requireStore, async (req: Request, res: Resp
   }
 });
 
-adminSettingsRouter.post('/contact', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.post('/contact', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
+    const userId = res.locals.user?.id;
     const { type, label, value, display_order, is_primary, is_active } = req.body;
-    await withStoreContext(storeId, () => {
-      // @ts-ignore
-      return db.insert(contact_information).values({
+
+    if (!type || !value) {
+      return res.status(400).json({ error: 'Contact type and value are required' });
+    }
+
+    await withStoreContext(storeId, async (tx) => {
+      return tx.insert(contact_information).values({
         store_id: storeId,
         contact_type: type, 
         label: label || type,
         value, 
-        display_order, 
-        is_primary, 
-        is_active
+        display_order: display_order || 0, 
+        is_primary: Boolean(is_primary), 
+        is_active: is_active ?? true
       });
-    });
+    }, userId);
     res.json({ success: true });
   } catch (error) {
     console.error('Error adding contact info:', error);
@@ -146,15 +202,24 @@ adminSettingsRouter.post('/contact', requireAuth, requireStore, async (req: Requ
   }
 });
 
-adminSettingsRouter.put('/contact/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.put('/contact/:id', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const { id } = req.params;
-    const updateData = req.body;
-    delete updateData.id;
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.update(contact_information).set(updateData).where(and(eq(contact_information.id, id), eq(contact_information.store_id, storeId)))
+    const userId = res.locals.user?.id;
+    const id = req.params.id as string;
+    const { type, label, value, display_order, is_primary, is_active } = req.body;
+
+    const updateData: any = { updated_at: new Date() };
+    if (type !== undefined) updateData.contact_type = type;
+    if (label !== undefined) updateData.label = label;
+    if (value !== undefined) updateData.value = value;
+    if (display_order !== undefined) updateData.display_order = display_order;
+    if (is_primary !== undefined) updateData.is_primary = Boolean(is_primary);
+    if (is_active !== undefined) updateData.is_active = Boolean(is_active);
+
+    await withStoreContext(storeId, async (tx) => 
+      tx.update(contact_information).set(updateData).where(and(eq(contact_information.id as any, id), eq(contact_information.store_id, storeId))),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -163,13 +228,14 @@ adminSettingsRouter.put('/contact/:id', requireAuth, requireStore, async (req: R
   }
 });
 
-adminSettingsRouter.delete('/contact/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.delete('/contact/:id', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const { id } = req.params;
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.delete(contact_information).where(and(eq(contact_information.id, id), eq(contact_information.store_id, storeId)))
+    const userId = res.locals.user?.id;
+    const id = req.params.id as string;
+    await withStoreContext(storeId, async (tx) => 
+      tx.delete(contact_information).where(and(eq(contact_information.id as any, id), eq(contact_information.store_id, storeId))),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -182,8 +248,10 @@ adminSettingsRouter.delete('/contact/:id', requireAuth, requireStore, async (req
 adminSettingsRouter.get('/social', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const accounts = await withStoreContext(storeId, () => 
-      db.select().from(social_media_accounts).where(eq(social_media_accounts.store_id, storeId))
+    const userId = res.locals.user?.id;
+    const accounts = await withStoreContext(storeId, async (tx) => 
+      tx.select().from(social_media_accounts).where(eq(social_media_accounts.store_id, storeId)),
+      userId
     );
     res.json(accounts);
   } catch (error) {
@@ -192,13 +260,28 @@ adminSettingsRouter.get('/social', requireStore, async (req: Request, res: Respo
   }
 });
 
-adminSettingsRouter.post('/social', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.post('/social', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const data = req.body;
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.insert(social_media_accounts).values({ ...data, store_id: storeId })
+    const userId = res.locals.user?.id;
+    const { platform, platform_name, url, username, icon_name, is_active, display_order } = req.body;
+
+    if (!platform || !url) {
+      return res.status(400).json({ error: 'Platform and URL are required' });
+    }
+
+    await withStoreContext(storeId, async (tx) => 
+      tx.insert(social_media_accounts).values({
+        store_id: storeId,
+        platform,
+        platform_name: platform_name || platform,
+        url,
+        username: username || null,
+        icon_name: icon_name || null,
+        is_active: is_active ?? true,
+        display_order: display_order || 0
+      }),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -207,15 +290,25 @@ adminSettingsRouter.post('/social', requireAuth, requireStore, async (req: Reque
   }
 });
 
-adminSettingsRouter.put('/social/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.put('/social/:id', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const { id } = req.params;
-    const updateData = req.body;
-    delete updateData.id;
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.update(social_media_accounts).set(updateData).where(and(eq(social_media_accounts.id, id), eq(social_media_accounts.store_id, storeId)))
+    const userId = res.locals.user?.id;
+    const id = req.params.id as string;
+    const { platform, platform_name, url, username, icon_name, is_active, display_order } = req.body;
+
+    const updateData: any = { updated_at: new Date() };
+    if (platform !== undefined) updateData.platform = platform;
+    if (platform_name !== undefined) updateData.platform_name = platform_name;
+    if (url !== undefined) updateData.url = url;
+    if (username !== undefined) updateData.username = username;
+    if (icon_name !== undefined) updateData.icon_name = icon_name;
+    if (is_active !== undefined) updateData.is_active = Boolean(is_active);
+    if (display_order !== undefined) updateData.display_order = display_order;
+
+    await withStoreContext(storeId, async (tx) => 
+      tx.update(social_media_accounts).set(updateData).where(and(eq(social_media_accounts.id as any, id), eq(social_media_accounts.store_id, storeId))),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -224,13 +317,14 @@ adminSettingsRouter.put('/social/:id', requireAuth, requireStore, async (req: Re
   }
 });
 
-adminSettingsRouter.delete('/social/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.delete('/social/:id', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const { id } = req.params;
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.delete(social_media_accounts).where(and(eq(social_media_accounts.id, id), eq(social_media_accounts.store_id, storeId)))
+    const userId = res.locals.user?.id;
+    const id = req.params.id as string;
+    await withStoreContext(storeId, async (tx) => 
+      tx.delete(social_media_accounts).where(and(eq(social_media_accounts.id as any, id), eq(social_media_accounts.store_id, storeId))),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -239,14 +333,15 @@ adminSettingsRouter.delete('/social/:id', requireAuth, requireStore, async (req:
   }
 });
 
-adminSettingsRouter.post('/social/batch-delete', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.post('/social/batch-delete', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
+    const userId = res.locals.user?.id;
     const { ids } = req.body;
     if (!ids || !ids.length) return res.json({ success: true });
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.delete(social_media_accounts).where(and(inArray(social_media_accounts.id, ids), eq(social_media_accounts.store_id, storeId)))
+    await withStoreContext(storeId, async (tx) => 
+      tx.delete(social_media_accounts).where(and(inArray(social_media_accounts.id, ids), eq(social_media_accounts.store_id, storeId))),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -259,8 +354,10 @@ adminSettingsRouter.post('/social/batch-delete', requireAuth, requireStore, asyn
 adminSettingsRouter.get('/footer', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const links = await withStoreContext(storeId, () => 
-      db.select().from(footer_links).where(eq(footer_links.store_id, storeId))
+    const userId = res.locals.user?.id;
+    const links = await withStoreContext(storeId, async (tx) => 
+      tx.select().from(footer_links).where(eq(footer_links.store_id, storeId)),
+      userId
     );
     res.json(links);
   } catch (error) {
@@ -269,13 +366,27 @@ adminSettingsRouter.get('/footer', requireStore, async (req: Request, res: Respo
   }
 });
 
-adminSettingsRouter.post('/footer', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.post('/footer', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const data = req.body;
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.insert(footer_links).values({ ...data, store_id: storeId })
+    const userId = res.locals.user?.id;
+    const { section_name, link_text, link_url, display_order, is_active, opens_new_tab } = req.body;
+
+    if (!section_name || !link_text || !link_url) {
+      return res.status(400).json({ error: 'section_name, link_text, and link_url are required' });
+    }
+
+    await withStoreContext(storeId, async (tx) => 
+      tx.insert(footer_links).values({
+        store_id: storeId,
+        section_name,
+        link_text,
+        link_url,
+        display_order: display_order || 0,
+        is_active: is_active ?? true,
+        opens_new_tab: Boolean(opens_new_tab)
+      }),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -284,15 +395,24 @@ adminSettingsRouter.post('/footer', requireAuth, requireStore, async (req: Reque
   }
 });
 
-adminSettingsRouter.put('/footer/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.put('/footer/:id', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const { id } = req.params;
-    const updateData = req.body;
-    delete updateData.id;
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.update(footer_links).set(updateData).where(and(eq(footer_links.id, id), eq(footer_links.store_id, storeId)))
+    const userId = res.locals.user?.id;
+    const id = req.params.id as string;
+    const { section_name, link_text, link_url, display_order, is_active, opens_new_tab } = req.body;
+
+    const updateData: any = { updated_at: new Date() };
+    if (section_name !== undefined) updateData.section_name = section_name;
+    if (link_text !== undefined) updateData.link_text = link_text;
+    if (link_url !== undefined) updateData.link_url = link_url;
+    if (display_order !== undefined) updateData.display_order = display_order;
+    if (is_active !== undefined) updateData.is_active = Boolean(is_active);
+    if (opens_new_tab !== undefined) updateData.opens_new_tab = Boolean(opens_new_tab);
+
+    await withStoreContext(storeId, async (tx) => 
+      tx.update(footer_links).set(updateData).where(and(eq(footer_links.id as any, id), eq(footer_links.store_id, storeId))),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -301,13 +421,14 @@ adminSettingsRouter.put('/footer/:id', requireAuth, requireStore, async (req: Re
   }
 });
 
-adminSettingsRouter.delete('/footer/:id', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.delete('/footer/:id', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const { id } = req.params;
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.delete(footer_links).where(and(eq(footer_links.id, id), eq(footer_links.store_id, storeId)))
+    const userId = res.locals.user?.id;
+    const id = req.params.id as string;
+    await withStoreContext(storeId, async (tx) => 
+      tx.delete(footer_links).where(and(eq(footer_links.id as any, id), eq(footer_links.store_id, storeId))),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -316,14 +437,15 @@ adminSettingsRouter.delete('/footer/:id', requireAuth, requireStore, async (req:
   }
 });
 
-adminSettingsRouter.post('/footer/batch-delete', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.post('/footer/batch-delete', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
+    const userId = res.locals.user?.id;
     const { ids } = req.body;
     if (!ids || !ids.length) return res.json({ success: true });
-    await withStoreContext(storeId, () => 
-      // @ts-ignore
-      db.delete(footer_links).where(and(inArray(footer_links.id, ids), eq(footer_links.store_id, storeId)))
+    await withStoreContext(storeId, async (tx) => 
+      tx.delete(footer_links).where(and(inArray(footer_links.id, ids), eq(footer_links.store_id, storeId))),
+      userId
     );
     res.json({ success: true });
   } catch (error) {
@@ -333,11 +455,13 @@ adminSettingsRouter.post('/footer/batch-delete', requireAuth, requireStore, asyn
 });
 
 // --- Hero Settings ---
-adminSettingsRouter.get('/hero', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.get('/hero', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const [heroRow] = await withStoreContext(storeId, () =>
-      db.select().from(site_settings).where(and(eq(site_settings.store_id, storeId), eq(site_settings.setting_key, 'hero_settings')))
+    const userId = res.locals.user?.id;
+    const [heroRow] = await withStoreContext(storeId, async (tx) =>
+      tx.select().from(site_settings).where(and(eq(site_settings.store_id, storeId), eq(site_settings.setting_key, 'hero_settings'))),
+      userId
     );
     let hero = null;
     if (heroRow?.setting_value) {
@@ -352,16 +476,15 @@ adminSettingsRouter.get('/hero', requireAuth, requireStore, async (req: Request,
   }
 });
 
-adminSettingsRouter.post('/hero', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.post('/hero', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
     const heroData = req.body;
-    const userId = res.locals.user?.id || (req as any).user?.id;
+    const userId = res.locals.user?.id;
     const valueStr = JSON.stringify(heroData);
 
-    await withStoreContext(storeId, () =>
-      // @ts-ignore
-      db.insert(site_settings).values({
+    await withStoreContext(storeId, async (tx) =>
+      tx.insert(site_settings).values({
         store_id: storeId,
         setting_key: 'hero_settings',
         setting_value: valueStr,
@@ -375,7 +498,8 @@ adminSettingsRouter.post('/hero', requireAuth, requireStore, async (req: Request
           updated_by: userId,
           updated_at: new Date(),
         }
-      })
+      }),
+      userId
     );
 
     res.json({ success: true, hero: heroData });
@@ -386,17 +510,18 @@ adminSettingsRouter.post('/hero', requireAuth, requireStore, async (req: Request
 });
 
 // --- Store Branding & Logo Settings ---
-adminSettingsRouter.get('/branding', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.get('/branding', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const [store] = await withStoreContext(storeId, () =>
-      db.select().from(stores).where(eq(stores.id, storeId))
-    );
-    const siteSettingsRows = await withStoreContext(storeId, () =>
-      db.select().from(site_settings).where(eq(site_settings.store_id, storeId))
-    );
+    const userId = res.locals.user?.id;
+    const { store, siteSettingsRows } = await withStoreContext(storeId, async (tx) => {
+      const [s] = await tx.select().from(stores).where(eq(stores.id, storeId));
+      const rows = await tx.select().from(site_settings).where(eq(site_settings.store_id, storeId));
+      return { store: s, siteSettingsRows: rows };
+    }, userId);
+
     const settingsMap: Record<string, string> = {};
-    siteSettingsRows.forEach(r => { settingsMap[r.setting_key] = r.setting_value || ''; });
+    siteSettingsRows.forEach((r: any) => { settingsMap[r.setting_key] = r.setting_value || ''; });
 
     let themeStudio = null;
     if (settingsMap['theme_studio_settings'] || settingsMap['theme_studio']) {
@@ -419,40 +544,35 @@ adminSettingsRouter.get('/branding', requireAuth, requireStore, async (req: Requ
   }
 });
 
-adminSettingsRouter.post('/branding', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.post('/branding', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
     const { name, logo_url, announcement_bar, primary_color, accent_color, theme_studio } = req.body;
-    const userId = res.locals.user?.id || (req as any).user?.id;
+    const userId = res.locals.user?.id;
 
-    if (name !== undefined || logo_url !== undefined) {
-      await withStoreContext(storeId, () =>
-        // @ts-ignore
-        db.update(stores).set({
+    await withStoreContext(storeId, async (tx) => {
+      if (name !== undefined || logo_url !== undefined) {
+        await tx.update(stores).set({
           ...(name ? { name: name.trim() } : {}),
           logo_url: logo_url !== undefined ? (logo_url || null) : null,
           updated_at: new Date(),
-        }).where(eq(stores.id, storeId))
-      );
-    }
+        }).where(eq(stores.id, storeId));
+      }
 
-    const updates: { key: string; value: string }[] = [];
+      const updates: { key: string; value: string }[] = [];
+      if (name !== undefined) updates.push({ key: 'site_name', value: name });
+      if (logo_url !== undefined) updates.push({ key: 'site_logo', value: logo_url });
+      if (announcement_bar !== undefined) updates.push({ key: 'announcement_bar', value: announcement_bar });
+      if (primary_color !== undefined) updates.push({ key: 'brand_primary', value: primary_color });
+      if (accent_color !== undefined) updates.push({ key: 'brand_accent', value: accent_color });
+      if (theme_studio !== undefined) {
+        const tsStr = typeof theme_studio === 'string' ? theme_studio : JSON.stringify(theme_studio);
+        updates.push({ key: 'theme_studio', value: tsStr });
+        updates.push({ key: 'theme_studio_settings', value: tsStr });
+      }
 
-    if (name !== undefined) updates.push({ key: 'site_name', value: name });
-    if (logo_url !== undefined) updates.push({ key: 'site_logo', value: logo_url });
-    if (announcement_bar !== undefined) updates.push({ key: 'announcement_bar', value: announcement_bar });
-    if (primary_color !== undefined) updates.push({ key: 'brand_primary', value: primary_color });
-    if (accent_color !== undefined) updates.push({ key: 'brand_accent', value: accent_color });
-    if (theme_studio !== undefined) {
-      const tsStr = typeof theme_studio === 'string' ? theme_studio : JSON.stringify(theme_studio);
-      updates.push({ key: 'theme_studio', value: tsStr });
-      updates.push({ key: 'theme_studio_settings', value: tsStr });
-    }
-
-    for (const item of updates) {
-      await withStoreContext(storeId, () =>
-        // @ts-ignore
-        db.insert(site_settings).values({
+      for (const item of updates) {
+        await tx.insert(site_settings).values({
           store_id: storeId,
           setting_key: item.key,
           setting_value: item.value,
@@ -461,9 +581,11 @@ adminSettingsRouter.post('/branding', requireAuth, requireStore, async (req: Req
         }).onConflictDoUpdate({
           target: [site_settings.store_id, site_settings.setting_key],
           set: { setting_value: item.value, updated_by: userId, updated_at: new Date() }
-        })
-      );
-    }
+        });
+      }
+    }, userId);
+
+    invalidateStoreCache();
 
     res.json({ success: true });
   } catch (error) {
@@ -472,19 +594,14 @@ adminSettingsRouter.post('/branding', requireAuth, requireStore, async (req: Req
   }
 });
 
-adminSettingsRouter.delete('/logo', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.delete('/logo', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const userId = res.locals.user?.id || (req as any).user?.id;
+    const userId = res.locals.user?.id;
 
-    await withStoreContext(storeId, () =>
-      // @ts-ignore
-      db.update(stores).set({ logo_url: null, updated_at: new Date() }).where(eq(stores.id, storeId))
-    );
-
-    await withStoreContext(storeId, () =>
-      // @ts-ignore
-      db.insert(site_settings).values({
+    await withStoreContext(storeId, async (tx) => {
+      await tx.update(stores).set({ logo_url: null, updated_at: new Date() }).where(eq(stores.id, storeId));
+      await tx.insert(site_settings).values({
         store_id: storeId,
         setting_key: 'site_logo',
         setting_value: '',
@@ -493,8 +610,10 @@ adminSettingsRouter.delete('/logo', requireAuth, requireStore, async (req: Reque
       }).onConflictDoUpdate({
         target: [site_settings.store_id, site_settings.setting_key],
         set: { setting_value: '', updated_by: userId, updated_at: new Date() }
-      })
-    );
+      });
+    }, userId);
+
+    invalidateStoreCache();
 
     res.json({ success: true, message: 'Logo removed successfully' });
   } catch (error) {
@@ -504,18 +623,18 @@ adminSettingsRouter.delete('/logo', requireAuth, requireStore, async (req: Reque
 });
 
 // --- Full Visual Theme Studio Settings ---
-adminSettingsRouter.get('/theme-studio', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.get('/theme-studio', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const [store] = await withStoreContext(storeId, () =>
-      db.select().from(stores).where(eq(stores.id, storeId))
-    );
-    const siteSettingsRows = await withStoreContext(storeId, () =>
-      db.select().from(site_settings).where(eq(site_settings.store_id, storeId))
-    );
+    const userId = res.locals.user?.id;
+    const { store, siteSettingsRows } = await withStoreContext(storeId, async (tx) => {
+      const [s] = await tx.select().from(stores).where(eq(stores.id, storeId));
+      const rows = await tx.select().from(site_settings).where(eq(site_settings.store_id, storeId));
+      return { store: s, siteSettingsRows: rows };
+    }, userId);
 
     const settingsMap: Record<string, string> = {};
-    siteSettingsRows.forEach(r => { settingsMap[r.setting_key] = r.setting_value || ''; });
+    siteSettingsRows.forEach((r: any) => { settingsMap[r.setting_key] = r.setting_value || ''; });
 
     let studioConfig = null;
     if (settingsMap['theme_studio_settings']) {
@@ -585,30 +704,26 @@ adminSettingsRouter.get('/theme-studio', requireAuth, requireStore, async (req: 
   }
 });
 
-adminSettingsRouter.post('/theme-studio', requireAuth, requireStore, async (req: Request, res: Response) => {
+adminSettingsRouter.post('/theme-studio', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const userId = res.locals.user?.id || (req as any).user?.id;
+    const userId = res.locals.user?.id;
     const { store: storeData, hero: heroData, theme: themeData } = req.body;
 
-    // 1. Update store name & logo if provided
-    if (storeData) {
-      await withStoreContext(storeId, () =>
-        // @ts-ignore
-        db.update(stores).set({
+    await withStoreContext(storeId, async (tx) => {
+      // 1. Update store name & logo if provided
+      if (storeData) {
+        await tx.update(stores).set({
           ...(storeData.name ? { name: storeData.name.trim() } : {}),
           logo_url: storeData.logo_url !== undefined ? (storeData.logo_url || null) : null,
           updated_at: new Date(),
-        }).where(eq(stores.id, storeId))
-      );
-    }
+        }).where(eq(stores.id, storeId));
+      }
 
-    // 2. Persist Hero settings if included
-    if (heroData) {
-      const heroStr = JSON.stringify(heroData);
-      await withStoreContext(storeId, () =>
-        // @ts-ignore
-        db.insert(site_settings).values({
+      // 2. Persist Hero settings if included
+      if (heroData) {
+        const heroStr = JSON.stringify(heroData);
+        await tx.insert(site_settings).values({
           store_id: storeId,
           setting_key: 'hero_settings',
           setting_value: heroStr,
@@ -618,27 +733,24 @@ adminSettingsRouter.post('/theme-studio', requireAuth, requireStore, async (req:
         }).onConflictDoUpdate({
           target: [site_settings.store_id, site_settings.setting_key],
           set: { setting_value: heroStr, updated_by: userId, updated_at: new Date() }
-        })
-      );
-    }
+        });
+      }
 
-    // 3. Persist Full Theme Studio Config & Quick Keys
-    const studioStr = JSON.stringify(themeData);
-    const quickUpdates = [
-      { key: 'theme_studio_settings', value: studioStr },
-      { key: 'site_name', value: storeData?.name || '' },
-      { key: 'site_logo', value: storeData?.logo_url || '' },
-      { key: 'announcement_bar', value: themeData?.header?.announcementText || '' },
-      { key: 'brand_primary', value: themeData?.palette?.primary || '#1c1917' },
-      { key: 'brand_accent', value: themeData?.palette?.accent || '#8c7e5a' },
-      { key: 'brand_typography', value: themeData?.typography?.headingFont || 'Inter' },
-    ];
+      // 3. Persist Full Theme Studio Config & Quick Keys
+      const studioStr = JSON.stringify(themeData);
+      const quickUpdates = [
+        { key: 'theme_studio_settings', value: studioStr },
+        { key: 'site_name', value: storeData?.name || '' },
+        { key: 'site_logo', value: storeData?.logo_url || '' },
+        { key: 'announcement_bar', value: themeData?.header?.announcementText || '' },
+        { key: 'brand_primary', value: themeData?.palette?.primary || '#1c1917' },
+        { key: 'brand_accent', value: themeData?.palette?.accent || '#8c7e5a' },
+        { key: 'brand_typography', value: themeData?.typography?.headingFont || 'Inter' },
+      ];
 
-    for (const item of quickUpdates) {
-      if (item.value !== undefined) {
-        await withStoreContext(storeId, () =>
-          // @ts-ignore
-          db.insert(site_settings).values({
+      for (const item of quickUpdates) {
+        if (item.value !== undefined) {
+          await tx.insert(site_settings).values({
             store_id: storeId,
             setting_key: item.key,
             setting_value: item.value,
@@ -647,10 +759,12 @@ adminSettingsRouter.post('/theme-studio', requireAuth, requireStore, async (req:
           }).onConflictDoUpdate({
             target: [site_settings.store_id, site_settings.setting_key],
             set: { setting_value: item.value, updated_by: userId, updated_at: new Date() }
-          })
-        );
+          });
+        }
       }
-    }
+    }, userId);
+
+    invalidateStoreCache();
 
     res.json({ success: true, message: 'Theme settings published successfully!' });
   } catch (error) {

@@ -1,21 +1,53 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import { db } from '../db/db';
 import { requireAuth } from '../middleware/auth';
 import { requireStore } from '../middleware/storeResolver';
 import { withStoreContext } from '../db/utils';
-import { products } from '../db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { products, store_members } from '../db/schema';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
+// Middleware: Verify store admin / owner / seller membership
+const requireStoreMember = async (req: Request, res: Response, next: NextFunction) => {
+  const user = res.locals.user;
+  const storeId = res.locals.storeId;
+
+  if (!user || !storeId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  if (user.role === 'admin') {
+    return next();
+  }
+
+  const [membership] = await db
+    .select()
+    .from(store_members)
+    .where(
+      and(
+        eq(store_members.store_id, storeId),
+        eq(store_members.user_id, user.id),
+        inArray(store_members.role, ['owner', 'admin', 'seller'])
+      )
+    );
+
+  if (!membership) {
+    return res.status(403).json({ error: 'Forbidden: Store merchant permissions required' });
+  }
+
+  next();
+};
+
 // Get all products (Tenant Scoped via withStoreContext)
-router.get('/', requireStore, async (req, res) => {
+router.get('/', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = res.locals.storeId;
     const userId = res.locals.user?.id;
     
     const allProducts = await withStoreContext(storeId, async (tx) => {
-      let query = tx.select().from(products).where(eq(products.store_id, storeId));
+      const query = tx.select().from(products).where(eq(products.store_id, storeId));
       return await query.orderBy(desc(products.created_at));
     }, userId);
 
@@ -27,7 +59,7 @@ router.get('/', requireStore, async (req, res) => {
 });
 
 // Get featured products
-router.get('/featured', requireStore, async (req, res) => {
+router.get('/featured', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = res.locals.storeId;
     const userId = res.locals.user?.id;
@@ -65,7 +97,7 @@ router.get('/featured', requireStore, async (req, res) => {
 });
 
 // Get product by id
-router.get('/:id', requireStore, async (req, res) => {
+router.get('/:id', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = res.locals.storeId;
     const userId = res.locals.user?.id;
@@ -73,7 +105,7 @@ router.get('/:id', requireStore, async (req, res) => {
     const product = await withStoreContext(storeId, async (tx) => {
       const [p] = await tx.select()
         .from(products)
-        .where(and(eq(products.id as any, req.params.id as any), eq(products.store_id as any, storeId as any)));
+        .where(and(eq(products.id, req.params.id as string), eq(products.store_id, storeId)));
       return p;
     }, userId);
 
@@ -85,10 +117,11 @@ router.get('/:id', requireStore, async (req, res) => {
   }
 });
 
-// Admin only routes below
+// Admin / Merchant mutation routes
 router.use(requireAuth);
+router.use(requireStoreMember);
 
-router.post('/', requireStore, async (req, res) => {
+router.post('/', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = res.locals.storeId;
     const userId = res.locals.user?.id;
@@ -104,6 +137,7 @@ router.post('/', requireStore, async (req, res) => {
       price: body.price != null ? Math.round(parseFloat(body.price)) : 0,
       original_price: body.original_price != null ? Math.round(parseFloat(body.original_price)) : null,
       category_id: body.category_id || null,
+      seller_id: userId || null,
       stock: body.stock != null ? parseInt(body.stock, 10) : 100,
       min_stock_level: body.min_stock_level != null ? parseInt(body.min_stock_level, 10) : 5,
       sku: body.sku || null,
@@ -130,7 +164,7 @@ router.post('/', requireStore, async (req, res) => {
   }
 });
 
-router.put('/:id', requireStore, async (req, res) => {
+router.put('/:id', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = res.locals.storeId;
     const userId = res.locals.user?.id;
@@ -161,7 +195,7 @@ router.put('/:id', requireStore, async (req, res) => {
     const updated = await withStoreContext(storeId, async (tx) => {
       const [p] = await tx.update(products)
         .set(updateData)
-        .where(and(eq(products.id as any, req.params.id as any), eq(products.store_id as any, storeId as any)))
+        .where(and(eq(products.id, req.params.id as string), eq(products.store_id, storeId)))
         .returning();
       return p;
     }, userId);
@@ -174,14 +208,14 @@ router.put('/:id', requireStore, async (req, res) => {
   }
 });
 
-router.delete('/:id', requireStore, async (req, res) => {
+router.delete('/:id', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = res.locals.storeId;
     const userId = res.locals.user?.id;
 
     const deleted = await withStoreContext(storeId, async (tx) => {
       const [p] = await tx.delete(products)
-        .where(and(eq(products.id as any, req.params.id as any), eq(products.store_id as any, storeId as any)))
+        .where(and(eq(products.id, req.params.id as string), eq(products.store_id, storeId)))
         .returning();
       return p;
     }, userId);

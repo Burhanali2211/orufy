@@ -27,6 +27,27 @@ export interface CartState {
   getTotal: () => number;
 }
 
+const getTenantKey = (base: string) => {
+  if (typeof window === 'undefined') return base;
+  const host = (window.location.hostname || 'default').replace(/[^a-zA-Z0-9_-]/g, '_');
+  return `${base}_${host}`;
+};
+
+const dynamicTenantStorage = {
+  getItem: (name: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(getTenantKey(name));
+  },
+  setItem: (name: string, value: string): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(getTenantKey(name), value);
+  },
+  removeItem: (name: string): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(getTenantKey(name));
+  },
+};
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -118,7 +139,7 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: 'orufy_cart_storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => dynamicTenantStorage),
       partialize: (state) => ({ items: state.items }),
     }
   )

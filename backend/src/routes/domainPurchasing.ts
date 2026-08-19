@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { stores, store_members, custom_domains, domain_registrations } from '../db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth';
 import { normalizeHostname, generateVerificationToken } from '../lib/domainUtils';
 import { getRegistrarProvider } from '../lib/registrar/registrarFactory';
@@ -11,12 +11,18 @@ import { withStoreContext, withUserContext } from '../db/utils';
 export const domainPurchasingRouter = Router();
 
 // Helper: Ensure user is authorized merchant for store
+// Helper: Ensure user is authorized merchant (owner/admin) for store
 async function getMerchantStore(userId: string) {
   return await withUserContext(userId, async (tx) => {
     const [membership] = await tx
       .select()
       .from(store_members)
-      .where(and(eq(store_members.user_id, userId), eq(store_members.role, 'owner')));
+      .where(
+        and(
+          eq(store_members.user_id, userId),
+          inArray(store_members.role, ['owner', 'admin'])
+        )
+      );
 
     if (!membership) {
       return null;
@@ -62,7 +68,7 @@ domainPurchasingRouter.post('/order', requireAuth, async (req: Request, res: Res
     const store = await getMerchantStore(userId);
 
     if (!store) {
-      return res.status(403).json({ error: 'Forbidden: You must be a store owner to purchase domains' });
+      return res.status(403).json({ error: 'Forbidden: You must be a store owner/admin to purchase domains' });
     }
 
     const { domain, periodYears = 1, contactInfo, isPrimary = true } = req.body;
@@ -155,6 +161,22 @@ domainPurchasingRouter.post('/confirm', requireAuth, async (req: Request, res: R
     }
 
     const { registrationId, razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body;
+
+    // Verify Razorpay payment signature if razorpay secret is configured
+    if (process.env.RAZORPAY_KEY_SECRET && razorpayOrderId && razorpayPaymentId) {
+      if (!razorpaySignature) {
+        return res.status(400).json({ error: 'Missing payment signature verification parameter' });
+      }
+      const crypto = await import('crypto');
+      const generatedSignature = crypto.default
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+        .digest('hex');
+
+      if (generatedSignature !== razorpaySignature) {
+        return res.status(400).json({ error: 'Invalid payment signature. Payment verification failed.' });
+      }
+    }
 
     const registration = await withStoreContext(store.id, async (tx) => {
       const [reg] = await tx

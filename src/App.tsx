@@ -178,18 +178,24 @@ function App() {
                 element={<Navigate to="/onboarding" replace />} 
               />
 
-              {/* Platform Landing Page - Root, NO Layout wrapper */}
+              {/* Platform Landing Page vs Storefront Home on Root */}
               <Route 
                 path="/" 
                 element={
-                  // If we are on a subdomain (e.g. shop.get-oru.com) or custom domain, redirect / to /store
-                  // If we are on the base domain (get-oru.com) or localhost without a subdomain, show the platform landing page
                   (() => {
                     const host = typeof window !== 'undefined' ? window.location.hostname : '';
                     const baseDomain = import.meta.env.VITE_SITE_URL ? new URL(import.meta.env.VITE_SITE_URL).hostname : 'get-oru.com';
-                    const isSubdomain = host !== baseDomain && host !== 'localhost' && host !== '127.0.0.1';
+                    const isTenantDomain = host !== baseDomain && host !== `www.${baseDomain}` && host !== 'localhost' && host !== '127.0.0.1';
                     
-                    return isSubdomain ? <Navigate to="/store" replace /> : <PlatformLandingPage />;
+                    return isTenantDomain ? (
+                      <Layout>
+                        <main id="main-content" className="focus:outline-none">
+                          <HomePage />
+                        </main>
+                      </Layout>
+                    ) : (
+                      <PlatformLandingPage />
+                    );
                   })()
                 } 
               />

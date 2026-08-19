@@ -27,16 +27,27 @@ export interface NginxValidationResult {
  */
 export function generateNginxServerBlock(hostname: string, certPath: string, keyPath: string): string {
   const safeHost = normalizeHostname(hostname);
+  const upstreamHost = process.env.UPSTREAM_BACKEND_HOST || '127.0.0.1:3001';
 
-  return `# Managed by Multi-Tenant Platform SSL Engine
+  return `server {
+    listen 80;
+    server_name ${safeHost};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
 server {
     listen 443 ssl http2;
-    listen [::]:443 ssl http2;
     server_name ${safeHost};
 
     ssl_certificate ${certPath};
     ssl_certificate_key ${keyPath};
-
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
@@ -48,7 +59,7 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
     location / {
-        proxy_pass http://127.0.0.1:3001;
+        proxy_pass http://${upstreamHost};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

@@ -19,6 +19,27 @@ export interface WishlistState {
   getItemCount: () => number;
 }
 
+const getTenantKey = (base: string) => {
+  if (typeof window === 'undefined') return base;
+  const host = (window.location.hostname || 'default').replace(/[^a-zA-Z0-9_-]/g, '_');
+  return `${base}_${host}`;
+};
+
+const dynamicTenantStorage = {
+  getItem: (name: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(getTenantKey(name));
+  },
+  setItem: (name: string, value: string): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(getTenantKey(name), value);
+  },
+  removeItem: (name: string): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(getTenantKey(name));
+  },
+};
+
 export const useWishlistStore = create<WishlistState>()(
   persist(
     (set, get) => ({
@@ -62,7 +83,7 @@ export const useWishlistStore = create<WishlistState>()(
     }),
     {
       name: 'orufy_wishlist_storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => dynamicTenantStorage),
     }
   )
 );

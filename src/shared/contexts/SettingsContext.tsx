@@ -403,12 +403,10 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       : 'get-oru.com';
 
     const isPlatformRoot =
-      host === baseDomain ||
-      host === `www.${baseDomain}` ||
-      host === 'localhost' ||
-      host === '127.0.0.1';
+      (host === baseDomain || host === `www.${baseDomain}`) &&
+      (typeof window !== 'undefined' && window.location.pathname === '/');
 
-    // On tenant subdomain or custom domain, always fetch dynamic store settings
+    // On tenant subdomain, custom domain, or local development, fetch dynamic store settings
     if (!isPlatformRoot) {
       fetchSettings();
     } else {

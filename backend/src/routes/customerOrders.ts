@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { orders, order_items, stores, products, profiles } from '../db/schema';
-import { eq, and, sql, or } from 'drizzle-orm';
+import { eq, and, sql, or, inArray } from 'drizzle-orm';
 import { optionalAuth } from '../middleware/auth';
 import { requireStore } from '../middleware/storeResolver';
 import { withStoreContext } from '../db/utils';
@@ -51,19 +51,28 @@ customerOrdersRouter.get('/', optionalAuth, async (req: Request, res: Response) 
       .where(whereClause)
       .orderBy(sql`${orders.created_at} DESC`);
 
-    // Fetch items for each order
-    const ordersWithItems = await Promise.all(
-      userOrders.map(async (ord) => {
-        const items = await db
-          .select()
-          .from(order_items)
-          .where(eq(order_items.order_id, ord.id));
-        return {
-          ...ord,
-          items,
-        };
-      })
-    );
+    if (userOrders.length === 0) {
+      return res.status(200).json({ orders: [] });
+    }
+
+    const orderIds = userOrders.map(o => o.id);
+    const allItems = await db
+      .select()
+      .from(order_items)
+      .where(inArray(order_items.order_id, orderIds));
+
+    const itemsByOrder = new Map<string, any[]>();
+    for (const itm of allItems) {
+      if (!itemsByOrder.has(itm.order_id)) {
+        itemsByOrder.set(itm.order_id, []);
+      }
+      itemsByOrder.get(itm.order_id)!.push(itm);
+    }
+
+    const ordersWithItems = userOrders.map(ord => ({
+      ...ord,
+      items: itemsByOrder.get(ord.id) || [],
+    }));
 
     return res.status(200).json({ orders: ordersWithItems });
   } catch (error) {
@@ -108,34 +117,41 @@ customerOrdersRouter.get('/:id', optionalAuth, async (req: Request, res: Respons
         return { isForbidden: true };
       }
 
-      // Fetch order items with snapshot / product details
+      // Fetch order items in a single query
       const items = await tx
         .select()
         .from(order_items)
         .where(eq(order_items.order_id, ord.id));
 
-      const populatedItems = await Promise.all(
-        items.map(async (item: any) => {
-          let productName = 'Product';
-          let productImage = '';
-          if (item.product_id) {
-            const [p] = await tx.select().from(products).where(eq(products.id, item.product_id));
-            if (p) {
-              productName = p.name;
-              productImage = Array.isArray(p.images) ? p.images[0] : '';
-            }
-          }
-          return {
-            id: item.id,
-            product_id: item.product_id,
-            product_name: (item.product_snapshot as any)?.name || productName,
-            product_image: (item.product_snapshot as any)?.images?.[0] || productImage,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            total_price: item.total_price,
-          };
-        })
-      );
+      const productIds = items
+        .map((i: any) => i.product_id)
+        .filter((id: any): id is string => Boolean(id));
+
+      const productMap = new Map<string, any>();
+      if (productIds.length > 0) {
+        const prodList = await tx
+          .select()
+          .from(products)
+          .where(inArray(products.id, productIds));
+        for (const p of prodList) {
+          productMap.set(p.id, p);
+        }
+      }
+
+      const populatedItems = items.map((item: any) => {
+        const p = item.product_id ? productMap.get(item.product_id) : null;
+        const productName = (item.product_snapshot as any)?.name || p?.name || 'Product';
+        const productImage = (item.product_snapshot as any)?.images?.[0] || (Array.isArray(p?.images) ? p.images[0] : '');
+        return {
+          id: item.id,
+          product_id: item.product_id,
+          product_name: productName,
+          product_image: productImage,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+        };
+      });
 
       // Customer-safe Sanitized Order Projection (merchant internals hidden)
       return {
