@@ -1,11 +1,13 @@
 /**
  * SEO Component
  * 
- * Manages meta tags, Open Graph, Twitter Cards, and canonical URLs
+ * Manages dynamic meta tags, Open Graph, Twitter Cards, and canonical URLs
+ * with full multi-tenant and Google Search Console compliance.
  */
 
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useSettings } from '@/shared/contexts/SettingsContext';
 
 interface SEOProps {
   title?: string;
@@ -22,12 +24,6 @@ interface SEOProps {
   canonical?: string;
 }
 
-const DEFAULT_TITLE = 'YourCommerce – Premium E-Commerce Store';
-const DEFAULT_DESCRIPTION = 'Shop premium curated products at YourCommerce. Free shipping on eligible orders across India & worldwide.';
-const DEFAULT_IMAGE = 'https://aligarhattarhouse.com/og-image.jpg';
-const DEFAULT_URL = 'https://aligarhattarhouse.com';
-const SITE_NAME = 'YourCommerce';
-
 export const SEO: React.FC<SEOProps> = ({
   title,
   description,
@@ -42,16 +38,27 @@ export const SEO: React.FC<SEOProps> = ({
   nofollow = false,
   canonical
 }) => {
-  const pageTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
-  const pageDescription = description || DEFAULT_DESCRIPTION;
-  const pageImage = image || DEFAULT_IMAGE;
-  const pageUrl = url || DEFAULT_URL;
+  const { getSiteSetting, settings } = useSettings();
+
+  const storeName = getSiteSetting('site_name') || (settings as any)?.site_name || 'Oru Store';
+  const storeDesc = getSiteSetting('site_description') || (settings as any)?.site_description || 'Shop premium curated products with fast tracked delivery and secure checkout.';
+  const storeKeywords = getSiteSetting('site_keywords') || (settings as any)?.site_keywords || 'online store, buy online, premium products, fast shipping, secure payment';
+  const storeLogo = getSiteSetting('logo_url') || (settings as any)?.site_logo || 'https://get-oru.com/og-image.jpg';
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://get-oru.com';
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+
+  const pageTitle = title ? `${title} — ${storeName}` : `${storeName} – Premium Online Store`;
+  const pageDescription = description || storeDesc;
+  const pageImage = image || storeLogo;
+  const pageUrl = url || `${origin}${pathname}`;
   const canonicalUrl = canonical || pageUrl;
+  const combinedKeywords = keywords ? `${keywords}, ${storeKeywords}` : storeKeywords;
 
   // Robots meta tag
   const robotsContent = noindex || nofollow
     ? `${noindex ? 'noindex' : 'index'}, ${nofollow ? 'nofollow' : 'follow'}`
-    : 'index, follow';
+    : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 
   return (
     <Helmet>
@@ -59,7 +66,7 @@ export const SEO: React.FC<SEOProps> = ({
       <title>{pageTitle}</title>
       <meta name="title" content={pageTitle} />
       <meta name="description" content={pageDescription} />
-      {keywords && <meta name="keywords" content={keywords} />}
+      <meta name="keywords" content={combinedKeywords} />
       {author && <meta name="author" content={author} />}
       <meta name="robots" content={robotsContent} />
 
@@ -72,7 +79,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta property="og:title" content={pageTitle} />
       <meta property="og:description" content={pageDescription} />
       <meta property="og:image" content={pageImage} />
-      <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:site_name" content={storeName} />
       <meta property="og:locale" content="en_IN" />
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
@@ -97,10 +104,15 @@ export const ProductSEO: React.FC<{
   image: string;
   category?: string;
   availability?: string;
-}> = ({ productName, description, price, image, category, availability }) => {
-  const title = `${productName} - Buy Online`;
-  const desc = `${description.substring(0, 150)}... Price: ₹${price}. ${availability === 'InStock' ? 'In Stock' : 'Out of Stock'}. Aligarh Attarsavenue – Free shipping on orders above ₹999.`;
-  const keywords = `${productName}, ${category || 'attar'}, AligarhAttarHouse, buy ${productName} online, AligarhAttarHouse`;
+  sku?: string;
+}> = ({ productName, description, price, image, category, availability, sku }) => {
+  const { getSiteSetting, settings } = useSettings();
+  const storeName = getSiteSetting('site_name') || (settings as any)?.site_name || 'Store';
+
+  const title = `${productName} – Buy Online at Best Price`;
+  const cleanDesc = description ? description.replace(/<[^>]*>?/gm, '').substring(0, 160).trim() : '';
+  const desc = `${cleanDesc} | Price: ₹${price}. ${availability === 'InStock' ? 'In Stock & Ready to Ship' : 'Available Online'}. Authentic quality, secure payment & fast delivery from ${storeName}.`;
+  const keywords = `${productName}, buy ${productName} online, ${category || 'products'}, ${storeName}, best price, order online`;
 
   return (
     <SEO
@@ -121,9 +133,12 @@ export const CategorySEO: React.FC<{
   description?: string;
   productCount?: number;
 }> = ({ categoryName, description, productCount }) => {
-  const title = `${categoryName} - AligarhAttarHouse`;
-  const desc = description || `Browse premium ${categoryName.toLowerCase()} at AligarhAttarHouse. ${productCount ? `${productCount} products available.` : ''} Authentic attars & Islamic lifestyle products. Free shipping on orders above ₹499.`;
-  const keywords = `${categoryName}, AligarhAttarHouse, buy ${categoryName} online, ${categoryName} shop, premium products`;
+  const { getSiteSetting, settings } = useSettings();
+  const storeName = getSiteSetting('site_name') || (settings as any)?.site_name || 'Store';
+
+  const title = `${categoryName} – Shop Collection`;
+  const desc = description || `Explore our curated selection of ${categoryName.toLowerCase()} at ${storeName}. ${productCount ? `Browse ${productCount}+ authentic products.` : ''} Fast tracked shipping and secure payment across India & worldwide.`;
+  const keywords = `${categoryName}, buy ${categoryName} online, ${categoryName} collection, ${storeName}, shopping`;
 
   return (
     <SEO
@@ -176,4 +191,3 @@ export const PageSEO: React.FC<{
     />
   );
 };
-

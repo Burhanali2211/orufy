@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { LayoutGrid, ArrowRight, ChevronRight } from 'lucide-react';
 import { useProducts } from '@/shared/contexts/ProductContext';
 import { getSafeImageUrl } from '@/shared/utils/imageUrlUtils';
+import { SEO } from '@/shared/components/SEO/SEO';
+import { BreadcrumbStructuredData } from '@/shared/components/SEO/StructuredData';
 
 // ── Attar / perfume emoji map ────────────────────────────────────────────────
 const EMOJI_MAP: [string, string][] = [
@@ -127,6 +129,17 @@ const CategoriesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO
+        title="Product Categories & Collections"
+        description="Browse all product categories and collections. Find authentic premium items, fast shipping, and unbeatable prices."
+        keywords="categories, collections, shop by category, all products, shopping"
+      />
+      <BreadcrumbStructuredData
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'Categories', url: '/categories' },
+        ]}
+      />
 
       {/* ── Page header ─────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">

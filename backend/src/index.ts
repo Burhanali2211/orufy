@@ -155,6 +155,87 @@ app.get('/api/store/settings', requireStore, async (req, res) => {
   }
 });
 
+// Dynamic XML Sitemap Generator (Google Search Console compliant)
+app.get(['/sitemap.xml', '/api/sitemap.xml'], async (req, res) => {
+  try {
+    const store = res.locals.store;
+    const baseUrl = store?.hostname
+      ? `https://${store.hostname}`
+      : (process.env.FRONTEND_URL || 'https://get-oru.com');
+    const today = new Date().toISOString().split('T')[0];
+
+    let storeProducts: any[] = [];
+    let storeCategories: any[] = [];
+
+    if (store?.id) {
+      storeProducts = await db
+        .select({ id: products.id, slug: products.slug, updated_at: products.updated_at })
+        .from(products)
+        .where(eq(products.store_id, store.id));
+      storeCategories = await db
+        .select({ id: categories.id, slug: categories.slug, updated_at: categories.updated_at })
+        .from(categories)
+        .where(eq(categories.store_id, store.id));
+    } else {
+      storeProducts = await db
+        .select({ id: products.id, slug: products.slug, updated_at: products.updated_at })
+        .from(products)
+        .limit(500);
+      storeCategories = await db
+        .select({ id: categories.id, slug: categories.slug, updated_at: categories.updated_at })
+        .from(categories)
+        .limit(100);
+    }
+
+    const staticRoutes = [
+      { path: '', priority: '1.0', changefreq: 'daily' },
+      { path: '/store', priority: '0.9', changefreq: 'daily' },
+      { path: '/products', priority: '0.9', changefreq: 'daily' },
+      { path: '/categories', priority: '0.8', changefreq: 'weekly' },
+      { path: '/about', priority: '0.7', changefreq: 'monthly' },
+      { path: '/contact', priority: '0.7', changefreq: 'monthly' },
+      { path: '/privacy-policy', priority: '0.5', changefreq: 'monthly' },
+      { path: '/terms-of-service', priority: '0.5', changefreq: 'monthly' },
+      { path: '/refund-policy', priority: '0.5', changefreq: 'monthly' },
+      { path: '/shipping-policy', priority: '0.5', changefreq: 'monthly' },
+    ];
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+
+    for (const r of staticRoutes) {
+      xml += `  <url>\n    <loc>${baseUrl}${r.path}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${r.changefreq}</changefreq>\n    <priority>${r.priority}</priority>\n  </url>\n`;
+    }
+
+    for (const p of storeProducts) {
+      const prodDate = p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : today;
+      const prodUrl = `${baseUrl}/products/${p.id}`;
+      xml += `  <url>\n    <loc>${prodUrl}</loc>\n    <lastmod>${prodDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+    }
+
+    for (const c of storeCategories) {
+      const catDate = c.updated_at ? new Date(c.updated_at).toISOString().split('T')[0] : today;
+      const catUrl = `${baseUrl}/categories/${c.id}`;
+      xml += `  <url>\n    <loc>${catUrl}</loc>\n    <lastmod>${catDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+    }
+
+    xml += `</urlset>`;
+
+    res.header('Content-Type', 'application/xml');
+    res.header('Cache-Control', 'public, max-age=3600, s-maxage=3600');
+    return res.send(xml);
+  } catch (error) {
+    console.error('Error generating dynamic sitemap:', error);
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
+// 301 Permanent Redirects for legacy URLs indexed in Google Search Console
+app.get(['/affiliate-onboarding.html', '/affiliate-onboarding', '/affiliate'], (req, res) => {
+  const baseUrl = process.env.FRONTEND_URL || 'https://get-oru.com';
+  return res.redirect(301, `${baseUrl}/onboarding`);
+});
+
 import { startReservationExpiryWorker } from './workers/reservationExpiryWorker';
 
 const server = app.listen(port, () => {

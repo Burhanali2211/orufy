@@ -1,12 +1,17 @@
 import { Router, Request, Response } from "express";
+import crypto from "crypto";
 import { lucia } from "../lib/auth";
 import { db } from "../db/db";
-import { profiles, store_members, stores } from "../db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { profiles, store_members, stores, email_verification_tokens } from "../db/schema";
+import { eq, and, inArray, gt } from "drizzle-orm";
 import { Argon2id } from "oslo/password";
 import { requireAuth } from "../middleware/auth";
+import { CommunicationService } from "../services/communicationService";
 
 export const authRouter = Router();
+
+// In-memory rate limiting for resend verification (60 second cooldown per email)
+const verificationCooldowns = new Map<string, number>();
 
 function extractSessionId(req: Request): string | null {
   const cookieSession = lucia.readSessionCookie(req.headers.cookie ?? "");
@@ -20,6 +25,54 @@ function extractSessionId(req: Request): string | null {
     }
   }
   return null;
+}
+
+/**
+ * Helper to generate verification token and dispatch verification email
+ */
+async function sendVerificationEmail(
+  userId: string,
+  email: string,
+  fullName: string,
+  storeId?: string,
+  storeName?: string,
+  storeHostname?: string
+) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+  // Delete previous verification tokens for this user
+  await db
+    .delete(email_verification_tokens)
+    .where(
+      and(
+        eq(email_verification_tokens.user_id, userId),
+        eq(email_verification_tokens.token_type, 'EMAIL_VERIFICATION')
+      )
+    );
+
+  // Insert new verification token
+  await db.insert(email_verification_tokens).values({
+    user_id: userId,
+    token,
+    token_type: 'EMAIL_VERIFICATION',
+    expires_at: expiresAt,
+  });
+
+  const baseUrl = storeHostname
+    ? `https://${storeHostname}`
+    : (process.env.FRONTEND_URL || 'https://get-oru.com');
+  const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
+
+  await CommunicationService.dispatchEvent({
+    eventType: 'EMAIL_VERIFICATION',
+    storeId: storeId || '00000000-0000-0000-0000-000000000000',
+    storeName: storeName || 'Commerce Store',
+    storeHostname,
+    recipientEmail: email,
+    recipientName: fullName,
+    verificationUrl,
+  });
 }
 
 const handleSignup = async (req: Request, res: Response) => {
@@ -49,6 +102,7 @@ const handleSignup = async (req: Request, res: Response) => {
         full_name: full_name || (isPlatform ? 'Store Owner' : 'Customer'),
         phone: req.body.phone || null,
         role: userRole,
+        email_verified: false,
       }).returning();
       
       // Associate with current store only if within a specific store context
@@ -63,6 +117,17 @@ const handleSignup = async (req: Request, res: Response) => {
       return user;
     });
 
+    // Auto dispatch verification email (non-blocking)
+    const store = res.locals.store;
+    sendVerificationEmail(
+      newUser.id,
+      newUser.email,
+      newUser.full_name || 'Customer',
+      store?.id,
+      store?.name,
+      store?.hostname
+    ).catch(err => console.warn('Signup verification email dispatch notice:', err));
+
     const session = await lucia.createSession(newUser.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
     
@@ -75,6 +140,7 @@ const handleSignup = async (req: Request, res: Response) => {
         email: newUser.email,
         full_name: newUser.full_name,
         role: newUser.role,
+        email_verified: false,
       }
     });
   } catch (error) {
@@ -113,9 +179,8 @@ authRouter.post("/login", async (req, res) => {
 
     const isPlatform = res.locals.isPlatform || !res.locals.storeId;
 
-    // ── Architectural Security Guard: Prevent Storefront Customers from Logging into Platform ──
+    // Architectural Security Guard: Prevent Storefront Customers from Logging into Platform
     if (isPlatform) {
-      // Check if this user has any merchant/admin store roles
       const merchantMemberships = await db
         .select({
           store_id: store_members.store_id,
@@ -132,7 +197,6 @@ authRouter.post("/login", async (req, res) => {
       const isMerchantOrAdmin = existingUser.role === 'merchant' || existingUser.role === 'admin' || existingUser.role === 'seller' || merchantMemberships.length > 0;
 
       if (!isMerchantOrAdmin && existingUser.role === 'customer') {
-        // Find their registered storefront to provide a helpful redirect
         const [customerStore] = await db
           .select({
             store_name: stores.name,
@@ -160,7 +224,6 @@ authRouter.post("/login", async (req, res) => {
       );
       
       if (!membership) {
-        // Automatically enroll customer to this store
         await db.insert(store_members).values({
           store_id: res.locals.storeId,
           user_id: existingUser.id,
@@ -207,6 +270,7 @@ authRouter.post("/login", async (req, res) => {
         role: existingUser.role,
         avatar_url: existingUser.avatar_url,
         phone: existingUser.phone,
+        email_verified: existingUser.email_verified || false,
       },
       store,
     });
@@ -265,6 +329,7 @@ authRouter.get("/me", async (req, res) => {
         phone: profiles.phone,
         gender: profiles.gender,
         date_of_birth: profiles.date_of_birth,
+        email_verified: profiles.email_verified,
       })
       .from(profiles)
       .where(eq(profiles.id, user.id));
@@ -338,6 +403,7 @@ authRouter.put("/profile", requireAuth, async (req, res) => {
         phone: updated.phone,
         gender: updated.gender,
         date_of_birth: updated.date_of_birth,
+        email_verified: updated.email_verified || false,
       }
     });
   } catch (error) {
@@ -380,3 +446,140 @@ authRouter.post("/change-password", requireAuth, async (req: Request, res: Respo
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EMAIL CONFIRMATION & RESEND ENDPOINTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/auth/resend-verification
+ * Resends the account confirmation / verification email with 60-second cooldown protection.
+ */
+authRouter.post("/resend-verification", async (req: Request, res: Response) => {
+  try {
+    let email = (req.body.email || '').trim().toLowerCase();
+
+    // If no email in body, attempt to extract from authenticated session
+    if (!email) {
+      const sessionId = extractSessionId(req);
+      if (sessionId) {
+        const { user } = await lucia.validateSession(sessionId);
+        if (user) {
+          const [p] = await db.select().from(profiles).where(eq(profiles.id, user.id));
+          if (p) email = p.email.toLowerCase();
+        }
+      }
+    }
+
+    if (!email) {
+      return res.status(400).json({ error: "Email address is required" });
+    }
+
+    // Cooldown check (60 seconds)
+    const now = Date.now();
+    const lastSent = verificationCooldowns.get(email);
+    if (lastSent && now - lastSent < 60000) {
+      const waitSeconds = Math.ceil((60000 - (now - lastSent)) / 1000);
+      return res.status(429).json({
+        error: "RATE_LIMITED",
+        message: `Please wait ${waitSeconds}s before requesting another verification email.`,
+        retryAfterSeconds: waitSeconds,
+      });
+    }
+
+    const [user] = await db.select().from(profiles).where(eq(profiles.email, email));
+    if (!user) {
+      // Do not reveal email existence to prevent user enumeration
+      return res.status(200).json({
+        success: true,
+        message: "If an account exists with this email, a verification link has been sent.",
+      });
+    }
+
+    if (user.email_verified) {
+      return res.status(200).json({
+        success: true,
+        alreadyVerified: true,
+        message: "Your email address is already verified. You can sign in anytime.",
+      });
+    }
+
+    // Record cooldown timestamp
+    verificationCooldowns.set(email, now);
+
+    const store = res.locals.store;
+    await sendVerificationEmail(
+      user.id,
+      user.email,
+      user.full_name || 'Customer',
+      store?.id,
+      store?.name,
+      store?.hostname
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Verification email has been sent. Please check your inbox.",
+    });
+  } catch (error: any) {
+    console.error("Resend verification error:", error);
+    res.status(500).json({ error: "Failed to send verification email" });
+  }
+});
+
+/**
+ * GET /api/auth/verify-email
+ * Verifies email address using the secure token from the confirmation link.
+ */
+authRouter.get("/verify-email", async (req: Request, res: Response) => {
+  try {
+    const token = typeof req.query.token === 'string' ? req.query.token.trim() : '';
+
+    if (!token) {
+      return res.status(400).json({
+        error: "MISSING_TOKEN",
+        message: "Verification token is required.",
+      });
+    }
+
+    const [tokenRecord] = await db
+      .select()
+      .from(email_verification_tokens)
+      .where(
+        and(
+          eq(email_verification_tokens.token, token),
+          eq(email_verification_tokens.token_type, 'EMAIL_VERIFICATION'),
+          gt(email_verification_tokens.expires_at, new Date())
+        )
+      );
+
+    if (!tokenRecord) {
+      return res.status(400).json({
+        error: "INVALID_OR_EXPIRED_TOKEN",
+        message: "This verification link is invalid or has expired. Please request a new confirmation email.",
+      });
+    }
+
+    // Mark user as verified
+    await db
+      .update(profiles)
+      .set({
+        email_verified: true,
+        email_verified_at: new Date(),
+        updated_at: new Date(),
+      })
+      .where(eq(profiles.id, tokenRecord.user_id));
+
+    // Delete token once consumed
+    await db
+      .delete(email_verification_tokens)
+      .where(eq(email_verification_tokens.id, tokenRecord.id));
+
+    return res.status(200).json({
+      success: true,
+      message: "Your email address has been successfully verified!",
+    });
+  } catch (error: any) {
+    console.error("Verify email error:", error);
+    res.status(500).json({ error: "Failed to verify email address" });
+  }
+});

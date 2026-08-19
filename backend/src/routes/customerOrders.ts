@@ -5,8 +5,12 @@ import { eq, and, sql, or } from 'drizzle-orm';
 import { optionalAuth } from '../middleware/auth';
 import { requireStore } from '../middleware/storeResolver';
 import { withStoreContext } from '../db/utils';
+import { CommunicationService } from '../services/communicationService';
 
 export const customerOrdersRouter = Router();
+
+// In-memory rate limiting for resend confirmation (60 second cooldown per order)
+const orderResendCooldowns = new Map<string, number>();
 
 /**
  * Helper to resolve store from res.locals or x-store-hostname header.
@@ -185,7 +189,117 @@ customerOrdersRouter.get('/:id', optionalAuth, async (req: Request, res: Respons
 });
 
 /**
- * 2. POST /api/customer/orders/lookup
+ * 2. POST /api/customer/orders/:id/resend-confirmation
+ * Resends order confirmation / receipt email to customer or guest with 60s cooldown.
+ */
+customerOrdersRouter.post('/:id/resend-confirmation', optionalAuth, async (req: Request, res: Response) => {
+  try {
+    const orderId = String(req.params.id);
+    const trackingToken = typeof req.query.token === 'string' ? req.query.token.trim() : (req.body.token || req.body.trackingToken || null);
+    const customEmail = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : null;
+    const userId = res.locals.user?.id;
+
+    const store = await resolveStoreContext(req, res);
+    if (!store) {
+      return res.status(404).json({ error: 'Store not found' });
+    }
+
+    // Cooldown check (60s)
+    const now = Date.now();
+    const lastSent = orderResendCooldowns.get(orderId);
+    if (lastSent && now - lastSent < 60000) {
+      const waitSeconds = Math.ceil((60000 - (now - lastSent)) / 1000);
+      return res.status(429).json({
+        error: 'RATE_LIMITED',
+        message: `Please wait ${waitSeconds}s before resending confirmation email.`,
+        retryAfterSeconds: waitSeconds,
+      });
+    }
+
+    const [ord] = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.id, orderId), eq(orders.store_id, store.id)));
+
+    if (!ord) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Access authorization
+    const isOwnerSession = userId && ord.user_id && userId === ord.user_id;
+    const isValidToken = trackingToken && ord.tracking_token && trackingToken === ord.tracking_token;
+
+    if (!isOwnerSession && !isValidToken) {
+      return res.status(403).json({ error: 'Access denied: Valid session or tracking token required' });
+    }
+
+    // Target email recipient
+    const recipientEmail = customEmail || ord.guest_email || (ord.shipping_address as any)?.email;
+    if (!recipientEmail) {
+      return res.status(400).json({ error: 'No recipient email found for this order. Please specify an email.' });
+    }
+
+    // Record cooldown
+    orderResendCooldowns.set(orderId, now);
+
+    // Fetch items
+    const items = await db
+      .select()
+      .from(order_items)
+      .where(eq(order_items.order_id, ord.id));
+
+    const populatedItems = await Promise.all(
+      items.map(async (item: any) => {
+        let productName = 'Product';
+        if (item.product_id) {
+          const [p] = await db.select().from(products).where(eq(products.id, item.product_id));
+          if (p) productName = p.name;
+        }
+        return {
+          name: (item.product_snapshot as any)?.name || productName,
+          quantity: item.quantity,
+          pricePaise: item.unit_price,
+          sku: item.variant_id || undefined,
+        };
+      })
+    );
+
+    const result = await CommunicationService.dispatchEvent({
+      eventType: 'ORDER_CONFIRMED',
+      storeId: store.id,
+      storeName: store.name,
+      storeHostname: store.hostname,
+      orderId: ord.id,
+      orderNumber: ord.order_number,
+      recipientEmail,
+      recipientPhone: ord.guest_phone || (ord.shipping_address as any)?.phone,
+      recipientName: (ord.shipping_address as any)?.full_name || (ord.shipping_address as any)?.name || 'Valued Customer',
+      totalAmountPaise: ord.total_amount,
+      subtotalPaise: ord.subtotal,
+      taxAmountPaise: ord.tax_amount,
+      shippingAmountPaise: ord.shipping_amount,
+      discountAmountPaise: ord.discount_amount || undefined,
+      items: populatedItems,
+      shippingAddress: ord.shipping_address,
+      trackingToken: ord.tracking_token || undefined,
+    });
+
+    if (!result.success && result.error) {
+      return res.status(500).json({ error: result.error || 'Failed to dispatch email' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Order confirmation receipt has been sent to ${recipientEmail}`,
+    });
+  } catch (error: any) {
+    console.error('Error resending order confirmation email:', error);
+    return res.status(500).json({ error: 'Failed to resend confirmation email' });
+  }
+});
+
+/**
+ * 3. POST /api/customer/orders/lookup
  * Allows customers to track an order with Order Number + Email / Phone.
  */
 customerOrdersRouter.post('/lookup', async (req: Request, res: Response) => {
@@ -203,7 +317,6 @@ customerOrdersRouter.post('/lookup', async (req: Request, res: Response) => {
     }
 
     const result = await withStoreContext(store.id, async (tx) => {
-      // Find orders matching order_number in current store
       const [ord] = await tx
         .select()
         .from(orders)
@@ -218,7 +331,6 @@ customerOrdersRouter.post('/lookup', async (req: Request, res: Response) => {
         return null;
       }
 
-      // Check if emailOrPhone matches guest_email, guest_phone, or shipping address
       const guestEmail = (ord.guest_email || '').toLowerCase();
       const guestPhone = (ord.guest_phone || '').toLowerCase();
       const shippingPhone = (ord.shipping_address as any)?.phone || (ord.shipping_address as any)?.phoneNumber || '';
@@ -231,7 +343,6 @@ customerOrdersRouter.post('/lookup', async (req: Request, res: Response) => {
         shippingEmail.toLowerCase() === emailOrPhone;
 
       if (!isMatch && ord.user_id) {
-        // Also check profile
         const [profile] = await tx.select().from(profiles).where(eq(profiles.id, ord.user_id));
         if (profile) {
           if (profile.email?.toLowerCase() === emailOrPhone || profile.phone?.toLowerCase() === emailOrPhone) {

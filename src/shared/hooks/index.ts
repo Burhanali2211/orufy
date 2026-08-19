@@ -1,4 +1,4 @@
 // Custom Hooks Barrel Exports
 export { useAddToCartWithAuth } from './useAddToCartWithAuth';
 export { useAddToWishlistWithAuth } from './useAddToWishlistWithAuth';
-export { useCartButtonState } from './useCartButtonState';
+export { useCartButton, useCartButtonState, useCartButtonStyles } from './useCartButton';

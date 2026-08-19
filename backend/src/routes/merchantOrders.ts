@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import { db } from '../db/db';
 import {
   stores,
@@ -8,6 +9,7 @@ import {
   store_members,
   profiles,
   inventory_reservations,
+  email_verification_tokens,
 } from '../db/schema';
 import { eq, and, desc, sql, lte } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth';
@@ -635,3 +637,174 @@ merchantOrdersRouter.put('/:id', requireAuth, async (req: Request, res: Response
 merchantOrdersRouter.post('/tracking', requireAuth, async (req: Request, res: Response) => {
   return res.status(200).json({ success: true, message: 'Tracking event recorded' });
 });
+
+// 9. Get Order Communication Logs
+merchantOrdersRouter.get('/:id/communications', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = res.locals.user;
+    const orderId = String(req.params.id);
+    const store = await resolveMerchantStore(req, res);
+    if (!store) return res.status(404).json({ error: 'Store not found' });
+
+    const isAuthorized = await verifyMerchantAccess(user.id, store.id, user.role);
+    if (!isAuthorized && user.role !== 'admin') return res.status(403).json({ error: 'Forbidden: Merchant access required' });
+
+    const logs = await CommunicationService.getOrderCommunications(store.id, orderId);
+    return res.status(200).json({ communications: logs });
+  } catch (error: any) {
+    console.error('Error fetching order communications:', error);
+    return res.status(500).json({ error: 'Failed to fetch communication logs' });
+  }
+});
+
+// 10. Resend Order Email (Order Confirmation, Shipping, Delivered, Cancelled, Invoice)
+merchantOrdersRouter.post('/:id/resend-email', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = res.locals.user;
+    const orderId = String(req.params.id);
+    const eventType = (req.body.eventType || req.body.event_type || 'ORDER_CONFIRMED') as any;
+    const customEmail = (req.body.recipientEmail || req.body.email || '').trim().toLowerCase();
+
+    const store = await resolveMerchantStore(req, res);
+    if (!store) return res.status(404).json({ error: 'Store not found' });
+
+    const isAuthorized = await verifyMerchantAccess(user.id, store.id, user.role);
+    if (!isAuthorized && user.role !== 'admin') return res.status(403).json({ error: 'Forbidden: Merchant access required' });
+
+    const [ord] = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.id, orderId), eq(orders.store_id, store.id)));
+
+    if (!ord) return res.status(404).json({ error: 'Order not found' });
+
+    const recipientEmail = customEmail || ord.guest_email || (ord.shipping_address as any)?.email;
+    if (!recipientEmail) {
+      return res.status(400).json({ error: 'Recipient email is required to resend notification' });
+    }
+
+    // Fetch order items
+    const items = await db.select().from(order_items).where(eq(order_items.order_id, ord.id));
+    const populatedItems = await Promise.all(
+      items.map(async (item: any) => {
+        let productName = 'Product';
+        if (item.product_id) {
+          const [p] = await db.select().from(products).where(eq(products.id, item.product_id));
+          if (p) productName = p.name;
+        }
+        return {
+          name: (item.product_snapshot as any)?.name || productName,
+          quantity: item.quantity,
+          pricePaise: item.unit_price,
+          sku: item.variant_id || undefined,
+        };
+      })
+    );
+
+    const result = await CommunicationService.dispatchEvent({
+      eventType,
+      storeId: store.id,
+      storeName: store.name,
+      storeHostname: store.hostname,
+      orderId: ord.id,
+      orderNumber: ord.order_number,
+      recipientEmail,
+      recipientPhone: ord.guest_phone || (ord.shipping_address as any)?.phone,
+      recipientName: (ord.shipping_address as any)?.full_name || (ord.shipping_address as any)?.name || 'Valued Customer',
+      totalAmountPaise: ord.total_amount,
+      subtotalPaise: ord.subtotal,
+      taxAmountPaise: ord.tax_amount,
+      shippingAmountPaise: ord.shipping_amount,
+      discountAmountPaise: ord.discount_amount || undefined,
+      carrier: ord.carrier || req.body.carrier || undefined,
+      trackingNumber: ord.tracking_number || req.body.trackingNumber || undefined,
+      trackingToken: ord.tracking_token || undefined,
+      items: populatedItems,
+      shippingAddress: ord.shipping_address,
+      customSubject: req.body.customSubject,
+    });
+
+    // Log audit action
+    AuditService.log({
+      storeId: store.id,
+      actorUserId: user.id,
+      action: 'EMAIL_RESENT',
+      resourceType: 'order',
+      resourceId: ord.id,
+      metadata: {
+        event_type: eventType,
+        recipient: recipientEmail,
+        success: result.success,
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(() => {});
+
+    if (!result.success && result.error) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Email (${eventType}) sent successfully to ${recipientEmail}`,
+    });
+  } catch (error: any) {
+    console.error('Error resending merchant order email:', error);
+    return res.status(500).json({ error: 'Failed to resend email' });
+  }
+});
+
+// 11. Resend Verification Email to Customer
+merchantOrdersRouter.post('/customers/:id/resend-verification', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = res.locals.user;
+    const customerId = String(req.params.id);
+    const store = await resolveMerchantStore(req, res);
+    if (!store) return res.status(404).json({ error: 'Store not found' });
+
+    const isAuthorized = await verifyMerchantAccess(user.id, store.id, user.role);
+    if (!isAuthorized && user.role !== 'admin') return res.status(403).json({ error: 'Forbidden: Merchant access required' });
+
+    const [targetUser] = await db.select().from(profiles).where(eq(profiles.id, customerId));
+    if (!targetUser) return res.status(404).json({ error: 'Customer not found' });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await db.delete(email_verification_tokens).where(
+      and(
+        eq(email_verification_tokens.user_id, targetUser.id),
+        eq(email_verification_tokens.token_type, 'EMAIL_VERIFICATION')
+      )
+    );
+
+    await db.insert(email_verification_tokens).values({
+      user_id: targetUser.id,
+      token,
+      token_type: 'EMAIL_VERIFICATION',
+      expires_at: expiresAt,
+    });
+
+    const baseUrl = store.hostname ? `https://${store.hostname}` : (process.env.FRONTEND_URL || 'https://get-oru.com');
+    const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
+
+    const result = await CommunicationService.dispatchEvent({
+      eventType: 'EMAIL_VERIFICATION',
+      storeId: store.id,
+      storeName: store.name,
+      storeHostname: store.hostname,
+      recipientEmail: targetUser.email,
+      recipientName: targetUser.full_name || 'Customer',
+      verificationUrl,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Verification email dispatched to ${targetUser.email}`,
+    });
+  } catch (error: any) {
+    console.error('Error sending customer verification email:', error);
+    return res.status(500).json({ error: 'Failed to send verification email' });
+  }
+});
+

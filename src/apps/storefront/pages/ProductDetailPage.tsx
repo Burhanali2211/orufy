@@ -18,8 +18,10 @@ import { ProductRecommendations } from '@/shared/components/Product/ProductRecom
 import { Modal } from '@/shared/components/Common/Modal';
 
 import { Review, Product } from '@/shared/types';
-import { useCartButtonState } from '@/shared/hooks/useCartButtonState';
+import { useCartButtonState } from '@/shared/hooks/useCartButton';
 import { LuxuryGallery } from '@/shared/components/Product/LuxuryGallery';
+import { ProductSEO } from '@/shared/components/SEO/SEO';
+import { ProductStructuredData, BreadcrumbStructuredData } from '@/shared/components/SEO/StructuredData';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -134,6 +136,38 @@ export const ProductDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white overflow-hidden">
+      {/* Rich SEO & Google Search Console Structured Data */}
+      <ProductSEO
+        productName={product.name}
+        description={product.description}
+        price={product.price}
+        image={images[0] || ''}
+        category={product.category}
+        availability={product.stock > 0 ? 'InStock' : 'OutOfStock'}
+        sku={product.sku || product.id}
+      />
+      <ProductStructuredData
+        product={{
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          image: images[0] || '',
+          category: product.category,
+          sku: product.sku || product.id,
+          availability: product.stock > 0 ? 'InStock' : 'OutOfStock',
+          rating: product.rating,
+          reviewCount: reviews.length,
+        }}
+      />
+      <BreadcrumbStructuredData
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'Products', url: '/products' },
+          { name: product.name, url: `/products/${product.id}` },
+        ]}
+      />
+
       {/* Mobile Header with Back + Wishlist */}
       <div className="fixed top-4 left-4 right-4 z-40 md:hidden flex items-center justify-between pointer-events-none">
         <button onClick={() => navigate(-1)} className="w-10 h-10 bg-black/20 backdrop-blur-md hover:bg-black/30 rounded-full transition-colors pointer-events-auto flex items-center justify-center">

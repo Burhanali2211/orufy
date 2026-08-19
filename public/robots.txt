@@ -1,60 +1,59 @@
-# robots.txt for Himalayan Spices Exports
+# robots.txt for Oru Multi-tenant Commerce Platform
 # https://www.robotstxt.org/robotstxt.html
 
-# Allow all search engines to crawl the site
+# Allow all verified search engine crawlers
 User-agent: *
 Allow: /
-
-# Disallow admin and private areas
-Disallow: /admin/
-Disallow: /dashboard/
-Disallow: /api/
-Disallow: /checkout
-Disallow: /cart
-Disallow: /wishlist
-Disallow: /orders
-Disallow: /settings
-Disallow: /auth
-
-# Allow product pages and categories
+Allow: /store
 Allow: /products
 Allow: /products/*
 Allow: /categories
 Allow: /categories/*
 Allow: /collections
 Allow: /collections/*
-
-# Allow legal and informational pages
 Allow: /about
+Allow: /contact
 Allow: /privacy-policy
 Allow: /terms-of-service
 Allow: /refund-policy
 Allow: /shipping-policy
 
-# Sitemap location
-Sitemap: https://himalayanspicesexports.com/sitemap.xml
+# Disallow private user/admin/session areas
+Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /checkout
+Disallow: /cart
+Disallow: /wishlist
+Disallow: /auth/
+Disallow: /auth?*
+Disallow: /onboarding
 
-# Crawl delay (optional, helps prevent server overload)
-Crawl-delay: 1
-
-# Specific rules for Google
+# Specific rules for Googlebot
 User-agent: Googlebot
 Allow: /
 Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /api/
+Disallow: /checkout
+Disallow: /cart
+Disallow: /auth
 
-# Specific rules for Bing
+# Specific rules for Googlebot-Image
+User-agent: Googlebot-Image
+Allow: /
+
+# Specific rules for Bingbot
 User-agent: Bingbot
 Allow: /
 Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /api/
+Disallow: /checkout
+Disallow: /cart
+Disallow: /auth
 
-# Block bad bots (optional)
-User-agent: AhrefsBot
-Crawl-delay: 10
-
-User-agent: SemrushBot
-Crawl-delay: 10
-
+# Primary XML Sitemap Location (Google Search Console compliant)
+Sitemap: https://get-oru.com/sitemap.xml

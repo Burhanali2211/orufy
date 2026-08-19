@@ -4,8 +4,7 @@ import { X, Star, Heart, Minus, Plus, Shield, Truck, RotateCcw, Award } from 'lu
 import { Product } from '../../types';
 import { useAddToCartWithAuth } from '@/shared/hooks/useAddToCartWithAuth';
 import { useAddToWishlistWithAuth } from '@/shared/hooks/useAddToWishlistWithAuth';
-import { useCartButtonStyles } from '@/shared/hooks/useCartButtonStyles';
-import { useCartButtonState } from '@/shared/hooks/useCartButtonState';
+import { useCartButtonStyles, useCartButtonState } from '@/shared/hooks/useCartButton';
 import { AddToCartButton } from './AddToCartButton';
 
 interface ProductDetailsProps {

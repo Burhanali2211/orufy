@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { useForm } from 'react-hook-form';
@@ -36,8 +37,10 @@ const AuthPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
   const [signupConfirmEmail, setSignupConfirmEmail] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
 
-  const { signIn, signUp, resetPassword, user } = useAuth();
+  const { signIn, signUp, resetPassword, resendVerification, user } = useAuth();
   const { getSiteSetting } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -95,6 +98,31 @@ const AuthPage: React.FC = () => {
     const preEmail = params.get('email');
     if (preEmail) setValue('email', decodeURIComponent(preEmail));
   }, [location.search, isPlatform, navigate, setValue]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResendSignupConfirmation = async () => {
+    if (!signupConfirmEmail || resendCooldown > 0) return;
+    try {
+      setIsResending(true);
+      const res = await resendVerification(signupConfirmEmail);
+      toast.success(res.message || 'Verification email resent! Please check your inbox.');
+      setResendCooldown(60);
+    } catch (err: any) {
+      if (err.retryAfterSeconds) {
+        setResendCooldown(err.retryAfterSeconds);
+      }
+      toast.error(err.message || 'Failed to resend confirmation email');
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const switchMode = (next: AuthMode) => {
     setMode(next);
@@ -300,13 +328,36 @@ const AuthPage: React.FC = () => {
                       Click the link to verify your account, then sign in.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => { setSignupConfirmEmail(null); switchMode('login'); }}
-                    className="w-full py-3 rounded-xl border border-stone-200 text-xs font-bold text-stone-700 hover:bg-stone-50 transition-colors"
-                  >
-                    ← Back to sign in
-                  </button>
+
+                  <div className="space-y-2.5">
+                    <button
+                      type="button"
+                      onClick={handleResendSignupConfirmation}
+                      disabled={isResending || resendCooldown > 0}
+                      className="w-full py-3 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {isResending ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Mail className="w-3.5 h-3.5" />
+                      )}
+                      <span>
+                        {resendCooldown > 0
+                          ? `Resend Email (${resendCooldown}s)`
+                          : isResending
+                          ? 'Resending Email...'
+                          : 'Resend Verification Email'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { setSignupConfirmEmail(null); switchMode('login'); }}
+                      className="w-full py-3 rounded-xl border border-stone-200 text-xs font-bold text-stone-700 hover:bg-stone-50 transition-colors"
+                    >
+                      ← Back to sign in
+                    </button>
+                  </div>
                 </div>
               ) : mode === 'forgot' && forgotSent ? (
                 <div className="space-y-5">

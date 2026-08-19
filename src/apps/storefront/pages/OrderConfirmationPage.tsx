@@ -4,8 +4,9 @@ import { motion } from 'framer-motion';
 import {
   CheckCircle2, Package, MapPin, CreditCard,
   Truck, ArrowRight, ShoppingBag, Copy, Check, AlertCircle, Sparkles, Printer,
-  Phone, Mail, ShieldCheck, Clock, ArrowLeft
+  Phone, Mail, ShieldCheck, Clock, ArrowLeft, RefreshCw
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { generateInvoicePrintWindow } from '@/shared/utils/invoiceGenerator';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 
@@ -69,6 +70,48 @@ export const OrderConfirmationPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedTracking, setCopiedTracking] = useState(false);
+  const [isResendingReceipt, setIsResendingReceipt] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResendReceipt = async () => {
+    if (!order || isResendingReceipt || resendCooldown > 0) return;
+    try {
+      setIsResendingReceipt(true);
+      const url = `/api/customer/orders/${order.id}/resend-confirmation${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+      const storeHost = localStorage.getItem('store_hostname');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (storeHost) headers['x-store-hostname'] = storeHost;
+
+      const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: JSON.stringify({ token, email: order.shipping_address?.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.retryAfterSeconds) {
+          setResendCooldown(data.retryAfterSeconds);
+        }
+        throw new Error(data.message || data.error || 'Failed to resend receipt');
+      }
+
+      toast.success(data.message || 'Order confirmation receipt sent to your email!');
+      setResendCooldown(60);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to resend receipt');
+    } finally {
+      setIsResendingReceipt(false);
+    }
+  };
 
   useEffect(() => {
     if (orderId) fetchOrder();
@@ -258,9 +301,26 @@ export const OrderConfirmationPage: React.FC = () => {
               </div>
 
               {customerEmail && (
-                <div className="flex items-center gap-2 text-xs text-stone-500 pt-1">
-                  <Mail className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
-                  <span>An order receipt has been sent to <strong className="text-stone-800 font-medium">{customerEmail}</strong></span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-stone-50 border border-stone-200/80 text-xs">
+                  <div className="flex items-center gap-2.5 text-stone-600 min-w-0">
+                    <Mail className="w-4 h-4 text-stone-400 flex-shrink-0" />
+                    <span className="truncate">Order receipt sent to <strong className="text-stone-800 font-semibold">{customerEmail}</strong></span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResendReceipt}
+                    disabled={isResendingReceipt || resendCooldown > 0}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-stone-800 hover:bg-stone-100 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer flex-shrink-0 self-start sm:self-auto"
+                  >
+                    {isResendingReceipt ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-stone-600" /> : <Mail className="w-3.5 h-3.5 text-stone-600" />}
+                    <span>
+                      {resendCooldown > 0
+                        ? `Resend in ${resendCooldown}s`
+                        : isResendingReceipt
+                        ? 'Sending...'
+                        : 'Resend Receipt'}
+                    </span>
+                  </button>
                 </div>
               )}
             </div>

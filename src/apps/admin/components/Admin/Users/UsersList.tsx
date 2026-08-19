@@ -1,6 +1,9 @@
 import { apiClient } from '@/shared/lib/apiClient';
 import React, { useEffect, useRef, useState } from 'react';
-import { Plus, Search, Edit, Trash2, Power, Users as UsersIcon, X, ChevronLeft, ChevronRight, ShieldCheck, ShoppingBag, UserCheck } from 'lucide-react';
+import {
+  Plus, Search, Edit, Trash2, Power, Users as UsersIcon, X, ChevronLeft, ChevronRight,
+  ShieldCheck, ShoppingBag, UserCheck, Mail, RefreshCw, CheckCircle2
+} from 'lucide-react';
 import { ConfirmModal } from '@/shared/components/Common/Modal';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { UserForm } from './UserForm';
@@ -130,6 +133,20 @@ export const UsersList: React.FC = () => {
     }
   };
 
+  const [sendingVerificationId, setSendingVerificationId] = useState<string | null>(null);
+
+  const handleResendVerification = async (targetUser: User) => {
+    try {
+      setSendingVerificationId(targetUser.id);
+      const res = await apiClient.post<any>(`/merchant/orders/customers/${targetUser.id}/resend-verification`, {});
+      showSuccess('Verification Dispatched', res.message || `Verification email sent to ${targetUser.email}`);
+    } catch (err: any) {
+      showError('Failed to Send', err.message || 'Failed to dispatch verification email');
+    } finally {
+      setSendingVerificationId(null);
+    }
+  };
+
   const clearFilters = () => {
     setSearchTerm('');
     setRoleFilter('');
@@ -254,9 +271,21 @@ export const UsersList: React.FC = () => {
                         <div className="w-10 h-10 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center font-bold text-stone-700 text-xs flex-shrink-0">
                           {(user.full_name || user.email).charAt(0).toUpperCase()}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 space-y-0.5">
                           <p className="font-bold text-stone-900 truncate max-w-xs">{user.full_name || 'Customer'}</p>
-                          <p className="text-xs text-stone-400 truncate max-w-xs">{user.email}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-stone-400 truncate max-w-xs">{user.email}</p>
+                            {user.email_verified ? (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 className="w-2.5 h-2.5" />
+                                Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                Unverified
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -291,6 +320,18 @@ export const UsersList: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-5 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleResendVerification(user)}
+                          disabled={sendingVerificationId === user.id}
+                          className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 disabled:opacity-50 rounded-xl transition-colors cursor-pointer"
+                          title="Resend verification email"
+                        >
+                          {sendingVerificationId === user.id ? (
+                            <RefreshCw className="w-4 h-4 animate-spin text-stone-600" />
+                          ) : (
+                            <Mail className="w-4 h-4" />
+                          )}
+                        </button>
                         <button
                           onClick={() => { setSelectedUser(user); setShowFormModal(true); }}
                           className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"

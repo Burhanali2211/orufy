@@ -43,6 +43,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             phone: data.user.phone,
             gender: data.user.gender,
             dateOfBirth: data.user.date_of_birth || data.user.dateOfBirth,
+            email_verified: data.user.email_verified || data.user.emailVerified || false,
+            emailVerified: data.user.email_verified || data.user.emailVerified || false,
           });
           setStore(data.store || null);
           if (data.store?.hostname) {
@@ -106,6 +108,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         phone: data.user.phone,
         gender: data.user.gender,
         dateOfBirth: data.user.date_of_birth || data.user.dateOfBirth,
+        email_verified: data.user.email_verified || data.user.emailVerified || false,
+        emailVerified: data.user.email_verified || data.user.emailVerified || false,
       });
       setStore(data.store || null);
       if (data.store?.hostname) {
@@ -165,6 +169,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         role: data.user.role || 'customer',
         avatar: data.user.avatar_url || data.user.avatar,
         phone: data.user.phone,
+        email_verified: data.user.email_verified || data.user.emailVerified || false,
+        emailVerified: data.user.email_verified || data.user.emailVerified || false,
       });
       setStore(data.store || null);
       if (data.store?.hostname) {
@@ -203,6 +209,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.warn("Reset password requested for", email);
   };
 
+  const resendVerification = async (email?: string): Promise<{ success: boolean; message: string; retryAfterSeconds?: number }> => {
+    try {
+      const targetEmail = email || user?.email;
+      const res = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: targetEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const err: any = new Error(data.message || data.error || 'Failed to resend verification email');
+        err.retryAfterSeconds = data.retryAfterSeconds;
+        throw err;
+      }
+      return data;
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
   const updateProfile = async (updates: Partial<User>): Promise<void> => {
     try {
       const res = await apiClient.put<any>('/auth/profile', {
@@ -221,6 +247,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           avatar: res.user.avatar_url ?? prev.avatar,
           gender: res.user.gender ?? prev.gender,
           dateOfBirth: res.user.date_of_birth ?? prev.dateOfBirth,
+          email_verified: res.user.email_verified ?? prev.email_verified,
+          emailVerified: res.user.email_verified ?? prev.emailVerified,
         } : null);
       }
     } catch (error) {
@@ -245,8 +273,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signUp,
     signOut,
+    logout: signOut,
     login,
     resetPassword,
+    resendVerification,
     updateProfile,
     isMobileAuthOpen,
     mobileAuthMode,

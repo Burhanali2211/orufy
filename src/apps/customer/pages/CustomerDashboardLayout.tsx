@@ -11,8 +11,12 @@ import {
   X,
   ChevronRight,
   ShoppingBag,
-  Sparkles
+  Sparkles,
+  AlertCircle,
+  Mail,
+  RefreshCw
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { useWishlist } from '@/shared/contexts/WishlistContext';
@@ -38,7 +42,7 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
   title,
   subtitle
 }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, resendVerification } = useAuth();
   const { settings, getSiteSetting } = useSettings();
   const { items: wishlistItems } = useWishlist();
   const { data: stats } = useCustomerStats();
@@ -48,6 +52,34 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Cooldown countdown ticker
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const handleResendVerification = async () => {
+    if (!user?.email || isResending || cooldown > 0) return;
+    try {
+      setIsResending(true);
+      const res = await resendVerification(user.email);
+      toast.success(res.message || 'Verification email has been resent!');
+      setCooldown(60);
+    } catch (err: any) {
+      if (err.retryAfterSeconds) {
+        setCooldown(err.retryAfterSeconds);
+      }
+      toast.error(err.message || 'Failed to resend verification email');
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   // Close sidebar on route change
   useEffect(() => {
@@ -291,6 +323,32 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
 
           {/* ── Main Content Area (lg:col-span-9) ── */}
           <main className="lg:col-span-9 space-y-6">
+            {/* Unverified Email Alert Banner */}
+            {user && !user.email_verified && !user.emailVerified && (
+              <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                <div className="flex items-start gap-3.5 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <AlertCircle className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wide">Please verify your email address</h4>
+                    <p className="text-xs text-amber-800 mt-0.5 leading-relaxed truncate sm:whitespace-normal">
+                      A confirmation link was sent to <strong className="font-semibold text-amber-950">{user.email}</strong>. Verify to secure your account.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={isResending || cooldown > 0}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex-shrink-0 self-start sm:self-auto"
+                >
+                  {isResending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                  <span>{cooldown > 0 ? `Resend (${cooldown}s)` : isResending ? 'Sending...' : 'Resend Confirmation'}</span>
+                </button>
+              </div>
+            )}
+
             {/* View Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200/80 pb-4">
               <div>

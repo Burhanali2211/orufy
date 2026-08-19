@@ -2,7 +2,8 @@ import { apiClient } from '@/shared/lib/apiClient';
 import React, { useState } from 'react';
 import {
   ArrowLeft, Package, Truck, Printer, AlertCircle,
-  DollarSign, User, MapPin, Calendar, CreditCard, Edit, Save, RefreshCw
+  DollarSign, User, MapPin, Calendar, CreditCard, Edit, Save, RefreshCw,
+  Mail, Send, History, X, CheckCircle2
 } from 'lucide-react';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { ConfirmModal } from '@/shared/components/Common/Modal';
@@ -95,6 +96,10 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
   const [newPaymentStatus, setNewPaymentStatus] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailEventType, setEmailEventType] = useState('ORDER_CONFIRMED');
+  const [emailRecipient, setEmailRecipient] = useState('');
+  const [customSubject, setCustomSubject] = useState('');
   
   const { showSuccess, showError } = useNotification();
   const queryClient = useQueryClient();
@@ -106,8 +111,31 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
         setNewStatus(res.status);
         setNewPaymentStatus(res.payment_status);
         setTrackingNumber(res.tracking_number || '');
+        setEmailRecipient(res.customer_email || res.user_email || res.shipping_address?.email || '');
         return res;
     }),
+  });
+
+  const { data: communications, isLoading: communicationsLoading, refetch: refetchCommunications } = useQuery({
+    queryKey: ['order-communications', orderId],
+    queryFn: async () => {
+      const res = await apiClient.get<any>(`/merchant/orders/${orderId}/communications`);
+      return res?.communications || [];
+    },
+    enabled: !!orderId,
+  });
+
+  const resendEmailMutation = useMutation({
+    mutationFn: (payload: { eventType: string; recipientEmail?: string; customSubject?: string }) =>
+      apiClient.post(`/merchant/orders/${orderId}/resend-email`, payload),
+    onSuccess: (data: any) => {
+      showSuccess('Email Sent', data.message || 'Notification email dispatched successfully');
+      setShowEmailModal(false);
+      refetchCommunications();
+    },
+    onError: (err: any) => {
+      showError('Failed to Send', err.message || 'Failed to dispatch notification email');
+    },
   });
 
   const updateMutation = useMutation({
@@ -248,13 +276,27 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
             </div>
           </div>
         </div>
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl font-medium text-sm text-gray-700 transition-colors flex-shrink-0"
-        >
-          <Printer className="h-4 w-4" />
-          Print Invoice
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              const defaultEmail = order.customer_email || order.user_email || order.shipping_address?.email || '';
+              setEmailRecipient(defaultEmail);
+              setShowEmailModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-colors shadow-xs cursor-pointer"
+          >
+            <Mail className="h-4 w-4" />
+            Resend Email
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl font-medium text-sm text-gray-700 transition-colors flex-shrink-0 cursor-pointer"
+          >
+            <Printer className="h-4 w-4" />
+            Print Invoice
+          </button>
+        </div>
       </div>
 
       {/* Quick stat cards */}
@@ -561,8 +603,206 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
               </div>
             </div>
           </SectionCard>
+
+          {/* Communication History Section */}
+          <SectionCard
+            icon={<History className="h-4 w-4 text-blue-600" />}
+            iconBg="bg-blue-50"
+            title="Communication History"
+          >
+            <div className="space-y-3">
+              {communicationsLoading ? (
+                <div className="py-6 text-center text-xs text-stone-400 flex items-center justify-center gap-2">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Loading communications...</span>
+                </div>
+              ) : !communications || communications.length === 0 ? (
+                <div className="py-5 text-center bg-stone-50 border border-stone-200/80 rounded-xl p-4 space-y-2">
+                  <Mail className="w-6 h-6 text-stone-300 mx-auto" />
+                  <p className="text-xs font-medium text-stone-500">No email history recorded for this order yet.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const defaultEmail = order.customer_email || order.user_email || order.shipping_address?.email || '';
+                      setEmailRecipient(defaultEmail);
+                      setShowEmailModal(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    <Send className="w-3 h-3" />
+                    <span>Send Initial Email</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {communications.map((comm: any) => (
+                    <div
+                      key={comm.id}
+                      className="p-3 bg-stone-50 border border-stone-200/80 rounded-xl space-y-1 text-xs"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-stone-900 uppercase tracking-wider text-[10px] px-2 py-0.5 bg-white border border-stone-200 rounded-md">
+                          {comm.event_type.replace(/_/g, ' ')}
+                        </span>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            comm.status === 'DELIVERED'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-red-50 text-red-700 border border-red-200'
+                          }`}
+                        >
+                          {comm.status === 'DELIVERED' ? (
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                          ) : (
+                            <AlertCircle className="w-2.5 h-2.5" />
+                          )}
+                          <span>{comm.status}</span>
+                        </span>
+                      </div>
+                      <div className="text-stone-600 truncate flex items-center gap-1 pt-0.5">
+                        <Mail className="w-3 h-3 text-stone-400 flex-shrink-0" />
+                        <span className="truncate">{comm.recipient}</span>
+                      </div>
+                      <div className="text-[10px] text-stone-400 pt-0.5">
+                        {new Date(comm.created_at).toLocaleString('en-IN', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const defaultEmail = order.customer_email || order.user_email || order.shipping_address?.email || '';
+                      setEmailRecipient(defaultEmail);
+                      setShowEmailModal(true);
+                    }}
+                    className="w-full mt-2 py-2 px-3 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Send Another Email</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </SectionCard>
         </div>
       </div>
+
+      {/* Resend Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-stone-200 shadow-2xl max-w-md w-full p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-stone-900 text-white flex items-center justify-center font-bold shadow-xs">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-stone-900 font-serif">Resend Order Email</h3>
+                  <p className="text-xs text-stone-500">Dispatch transactional update via Resend</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEmailModal(false)}
+                className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!emailRecipient.trim()) {
+                  showError('Missing Recipient', 'Please specify a recipient email address');
+                  return;
+                }
+                resendEmailMutation.mutate({
+                  eventType: emailEventType,
+                  recipientEmail: emailRecipient.trim(),
+                  customSubject: customSubject.trim() || undefined,
+                });
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                  Email Template
+                </label>
+                <select
+                  value={emailEventType}
+                  onChange={(e) => setEmailEventType(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900"
+                >
+                  <option value="ORDER_CONFIRMED">Order Confirmation & Receipt</option>
+                  <option value="ORDER_SHIPPED">Shipping & Tracking Notification</option>
+                  <option value="ORDER_DELIVERED">Delivery Confirmation</option>
+                  <option value="ORDER_CANCELLED">Order Cancellation Notice</option>
+                  <option value="INVOICE">Official Tax Invoice</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                  Recipient Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="email"
+                    required
+                    value={emailRecipient}
+                    onChange={(e) => setEmailRecipient(e.target.value)}
+                    placeholder="customer@example.com"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-stone-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                  Custom Subject Line (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  placeholder={`e.g. Update regarding your Order #${order.order_number}`}
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-stone-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-stone-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEmailModal(false)}
+                  disabled={resendEmailMutation.isPending}
+                  className="px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-700 hover:bg-stone-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resendEmailMutation.isPending}
+                  className="px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-xs inline-flex items-center gap-2 cursor-pointer"
+                >
+                  {resendEmailMutation.isPending ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5" />
+                  )}
+                  <span>{resendEmailMutation.isPending ? 'Sending...' : 'Send Email Now'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Status Update Confirmation */}
       <ConfirmModal

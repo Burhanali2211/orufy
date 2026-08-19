@@ -23,6 +23,7 @@ const SearchPage = React.lazy(() => import('@/apps/storefront/pages/SearchPage')
 const CartPage = React.lazy(() => import('@/apps/storefront/pages/CartPage'));
 const WishlistPage = React.lazy(() => import('@/apps/storefront/pages/WishlistPage'));
 const AuthPage = React.lazy(() => import('@/apps/storefront/pages/AuthPage'));
+const VerifyEmailPage = React.lazy(() => import('@/apps/storefront/pages/VerifyEmailPage'));
 const ResetPasswordPage = React.lazy(() => import('@/apps/storefront/pages/ResetPasswordPage'));
 const NotFoundPage = React.lazy(() => import('@/apps/storefront/pages/NotFoundPage'));
 const CategoriesPage = React.lazy(() => import('@/apps/storefront/pages/CategoriesPage'));
@@ -164,6 +165,18 @@ function App() {
                 path="/onboarding" 
                 element={<OnboardingPage />} 
               />
+              <Route 
+                path="/affiliate-onboarding.html" 
+                element={<Navigate to="/onboarding" replace />} 
+              />
+              <Route 
+                path="/affiliate-onboarding" 
+                element={<Navigate to="/onboarding" replace />} 
+              />
+              <Route 
+                path="/affiliate" 
+                element={<Navigate to="/onboarding" replace />} 
+              />
 
               {/* Platform Landing Page - Root, NO Layout wrapper */}
               <Route 
@@ -237,7 +250,8 @@ function App() {
                         }
                       />
 
-                      {/* Password reset - accessible without auth (user arrives from email link) */}
+                      {/* Password reset & Email verification - accessible without auth */}
+                      <Route path="/verify-email" element={<VerifyEmailPage />} />
                       <Route path="/reset-password" element={<ResetPasswordPage />} />
                       <Route path="/auth/callback" element={<AuthCallbackPage />} />
 

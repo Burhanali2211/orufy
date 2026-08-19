@@ -10,6 +10,8 @@ import { useCart } from '@/shared/contexts/CartContext';
 import { ProductCard } from '@/shared/components/Product/ProductCard';
 import { MobileProductHeader } from '@/shared/components/Product/MobileProductHeader';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SEO, CategorySEO } from '@/shared/components/SEO/SEO';
+import { BreadcrumbStructuredData } from '@/shared/components/SEO/StructuredData';
 
 interface FilterState {
     category: string;
@@ -184,8 +186,29 @@ const ProductsPage: React.FC = () => {
         return sortedCategories.slice(0, 7);
     }, [sortedCategories, showAllCategories]);
 
+    const activeCategoryObj = useMemo(() => {
+        return categories.find(c => c.id === filters.category || c.name.toLowerCase() === filters.category.toLowerCase());
+    }, [categories, filters.category]);
+
+    const pageSeoTitle = activeCategoryObj ? `${activeCategoryObj.name} – Buy Online` : 'All Products – Explore Our Catalog';
+    const pageSeoDesc = activeCategoryObj
+        ? `Shop authentic ${activeCategoryObj.name.toLowerCase()} online. Discover top-rated items with fast tracked shipping and secure payment.`
+        : 'Browse our complete catalog of premium curated products. Guaranteed authentic quality, fast shipping and secure payments.';
+
     return (
         <div className="min-h-screen bg-[#f8f9fa]">
+            <SEO
+                title={pageSeoTitle}
+                description={pageSeoDesc}
+                keywords={activeCategoryObj ? `${activeCategoryObj.name}, buy ${activeCategoryObj.name} online, products, shopping` : 'online shopping, store catalog, buy online'}
+            />
+            <BreadcrumbStructuredData
+                items={[
+                    { name: 'Home', url: '/' },
+                    { name: 'Products', url: '/products' },
+                    ...(activeCategoryObj ? [{ name: activeCategoryObj.name, url: `/products?category=${activeCategoryObj.id}` }] : []),
+                ]}
+            />
             <MobileProductHeader
                 productCount={sortedProducts.length}
                 viewMode={viewMode}

@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSettings } from '@/shared/contexts/SettingsContext';
+import { SEO } from '@/shared/components/SEO/SEO';
+import { BreadcrumbStructuredData } from '@/shared/components/SEO/StructuredData';
 
 interface FormData {
   name: string;
@@ -127,6 +129,17 @@ export const ContactPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Contact Us – Customer Support & Inquiries"
+        description="Get in touch with our support team for orders, product assistance, shipping inquiries, and customer service."
+        keywords="contact us, customer support, help desk, get in touch"
+      />
+      <BreadcrumbStructuredData
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'Contact Us', url: '/contact' },
+        ]}
+      />
 
       {/* ── Hero ── */}
       <div className="relative bg-gray-900 text-white overflow-hidden">

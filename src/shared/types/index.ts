@@ -10,6 +10,8 @@ export interface User {
   gender?: string; // Maps to gender in DB
   isActive?: boolean; // Maps to is_active in DB
   emailVerified?: boolean; // Maps to email_verified in DB
+  email_verified?: boolean;
+  email_verified_at?: string;
   // Seller specific fields
   businessName?: string; // Maps to business_name in DB
   businessAddress?: string; // Maps to business_address in DB
@@ -324,10 +326,10 @@ export interface AuthContextType {
   signUp: (email: string, password: string, additionalData?: Record<string, unknown>) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
-  resendVerification: () => Promise<void>;
+  updatePassword?: (newPassword: string) => Promise<void>;
+  resendVerification: (email?: string) => Promise<{ success: boolean; message: string; retryAfterSeconds?: number }>;
   updateProfile: (data: Partial<User>) => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser?: () => Promise<void>;
   loading: boolean;
 
   // Mobile authentication functionality

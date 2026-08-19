@@ -12,6 +12,8 @@ export const profiles = pgTable('profiles', {
   date_of_birth: text('date_of_birth'),
   role: text('role').default('customer').notNull(), // customer, merchant, admin
   is_super_admin: boolean('is_super_admin').default(false).notNull(),
+  email_verified: boolean('email_verified').default(false).notNull(),
+  email_verified_at: timestamp('email_verified_at', { withTimezone: true }),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
@@ -528,3 +530,13 @@ export const uploaded_files = pgTable('uploaded_files', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
+
+export const email_verification_tokens = pgTable('email_verification_tokens', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  user_id: uuid('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  token_type: text('token_type').default('EMAIL_VERIFICATION').notNull(), // EMAIL_VERIFICATION, PASSWORD_RESET
+  expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+

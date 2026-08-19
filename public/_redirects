@@ -1,3 +1,11 @@
-/api/*    /.netlify/functions/api/:splat    200
+# Legacy & Google Search Console Redirects (301 Permanent)
+/affiliate-onboarding.html   /onboarding   301!
+/affiliate-onboarding        /onboarding   301!
+/affiliate-onboarding/*      /onboarding   301!
+
+# API and Asset routing
+/api/*        /.netlify/functions/api/:splat    200
 /uploads/*    /.netlify/functions/api/uploads/:splat    200
-/*    /index.html    200
+
+# SPA Fallback
+/*            /index.html    200

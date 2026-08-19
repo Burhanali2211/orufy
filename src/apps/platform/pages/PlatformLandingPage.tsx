@@ -34,6 +34,8 @@ import {
   Eye,
   Sliders
 } from 'lucide-react';
+import { SEO } from '@/shared/components/SEO/SEO';
+import { StoreStructuredData } from '@/shared/components/SEO/StructuredData';
 
 // Animation presets
 const fadeInUp: Variants = {
@@ -160,6 +162,15 @@ export const PlatformLandingPage: React.FC = () => {
           '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif',
       }}
     >
+      {/* Rich SEO & Structured Data */}
+      <SEO
+        title="Launch Your Luxury Storefront in 60 Seconds"
+        description="Oru gives modern merchants instant custom stores, built-in POS, automated Resend email workflows, verified domains, and 0% platform take rates."
+        keywords="ecommerce platform, launch online store, free ecommerce website, best ecommerce platform india, multi-tenant ecommerce, online boutique creator"
+        url="https://get-oru.com"
+      />
+      <StoreStructuredData />
+
       {/* Scroll Progress Bar */}
       <motion.div
         className="fixed top-0 left-0 right-0 h-[2px] bg-[#0071E3] z-50 origin-left"

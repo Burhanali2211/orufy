@@ -3,6 +3,8 @@ import { MapPin, Award, Heart, BookOpen, ShieldCheck, CheckCircle2, Quote, Flame
 import { motion } from 'framer-motion';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/shared/components/SEO/SEO';
+import { BreadcrumbStructuredData } from '@/shared/components/SEO/StructuredData';
 
 export const AboutPage: React.FC = () => {
   const { settings, getSiteSetting } = useSettings();
@@ -15,6 +17,17 @@ export const AboutPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FBF9F5] text-stone-900">
+      <SEO
+        title={`About ${siteName} – Our Story & Heritage`}
+        description={`Learn more about ${siteName}, our commitment to quality craftsmanship, authentic curation, and exceptional customer experience.`}
+        keywords={`about ${siteName}, ${siteName} story, brand heritage, authentic products`}
+      />
+      <BreadcrumbStructuredData
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'About Us', url: '/about' },
+        ]}
+      />
 
       {/* ── 1. Hero Header ── */}
       <div className="relative bg-stone-900 text-white overflow-hidden py-20 sm:py-28 border-b border-stone-800">

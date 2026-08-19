@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Package, Truck, CheckCircle2, Clock, XCircle,
@@ -6,6 +6,7 @@ import {
   ExternalLink, ChevronRight, X, Printer, MapPin,
   Phone, Mail, Copy, Check, Sparkles
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
 import { useCustomerOrders } from '@/shared/hooks/customer/useCustomerOrders';
 import { generateInvoicePrintWindow } from '@/shared/utils/invoiceGenerator';
@@ -32,6 +33,43 @@ export const OrdersPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [copiedTracking, setCopiedTracking] = useState(false);
+  const [isResendingReceipt, setIsResendingReceipt] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResendReceipt = async (order: any) => {
+    if (!order || isResendingReceipt || resendCooldown > 0) return;
+    try {
+      setIsResendingReceipt(true);
+      const res = await fetch(`/api/customer/orders/${order.id}/resend-confirmation`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: order.tracking_token }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.retryAfterSeconds) {
+          setResendCooldown(data.retryAfterSeconds);
+        }
+        throw new Error(data.message || data.error || 'Failed to resend confirmation email');
+      }
+
+      toast.success(data.message || 'Order confirmation email has been resent!');
+      setResendCooldown(60);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to resend confirmation email');
+    } finally {
+      setIsResendingReceipt(false);
+    }
+  };
 
   const orderList: any[] = orders || [];
 
@@ -471,7 +509,16 @@ export const OrdersPage: React.FC = () => {
               </div>
 
               {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-3 pt-2 border-t border-stone-100">
+              <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={() => handleResendReceipt(selectedOrder)}
+                  disabled={isResendingReceipt || resendCooldown > 0}
+                  className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 disabled:opacity-50 text-stone-800 text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  {isResendingReceipt ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                  <span>{resendCooldown > 0 ? `Resend (${resendCooldown}s)` : isResendingReceipt ? 'Sending...' : 'Resend Email Receipt'}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
