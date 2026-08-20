@@ -40,7 +40,7 @@ const AuthPage: React.FC = () => {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isResending, setIsResending] = useState(false);
 
-  const { signIn, signUp, resetPassword, resendVerification, user } = useAuth();
+  const { signIn, signUp, resetPassword, resendVerification, user, store } = useAuth();
   const { getSiteSetting } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,9 +49,9 @@ const AuthPage: React.FC = () => {
   const logoUrl = getSiteSetting('logo_url');
   const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
 
-  const host = typeof window !== 'undefined' ? window.location.hostname : '';
-  const baseDomain = import.meta.env.VITE_SITE_URL ? new URL(import.meta.env.VITE_SITE_URL).hostname : 'get-oru.com';
-  const isPlatform = host === baseDomain || host === 'localhost' || host === '127.0.0.1';
+  const host = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+  const baseDomain = import.meta.env.VITE_SITE_URL ? new URL(import.meta.env.VITE_SITE_URL).hostname.toLowerCase() : 'get-oru.com';
+  const isPlatform = host === baseDomain || host === `www.${baseDomain}` || host === 'localhost' || host === '127.0.0.1';
 
   const sendEmail = (payload: object) => {
     if (!isProduction) return; // Netlify functions only available in production
@@ -64,9 +64,15 @@ const AuthPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      navigate(user.role === 'admin' ? '/admin' : '/dashboard');
+      if (isPlatform && user.role === 'customer') {
+        if (store?.hostname && store.hostname !== baseDomain && store.hostname !== `www.${baseDomain}`) {
+          window.location.href = `https://${store.hostname}/dashboard`;
+          return;
+        }
+      }
+      navigate(user.role === 'admin' || user.role === 'merchant' ? '/admin' : '/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, isPlatform, store, baseDomain, navigate]);
 
   // Dynamic form configuration based on the current mode
   const currentSchema = mode === 'login' ? loginSchema : mode === 'signup' ? signupSchema : forgotSchema;

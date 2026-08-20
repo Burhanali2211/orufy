@@ -420,12 +420,7 @@ authRouter.get("/me", async (req, res) => {
           .select({ store_id: store_members.store_id, role: store_members.role })
           .from(store_members)
           .innerJoin(stores, eq(stores.id, store_members.store_id))
-          .where(
-            and(
-              eq(store_members.user_id, user.id),
-              inArray(store_members.role, ['owner', 'admin', 'member'])
-            )
-          )
+          .where(eq(store_members.user_id, user.id))
           .orderBy(desc(stores.created_at))
           .limit(1);
 

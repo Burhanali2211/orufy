@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { SEO } from '@/shared/components/SEO/SEO';
 import { StoreStructuredData } from '@/shared/components/SEO/StructuredData';
+import { useAuth } from '@/shared/contexts/AuthContext';
 
 // Animation presets
 const fadeInUp: Variants = {
@@ -140,6 +141,8 @@ export const PlatformLandingPage: React.FC = () => {
     restDelta: 0.001
   });
 
+  const { user, store, logout } = useAuth();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -219,22 +222,69 @@ export const PlatformLandingPage: React.FC = () => {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
-            <Link
-              to="/auth"
-              className="text-[12px] font-medium text-[#1D1D1F]/80 hover:text-[#09090B] transition-colors px-3 py-1"
-            >
-              Sign In
-            </Link>
+            {user ? (
+              user.role === 'admin' || user.role === 'merchant' ? (
+                <>
+                  <Link
+                    to="/admin"
+                    className="text-[12px] font-medium text-[#1D1D1F]/80 hover:text-[#09090B] transition-colors px-3 py-1"
+                  >
+                    Admin Console
+                  </Link>
+                  <button
+                    onClick={() => logout()}
+                    className="text-[12px] font-medium text-stone-500 hover:text-stone-900 transition-colors px-2 py-1 cursor-pointer"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  {store?.hostname ? (
+                    <a
+                      href={`https://${store.hostname}/dashboard`}
+                      className="bg-stone-900 hover:bg-stone-800 text-white text-[12px] font-semibold px-4 py-1.5 rounded-full transition-all shadow-xs inline-flex items-center gap-1.5"
+                    >
+                      <Store className="w-3.5 h-3.5" />
+                      <span>Go to {store.name || 'Store'}</span>
+                    </a>
+                  ) : (
+                    <Link
+                      to="/onboarding"
+                      className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full transition-all shadow-xs inline-flex items-center gap-1"
+                    >
+                      <span>Create Store</span>
+                      <ChevronRight className="w-3 h-3" strokeWidth={2.5} />
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => logout()}
+                    className="text-[12px] font-medium text-stone-500 hover:text-stone-900 transition-colors px-2 py-1 cursor-pointer"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              )
+            ) : (
+              <>
+                <Link
+                  to="/auth"
+                  className="text-[12px] font-medium text-[#1D1D1F]/80 hover:text-[#09090B] transition-colors px-3 py-1"
+                >
+                  Sign In
+                </Link>
 
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-              <Link
-                to="/onboarding"
-                className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full transition-all shadow-xs inline-flex items-center gap-1"
-              >
-                <span>Launch Store</span>
-                <ChevronRight className="w-3 h-3" strokeWidth={2.5} />
-              </Link>
-            </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                  <Link
+                    to="/onboarding"
+                    className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full transition-all shadow-xs inline-flex items-center gap-1"
+                  >
+                    <span>Launch Store</span>
+                    <ChevronRight className="w-3 h-3" strokeWidth={2.5} />
+                  </Link>
+                </motion.div>
+              </>
+            )}
           </div>
         </div>
       </header>

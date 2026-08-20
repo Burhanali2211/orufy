@@ -64,19 +64,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Check host domain context
-  const host = typeof window !== 'undefined' ? window.location.hostname : '';
-  const baseDomain = import.meta.env.VITE_SITE_URL ? new URL(import.meta.env.VITE_SITE_URL).hostname : 'get-oru.com';
-  const isPlatformDomain = host === baseDomain || host === 'localhost' || host === '127.0.0.1';
+  const host = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+  const baseDomain = import.meta.env.VITE_SITE_URL ? new URL(import.meta.env.VITE_SITE_URL).hostname.toLowerCase() : 'get-oru.com';
+  const isPlatformDomain = host === baseDomain || host === `www.${baseDomain}` || host === 'localhost' || host === '127.0.0.1';
 
-  // Enforce onboarding for merchants without a store on the platform
+  // Access user's store context
   const { store } = useAuth();
-  if (user.role === 'merchant' && !store && location.pathname !== '/onboarding') {
-    return <Navigate to="/onboarding" replace />;
+
+  // If a customer account attempts to access dashboard on the platform root domain, transfer them to their actual store domain
+  if (isPlatformDomain && user.role === 'customer' && location.pathname.startsWith('/dashboard')) {
+    if (store?.hostname && store.hostname !== baseDomain && store.hostname !== `www.${baseDomain}`) {
+      window.location.href = `https://${store.hostname}/dashboard`;
+      return null;
+    }
+    return <Navigate to="/" replace />;
   }
 
-  // Prevent storefront customers from accessing platform-level dashboards
-  if (isPlatformDomain && user.role === 'customer' && location.pathname.startsWith('/dashboard')) {
-    return <Navigate to="/" replace />;
+  // Enforce onboarding for merchants without a store on the platform
+  if (user.role === 'merchant' && !store && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   // Check for required role

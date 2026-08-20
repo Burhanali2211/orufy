@@ -14,7 +14,7 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({
   redirectIfAuthenticated = false,
   redirectTo
 }) => {
-  const { user, loading } = useAuth();
+  const { user, store, loading } = useAuth();
 
   // Only block render during the *initial* auth session check, not during
   // sign-in / sign-up operations (which also temporarily set loading=true).
@@ -31,7 +31,19 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({
   }
 
   if (redirectIfAuthenticated && user) {
-    const destination = redirectTo || (user.role === 'admin' ? '/admin' : '/dashboard');
+    const host = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+    const baseDomain = import.meta.env.VITE_SITE_URL ? new URL(import.meta.env.VITE_SITE_URL).hostname.toLowerCase() : 'get-oru.com';
+    const isPlatformDomain = host === baseDomain || host === `www.${baseDomain}` || host === 'localhost' || host === '127.0.0.1';
+
+    if (isPlatformDomain && user.role === 'customer') {
+      if (store?.hostname && store.hostname !== baseDomain && store.hostname !== `www.${baseDomain}`) {
+        window.location.href = `https://${store.hostname}/dashboard`;
+        return null;
+      }
+      return <Navigate to="/" replace />;
+    }
+
+    const destination = redirectTo || (user.role === 'admin' || user.role === 'merchant' ? '/admin' : '/dashboard');
     return <Navigate to={destination} replace />;
   }
 
