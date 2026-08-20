@@ -15,6 +15,15 @@ export async function runMigrations(): Promise<void> {
       });
       console.log('✅ Database schema migrations applied successfully.');
     }
+
+    const rlsFile = path.resolve(__dirname, 'apply-rls.sql');
+    if (fs.existsSync(rlsFile)) {
+      console.log('🔒 Applying Row Level Security (RLS) policies and functions...');
+      const sqlContent = fs.readFileSync(rlsFile, 'utf8');
+      const { pool } = await import('./db');
+      await pool.query(sqlContent);
+      console.log('✅ RLS policies and functions applied successfully.');
+    }
   } catch (error: any) {
     console.warn('⚠️ Notice during automatic database migration check:', error?.message || error);
   }

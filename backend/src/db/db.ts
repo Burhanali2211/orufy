@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const pool = new Pool({
+export const pool = new Pool({
   connectionString: process.env.APP_DATABASE_URL || process.env.DATABASE_URL || 'postgres://platform_app:password@localhost:5433/platform_db',
 });
 
