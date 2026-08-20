@@ -181,7 +181,7 @@ export const OrderConfirmationPage: React.FC = () => {
           <p className="text-stone-500 text-xs leading-relaxed">{error || 'Unable to access order information.'}</p>
           <div className="pt-2 flex flex-col gap-2">
             <Link
-              to="/store"
+              to="/"
               className="w-full py-3 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-800 transition-colors shadow-xs"
             >
               Return to Storefront
@@ -240,7 +240,7 @@ export const OrderConfirmationPage: React.FC = () => {
       {/* ── Minimal Top Header (Distraction-Free) ── */}
       <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-2xs">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          <Link to="/store" className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-2.5">
             {logoUrl ? (
               <img src={logoUrl} alt="Logo" className="h-7 w-auto max-w-[120px] object-contain rounded" />
             ) : (
@@ -254,7 +254,7 @@ export const OrderConfirmationPage: React.FC = () => {
           </Link>
 
           <Link
-            to="/store"
+            to="/"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-600 hover:text-stone-900 transition-colors"
           >
             <span>Continue Shopping</span>
@@ -513,7 +513,7 @@ export const OrderConfirmationPage: React.FC = () => {
               </button>
 
               <Link
-                to="/store"
+                to="/"
                 className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
               >
                 <span>Continue Shopping</span>

@@ -515,13 +515,15 @@ export const LaunchStep: React.FC = () => {
               Go to Admin
               <ArrowRight className="w-4 h-4" />
             </button>
-            <Link
-              to="/store"
+            <a
+              href={finalStoreUrl || `https://${displayDomain}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-full sm:w-auto flex-1 py-4 bg-white border border-stone-200 hover:bg-stone-50 text-stone-900 rounded-full font-bold text-base transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               View Store
               <ExternalLink className="w-4 h-4" />
-            </Link>
+            </a>
           </div>
         </motion.div>
       )}

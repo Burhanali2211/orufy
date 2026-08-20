@@ -88,7 +88,7 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
 
   const handleLogout = async () => {
     await logout();
-    navigate('/store');
+    navigate('/');
   };
 
   const navItems: NavItem[] = [
@@ -149,7 +149,7 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
 
             {/* Breadcrumb path */}
             <nav className="flex items-center gap-2 text-xs font-semibold text-stone-500">
-              <Link to="/store" className="hover:text-stone-900 transition-colors flex items-center gap-1">
+              <Link to="/" className="hover:text-stone-900 transition-colors flex items-center gap-1">
                 <span>Store</span>
               </Link>
               <ChevronRight className="w-3.5 h-3.5 text-stone-400" />

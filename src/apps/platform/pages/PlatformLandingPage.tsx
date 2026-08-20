@@ -829,12 +829,12 @@ export const PlatformLandingPage: React.FC = () => {
                 <span>Create Your Store Free</span>
                 <ArrowRight className="w-4 h-4" strokeWidth={2} />
               </Link>
-              <Link
-                to="/store"
-                className="w-full sm:w-auto bg-[#F5F5F7] hover:bg-[#EBEBEF] text-[#09090B] text-[15px] font-medium px-6 py-3.5 rounded-full transition-colors"
+              <a
+                href="#interactive-demo"
+                className="w-full sm:w-auto bg-[#F5F5F7] hover:bg-[#EBEBEF] text-[#09090B] text-[15px] font-medium px-6 py-3.5 rounded-full transition-colors inline-flex items-center justify-center"
               >
-                Explore Live Store
-              </Link>
+                Interactive Demo
+              </a>
             </div>
           </div>
         </section>

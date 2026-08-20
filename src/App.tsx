@@ -221,7 +221,7 @@ function App() {
                   <main id="main-content" className="focus:outline-none">
                     <Routes>
                       {/* Public routes - No authentication required */}
-                      <Route path="/store" element={<HomePage />} />
+                      <Route path="/store" element={<Navigate to="/" replace />} />
                       <Route path="/products" element={<ProductsPage />} />
                       <Route path="/products/:id" element={<ProductDetailPage />} />
                       <Route path="/search" element={<SearchPage />} />

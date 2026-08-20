@@ -76,7 +76,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Prevent storefront customers from accessing platform-level dashboards
   if (isPlatformDomain && user.role === 'customer' && location.pathname.startsWith('/dashboard')) {
-    return <Navigate to="/store" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // Check for required role
