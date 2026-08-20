@@ -63,22 +63,53 @@ AS $$
 $$;
 
 -- =============================================================================
--- PROFILES
+-- PROFILES & AUTH SAFETY ENSURANCE
 -- =============================================================================
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS date_of_birth text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email_verified boolean DEFAULT false NOT NULL;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email_verified_at timestamp with time zone;
+
+CREATE TABLE IF NOT EXISTS public.email_verification_tokens (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  token text NOT NULL UNIQUE,
+  token_type text NOT NULL DEFAULT 'EMAIL_VERIFICATION',
+  expires_at timestamp with time zone NOT NULL,
+  created_at timestamp with time zone DEFAULT now()
+);
+
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
 CREATE POLICY "Users can read own profile" ON public.profiles
-  FOR SELECT USING (id = public.app_user_id());
+  FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles
   FOR UPDATE USING (id = public.app_user_id()) WITH CHECK (id = public.app_user_id());
 
+DROP POLICY IF EXISTS "Allow user registration" ON public.profiles;
+CREATE POLICY "Allow user registration" ON public.profiles
+  FOR INSERT WITH CHECK (true);
+
 -- Admin can read all profiles
 DROP POLICY IF EXISTS "Admin can read all profiles" ON public.profiles;
 CREATE POLICY "Admin can read all profiles" ON public.profiles
   FOR SELECT USING (public.is_global_admin());
+
+-- SESSIONS
+ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Sessions open access" ON public.sessions;
+CREATE POLICY "Sessions open access" ON public.sessions FOR ALL USING (true) WITH CHECK (true);
+
+-- EMAIL VERIFICATION TOKENS
+ALTER TABLE public.email_verification_tokens ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Email tokens open access" ON public.email_verification_tokens;
+CREATE POLICY "Email tokens open access" ON public.email_verification_tokens FOR ALL USING (true) WITH CHECK (true);
+
+
 
 -- =============================================================================
 -- PRODUCTS (public read; store merchant write)

@@ -22,6 +22,7 @@ import { storeResolver, requireStore } from './middleware/storeResolver';
 import { withStoreContext } from './db/utils';
 import helmet from 'helmet';
 import { authLimiter, checkoutLimiter, apiLimiter } from './middleware/rateLimiter';
+import { runMigrations } from './db/migrate';
 
 dotenv.config();
 
@@ -236,9 +237,10 @@ app.get(['/affiliate-onboarding.html', '/affiliate-onboarding', '/affiliate'], (
   return res.redirect(301, `${baseUrl}/onboarding`);
 });
 
-const server = app.listen(port, () => {
+const server = app.listen(port, async () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   if (process.env.NODE_ENV !== 'test') {
+    await runMigrations();
     WorkerManager.startAll();
   }
 });

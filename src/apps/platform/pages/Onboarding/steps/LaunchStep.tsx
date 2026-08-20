@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useOnboarding } from '../OnboardingContext';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Rocket, Globe, CreditCard, Store, ExternalLink, ArrowRight, Copy, CheckCircle2, ShieldCheck, Mail, User, Lock, Phone } from 'lucide-react';
+import { Rocket, Globe, CreditCard, Store, ExternalLink, ArrowRight, ArrowLeft, Copy, CheckCircle2, ShieldCheck, Mail, User, Lock, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/shared/lib/apiClient';
 
 export const LaunchStep: React.FC = () => {
-  const { data } = useOnboarding();
-  const { user, signUp } = useAuth();
+  const { data, prevStep } = useOnboarding();
+  const { user, signUp, login } = useAuth();
   const navigate = useNavigate();
 
   const [launchStatus, setLaunchStatus] = useState<'ready' | 'claim' | 'launching' | 'live'>(
@@ -26,6 +26,7 @@ export const LaunchStep: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [isLoginMode, setIsLoginMode] = useState(false);
 
   const storeName = data.business.name.trim() || 'My Store';
   const displayDomain = (() => {
@@ -122,22 +123,31 @@ export const LaunchStep: React.FC = () => {
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName || !lastName || !email || !password || !phone) {
+    if (!email || !password) {
       setAuthError('Please fill in all required fields.');
+      return;
+    }
+
+    if (!isLoginMode && (!firstName || !lastName || !phone)) {
+      setAuthError('Please fill in your name and phone number.');
       return;
     }
 
     setIsAuthLoading(true);
     setAuthError('');
     try {
-      await signUp(email, password, {
-        fullName: `${firstName} ${lastName}`.trim(),
-        role: 'admin',
-        phone: phone.trim()
-      });
+      if (isLoginMode) {
+        await login(email.trim(), password);
+      } else {
+        await signUp(email.trim(), password, {
+          fullName: `${firstName} ${lastName}`.trim(),
+          role: 'admin',
+          phone: phone.trim()
+        });
+      }
       await handleLaunch(true);
     } catch (err: any) {
-      setAuthError(err.message || 'Failed to create account.');
+      setAuthError(err.message || 'Failed to authenticate. Please check your details.');
       setIsAuthLoading(false);
       setLaunchStatus('claim');
     }
@@ -146,7 +156,7 @@ export const LaunchStep: React.FC = () => {
   return (
     <AnimatePresence mode="wait">
       {/* -------------------------------------------------------------
-        * STATE 1: CLAIM YOUR STORE (ACCOUNT CREATION)
+        * STATE 1: CLAIM YOUR STORE (ACCOUNT CREATION OR LOGIN)
         * ------------------------------------------------------------- */}
       {launchStatus === 'claim' && (
         <motion.div
@@ -155,144 +165,180 @@ export const LaunchStep: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-lg mx-auto"
+          className="w-full max-w-lg mx-auto text-left"
         >
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center p-3 bg-stone-100 rounded-2xl mb-6">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center p-3 bg-stone-100 rounded-2xl mb-5">
               <ShieldCheck className="w-6 h-6 text-stone-900" />
             </div>
-            <h1 className="text-[40px] font-bold text-stone-900 tracking-tight leading-none mb-4">
-              Secure your store
+            <h1 className="text-[36px] sm:text-[40px] font-extrabold text-stone-900 tracking-tight leading-none mb-3">
+              {isLoginMode ? 'Sign in to publish' : 'Secure your store'}
             </h1>
-            <p className="text-lg text-stone-500 font-medium leading-relaxed">
-              Create your admin account to finalize <span className="text-stone-900 font-bold">{storeName}</span>.
+            <p className="text-base sm:text-lg text-stone-500 font-medium leading-relaxed">
+              {isLoginMode ? (
+                <>Sign in to your account to finalize <strong className="text-stone-900">{storeName}</strong>.</>
+              ) : (
+                <>Create your merchant account to finalize <strong className="text-stone-900">{storeName}</strong>.</>
+              )}
             </p>
           </div>
 
-          <form onSubmit={handleCreateAccount} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-[13px] font-bold text-stone-900 uppercase tracking-wide">First Name</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="w-5 h-5 text-stone-400" />
+          <form onSubmit={handleCreateAccount} className="space-y-5">
+            {!isLoginMode && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-stone-900 uppercase tracking-wide">First Name</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                      <User className="w-4 h-4 text-stone-400" />
+                    </div>
+                    <input
+                      type="text"
+                      required={!isLoginMode}
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full pl-10 pr-3 py-3.5 text-sm text-stone-900 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stone-900 focus:bg-white transition-all placeholder:text-stone-400 font-medium"
+                      placeholder="Jane"
+                    />
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-stone-900 uppercase tracking-wide">Last Name</label>
                   <input
                     type="text"
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full pl-11 pr-4 py-4 text-base text-stone-900 bg-stone-50 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-stone-900 transition-shadow placeholder:text-stone-400 font-medium"
-                    placeholder="Jane"
+                    required={!isLoginMode}
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full px-3.5 py-3.5 text-sm text-stone-900 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stone-900 focus:bg-white transition-all placeholder:text-stone-400 font-medium"
+                    placeholder="Doe"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-[13px] font-bold text-stone-900 uppercase tracking-wide">Last Name</label>
-                <input
-                  type="text"
-                  required
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-4 py-4 text-base text-stone-900 bg-stone-50 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-stone-900 transition-shadow placeholder:text-stone-400 font-medium"
-                  placeholder="Doe"
-                />
-              </div>
-            </div>
+            )}
 
-            <div className="space-y-2">
-              <label className="text-[13px] font-bold text-stone-900 uppercase tracking-wide">Email Address</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-stone-900 uppercase tracking-wide">Email Address</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="w-5 h-5 text-stone-400" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Mail className="w-4 h-4 text-stone-400" />
                 </div>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-4 text-base text-stone-900 bg-stone-50 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-stone-900 transition-shadow placeholder:text-stone-400 font-medium"
+                  className="w-full pl-10 pr-4 py-3.5 text-sm text-stone-900 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stone-900 focus:bg-white transition-all placeholder:text-stone-400 font-medium"
                   placeholder="jane@example.com"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[13px] font-bold text-stone-900 uppercase tracking-wide">Phone Number</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Phone className="w-5 h-5 text-stone-400" />
+            {!isLoginMode && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-stone-900 uppercase tracking-wide">Phone Number</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Phone className="w-4 h-4 text-stone-400" />
+                  </div>
+                  <input
+                    type="tel"
+                    required={!isLoginMode}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3.5 text-sm text-stone-900 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stone-900 focus:bg-white transition-all placeholder:text-stone-400 font-medium"
+                    placeholder="+91 98765 43210"
+                  />
                 </div>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full pl-11 pr-4 py-4 text-base text-stone-900 bg-stone-50 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-stone-900 transition-shadow placeholder:text-stone-400 font-medium"
-                  placeholder="+1 (555) 000-0000"
-                />
               </div>
-            </div>
+            )}
 
-            <div className="space-y-2">
-              <label className="text-[13px] font-bold text-stone-900 uppercase tracking-wide">Admin Password</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-stone-900 uppercase tracking-wide">Password</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="w-5 h-5 text-stone-400" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Lock className="w-4 h-4 text-stone-400" />
                 </div>
                 <input
                   type="password"
                   required
-                  minLength={8}
+                  minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-4 text-base text-stone-900 bg-stone-50 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-stone-900 transition-shadow placeholder:text-stone-400 font-medium"
+                  className="w-full pl-10 pr-4 py-3.5 text-sm text-stone-900 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stone-900 focus:bg-white transition-all placeholder:text-stone-400 font-medium"
                   placeholder="••••••••"
                 />
               </div>
-              <p className="text-xs text-stone-500 font-medium pt-1">Must be at least 8 characters long.</p>
+              {!isLoginMode && (
+                <p className="text-[11px] text-stone-500 font-medium pt-0.5">Must be at least 6 characters long.</p>
+              )}
             </div>
 
             {authError && (
-              <div className="p-4 bg-red-50 text-red-600 text-sm font-bold rounded-2xl flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                {authError}
+              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-start gap-2.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-rose-600 mt-1 shrink-0" />
+                <div className="flex-1">
+                  <span>{authError}</span>
+                  {authError.toLowerCase().includes('already exists') && !isLoginMode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLoginMode(true);
+                        setAuthError('');
+                      }}
+                      className="block mt-1.5 text-xs font-bold text-stone-900 underline hover:text-black cursor-pointer"
+                    >
+                      Click here to sign in with your password →
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
-            <div className="pt-6">
+            <div className="pt-3">
               <button
                 type="submit"
                 disabled={isAuthLoading}
-                className="w-full py-4.5 bg-stone-900 hover:bg-stone-800 text-white rounded-full font-bold text-base transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
+                className="w-full py-4 bg-stone-900 hover:bg-stone-800 text-white rounded-full font-bold text-sm sm:text-base transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 active:scale-[0.98] cursor-pointer shadow-sm"
               >
                 {isAuthLoading ? (
-                  <span className="flex items-center gap-3">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Securing Account...
+                  <span className="flex items-center gap-2.5">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {isLoginMode ? 'Signing In...' : 'Creating Account...'}
                   </span>
                 ) : (
                   <>
-                    <span>Create Account & Publish Store</span>
-                    <ArrowRight className="w-5 h-5" />
+                    <span>{isLoginMode ? 'Sign In & Launch Store' : 'Create Account & Publish Store'}</span>
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
               
-              <div className="mt-8 text-center">
+              <div className="mt-4 text-center">
                 <button
                   type="button"
                   onClick={() => {
-                    // Quick skip for development if needed, normally hidden or requires auth
-                    if (user) handleLaunch(false);
+                    setIsLoginMode(!isLoginMode);
+                    setAuthError('');
                   }}
-                  className="text-sm font-bold text-stone-400 hover:text-stone-900 transition-colors"
+                  className="text-xs font-bold text-stone-500 hover:text-stone-900 transition-colors cursor-pointer"
                 >
-                  {user ? 'Skip & Publish directly' : ''}
+                  {isLoginMode ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
                 </button>
               </div>
             </div>
           </form>
+
+          {/* Back Action to Step 7 */}
+          <div className="flex items-center justify-start pt-6 border-t border-stone-200/60 mt-8">
+            <button
+              type="button"
+              onClick={prevStep}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-900 rounded-full font-bold text-sm transition-all shadow-sm cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Web Address</span>
+            </button>
+          </div>
         </motion.div>
       )}
 
@@ -306,38 +352,56 @@ export const LaunchStep: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-2xl mx-auto"
+          className="w-full max-w-2xl mx-auto text-left"
         >
-          <div className="mb-12">
-            <h1 className="text-[48px] font-bold text-stone-900 tracking-tight leading-none mb-4">
+          <div className="mb-10">
+            <h1 className="text-[40px] sm:text-[48px] font-extrabold text-stone-900 tracking-tight leading-none mb-3">
               Ready to publish.
             </h1>
-            <p className="text-xl text-stone-500 font-medium leading-relaxed">
+            <p className="text-lg text-stone-500 font-medium leading-relaxed">
               Review your details before we deploy <strong className="text-stone-900">{storeName}</strong> to the world.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-            <div className="p-6 bg-stone-50 rounded-3xl">
-              <Store className="w-6 h-6 text-stone-400 mb-4" />
-              <span className="block text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Store Name</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            <div className="p-6 bg-stone-50 rounded-2xl border border-stone-200/60">
+              <Store className="w-5 h-5 text-stone-400 mb-3" />
+              <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Store Name</span>
               <p className="text-base font-bold text-stone-900 truncate">{storeName}</p>
             </div>
-            <div className="p-6 bg-stone-50 rounded-3xl">
-              <Globe className="w-6 h-6 text-stone-400 mb-4" />
-              <span className="block text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Domain</span>
+            <div className="p-6 bg-stone-50 rounded-2xl border border-stone-200/60">
+              <Globe className="w-5 h-5 text-stone-400 mb-3" />
+              <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Domain</span>
               <p className="text-base font-bold text-stone-900 truncate">{displayDomain}</p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => handleLaunch(false)}
-            className="w-full py-5 bg-stone-900 hover:bg-stone-800 text-white rounded-full font-bold text-lg transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
-          >
-            <Rocket className="w-5 h-5" />
-            <span>Launch Storefront Now</span>
-          </button>
+          {authError && (
+            <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 mb-6">
+              <div className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />
+              <span>{authError}</span>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-stone-200/60">
+            <button
+              type="button"
+              onClick={prevStep}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-900 rounded-full font-bold text-sm transition-all shadow-sm cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Web Address</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleLaunch(false)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-stone-900 hover:bg-stone-800 text-white rounded-full font-bold text-sm transition-all shadow-sm active:scale-[0.98] cursor-pointer"
+            >
+              <Rocket className="w-4 h-4" />
+              <span>Launch Storefront Now</span>
+            </button>
+          </div>
         </motion.div>
       )}
 

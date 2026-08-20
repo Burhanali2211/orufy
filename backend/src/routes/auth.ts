@@ -77,45 +77,67 @@ async function sendVerificationEmail(
 
 const handleSignup = async (req: Request, res: Response) => {
   try {
-    const { email, password, full_name, role } = req.body;
+    const { email, password, full_name, role, phone } = req.body;
     
     if (typeof email !== "string" || typeof password !== "string") {
-      return res.status(400).json({ error: "Invalid credentials" });
+      return res.status(400).json({ error: "Email and password are required." });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@') || cleanEmail.length < 5) {
+      return res.status(400).json({ error: "Please enter a valid email address." });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters long." });
     }
     
-    const existingUser = await db.select().from(profiles).where(eq(profiles.email, email.trim().toLowerCase()));
+    const existingUser = await db.select({ id: profiles.id, email: profiles.email }).from(profiles).where(eq(profiles.email, cleanEmail));
     if (existingUser.length > 0) {
-      return res.status(400).json({ error: "User already exists" });
+      return res.status(400).json({ error: "An account with this email address already exists. Please log in instead." });
     }
 
     const hashedPassword = await new Argon2id().hash(password);
     const isPlatform = res.locals.isPlatform || !res.locals.storeId;
     
     // Begin transaction for signup
-    const newUser = await db.transaction(async (tx) => {
-      // Platform signups are always merchants; Storefront signups are always customers
-      const userRole = role || (isPlatform ? "merchant" : "customer");
+    let newUser;
+    try {
+      newUser = await db.transaction(async (tx) => {
+        // Platform signups are always merchants; Storefront signups are always customers
+        const userRole = role || (isPlatform ? "merchant" : "customer");
 
-      const [user] = await tx.insert(profiles).values({
-        email: email.trim().toLowerCase(),
-        password_hash: hashedPassword,
-        full_name: full_name || (isPlatform ? 'Store Owner' : 'Customer'),
-        phone: req.body.phone || null,
-        role: userRole,
-        email_verified: false,
-      }).returning();
-      
-      // Associate with current store only if within a specific store context
-      if (res.locals.storeId) {
-        await tx.insert(store_members).values({
-          store_id: res.locals.storeId,
-          user_id: user.id,
-          role: userRole === "merchant" || userRole === "admin" ? "owner" : "customer"
-        });
+        const [user] = await tx.insert(profiles).values({
+          email: cleanEmail,
+          password_hash: hashedPassword,
+          full_name: full_name?.trim() || (isPlatform ? 'Store Owner' : 'Customer'),
+          phone: phone?.trim() || null,
+          role: userRole,
+          email_verified: false,
+        }).returning();
+        
+        // Associate with current store only if within a specific store context
+        if (res.locals.storeId) {
+          await tx.insert(store_members).values({
+            store_id: res.locals.storeId,
+            user_id: user.id,
+            role: userRole === "merchant" || userRole === "admin" ? "owner" : "customer"
+          }).onConflictDoNothing();
+        }
+        
+        return user;
+      });
+    } catch (txError: any) {
+      if (txError?.code === '23505') {
+        return res.status(409).json({ error: "An account with this email address already exists. Please log in instead." });
       }
-      
-      return user;
-    });
+      console.error("Signup transaction error:", txError);
+      throw txError;
+    }
+
+    if (!newUser) {
+      return res.status(500).json({ error: "Failed to initialize user account." });
+    }
 
     // Auto dispatch verification email (non-blocking)
     const store = res.locals.store;
@@ -143,9 +165,9 @@ const handleSignup = async (req: Request, res: Response) => {
         email_verified: false,
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Signup error:", error);
-    res.status(500).json({ error: "An error occurred during signup" });
+    return res.status(500).json({ error: error?.message || "An error occurred during signup." });
   }
 };
 

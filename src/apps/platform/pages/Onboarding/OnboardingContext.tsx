@@ -107,7 +107,74 @@ export const OnboardingProvider: React.FC<{ children: ReactNode }> = ({ children
     return defaultData;
   });
 
-  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [currentStep, setCurrentStep] = useState<number>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const searchParams = new URLSearchParams(window.location.search);
+        const stepParam = parseInt(searchParams.get('step') || '', 10);
+        if (!isNaN(stepParam) && stepParam >= 1 && stepParam <= 8) {
+          return stepParam;
+        }
+        const savedStep = localStorage.getItem('agy_merchant_onboarding_step');
+        if (savedStep) {
+          const parsed = parseInt(savedStep, 10);
+          if (!isNaN(parsed) && parsed >= 1 && parsed <= 8) {
+            return parsed;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return 1;
+  });
+
+  // Keep URL query param and browser history in sync with currentStep
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.setItem('agy_merchant_onboarding_step', currentStep.toString());
+      
+      const currentUrl = new URL(window.location.href);
+      const activeParam = currentUrl.searchParams.get('step');
+      
+      if (activeParam !== currentStep.toString()) {
+        currentUrl.searchParams.set('step', currentStep.toString());
+        // Use pushState so browser back/forward button navigates 1 step at a time
+        window.history.pushState({ step: currentStep }, '', currentUrl.toString());
+      }
+    } catch {
+      // ignore
+    }
+  }, [currentStep]);
+
+  // Listen to browser Back / Forward navigation (popstate)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Set initial history state if not already set
+    const currentUrl = new URL(window.location.href);
+    if (!currentUrl.searchParams.get('step')) {
+      currentUrl.searchParams.set('step', currentStep.toString());
+      window.history.replaceState({ step: currentStep }, '', currentUrl.toString());
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      const params = new URLSearchParams(window.location.search);
+      const stepFromUrl = parseInt(params.get('step') || '', 10);
+      if (!isNaN(stepFromUrl) && stepFromUrl >= 1 && stepFromUrl <= 8) {
+        setCurrentStep(stepFromUrl);
+      } else if (event.state?.step && typeof event.state.step === 'number') {
+        setCurrentStep(Math.max(1, Math.min(8, event.state.step)));
+      } else {
+        setCurrentStep(1);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     try {
