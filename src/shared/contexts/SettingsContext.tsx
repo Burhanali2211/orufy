@@ -396,18 +396,24 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, []);
 
   useEffect(() => {
-    // Only fetch store settings when we are on a store subdomain, not the platform root domain.
-    const host = typeof window !== 'undefined' ? window.location.hostname : '';
+    // Only fetch store settings when we are in a store context, not the platform SaaS website.
+    const host = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
     const baseDomain = import.meta.env.VITE_SITE_URL
-      ? new URL(import.meta.env.VITE_SITE_URL).hostname
+      ? new URL(import.meta.env.VITE_SITE_URL).hostname.toLowerCase()
       : 'get-oru.com';
 
-    const isPlatformRoot =
-      (host === baseDomain || host === `www.${baseDomain}`) &&
-      (typeof window !== 'undefined' && window.location.pathname === '/');
+    const isPlatformHost =
+      host === baseDomain ||
+      host === `www.${baseDomain}` ||
+      host === 'get-oru.com' ||
+      host === 'www.get-oru.com';
+
+    const isPlatformPage =
+      isPlatformHost &&
+      (typeof window !== 'undefined' && !window.location.pathname.startsWith('/store') && !localStorage.getItem('store_hostname'));
 
     // On tenant subdomain, custom domain, or local development, fetch dynamic store settings
-    if (!isPlatformRoot) {
+    if (!isPlatformPage) {
       fetchSettings();
     } else {
       setLoading(false);

@@ -330,11 +330,36 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     if (!initFetched.current) {
       initFetched.current = true;
-      fetchCategories(true);
-      fetchProducts(1, 20);
-      fetchFeaturedProducts();
-      fetchBestSellers();
-      fetchLatestProducts();
+
+      const isStoreContext = () => {
+        if (typeof window === 'undefined') return false;
+        const host = window.location.hostname.toLowerCase();
+        const baseDomain = import.meta.env.VITE_SITE_URL
+          ? new URL(import.meta.env.VITE_SITE_URL).hostname.toLowerCase()
+          : 'get-oru.com';
+
+        const isPlatformHost =
+          host === baseDomain ||
+          host === `www.${baseDomain}` ||
+          host === 'get-oru.com' ||
+          host === 'www.get-oru.com';
+
+        if (host === 'localhost' || host === '127.0.0.1') return true;
+
+        if (isPlatformHost) {
+          return window.location.pathname.startsWith('/store') || !!localStorage.getItem('store_hostname');
+        }
+
+        return true;
+      };
+
+      if (isStoreContext()) {
+        fetchCategories(true);
+        fetchProducts(1, 20);
+        fetchFeaturedProducts();
+        fetchBestSellers();
+        fetchLatestProducts();
+      }
     }
   }, [fetchCategories, fetchProducts, fetchFeaturedProducts, fetchBestSellers, fetchLatestProducts]);
 

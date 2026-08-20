@@ -225,7 +225,12 @@ class ApiClient {
         throw error;
       }
 
-      // Log all other errors
+      // Silently handle STORE_NOT_FOUND on platform domains
+      if (error?.response?.data?.error === 'STORE_NOT_FOUND') {
+        throw error;
+      }
+
+      // Log all unexpected errors
       console.error(`API Error [${endpoint}]:`, error);
       throw error;
     }
