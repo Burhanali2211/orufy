@@ -10,7 +10,6 @@ export async function runMigrations(): Promise<void> {
       console.log(`📦 Checking and applying database schema migrations from ${migrationsFolder}...`);
       await migrate(db, {
         migrationsFolder,
-        migrationsSchema: 'public',
         migrationsTable: '__drizzle_migrations',
       });
       console.log('✅ Database schema migrations applied successfully.');
