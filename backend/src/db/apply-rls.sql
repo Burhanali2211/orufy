@@ -20,6 +20,22 @@ AS $$
   SELECT NULLIF(current_setting('app.current_store_id', true), '')::uuid;
 $$;
 
+-- Helper: secure store membership verification
+CREATE OR REPLACE FUNCTION public.is_store_member_secure(p_user_id uuid, p_store_id uuid, p_roles text[])
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.store_members
+    WHERE user_id = p_user_id
+    AND store_id = p_store_id
+    AND role = ANY(p_roles)
+  );
+$$;
+
 -- Helper: returns true if current user is a global platform admin
 CREATE OR REPLACE FUNCTION public.is_global_admin()
 RETURNS boolean
@@ -257,69 +273,7 @@ CREATE POLICY "Authenticated can insert reviews" ON public.reviews
 -- Moves fragrance-specific columns into a JSONB `attributes` column.
 -- =============================================================================
 
-BEGIN;
-
--- 1. Add the attributes column
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS attributes JSONB DEFAULT '{}'::jsonb;
-
--- 2. Migrate existing data into attributes
-UPDATE public.products
-SET attributes = jsonb_build_object(
-  'scent_notes', scent_notes,
-  'longevity', longevity,
-  'sillage', sillage,
-  'fragrance_family', fragrance_family,
-  'gender_profile', gender_profile,
-  'occasion', occasion,
-  'season', season,
-  'perfumer_story', perfumer_story,
-  'origin', origin,
-  'grade', grade,
-  'packaging_options', packaging_options,
-  'shelf_life', shelf_life,
-  'certifications', certifications,
-  'usage_tips', usage_tips,
-  'culinary_uses', culinary_uses,
-  'health_benefits', health_benefits
-)
-WHERE 
-  scent_notes IS NOT NULL OR 
-  longevity IS NOT NULL OR 
-  sillage IS NOT NULL OR 
-  fragrance_family IS NOT NULL OR 
-  gender_profile IS NOT NULL OR 
-  occasion IS NOT NULL OR 
-  season IS NOT NULL OR 
-  perfumer_story IS NOT NULL OR 
-  origin IS NOT NULL OR 
-  grade IS NOT NULL OR 
-  packaging_options IS NOT NULL OR 
-  shelf_life IS NOT NULL OR 
-  certifications IS NOT NULL OR 
-  usage_tips IS NOT NULL OR 
-  culinary_uses IS NOT NULL OR 
-  health_benefits IS NOT NULL;
-
--- 3. Drop legacy columns
-ALTER TABLE public.products 
-  DROP COLUMN IF EXISTS scent_notes,
-  DROP COLUMN IF EXISTS longevity,
-  DROP COLUMN IF EXISTS sillage,
-  DROP COLUMN IF EXISTS fragrance_family,
-  DROP COLUMN IF EXISTS gender_profile,
-  DROP COLUMN IF EXISTS occasion,
-  DROP COLUMN IF EXISTS season,
-  DROP COLUMN IF EXISTS perfumer_story,
-  DROP COLUMN IF EXISTS origin,
-  DROP COLUMN IF EXISTS grade,
-  DROP COLUMN IF EXISTS packaging_options,
-  DROP COLUMN IF EXISTS shelf_life,
-  DROP COLUMN IF EXISTS certifications,
-  DROP COLUMN IF EXISTS usage_tips,
-  DROP COLUMN IF EXISTS culinary_uses,
-  DROP COLUMN IF EXISTS health_benefits;
-
-COMMIT;
 -- =============================================================================
 -- ORDERS & ORDER ITEMS RLS
 -- =============================================================================
