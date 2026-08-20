@@ -13,7 +13,9 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   title,
 }) => {
   const { store } = useAuth();
-  const storeUrl = store?.hostname && store.hostname !== 'get-oru.com' ? `https://${store.hostname}` : `https://${store?.slug || 'easyio'}.get-oru.com`;
+  const storeUrl = store?.hostname && store.hostname !== 'get-oru.com' 
+    ? `https://${store.hostname}` 
+    : `https://${store?.slug || (store?.name ? store.name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') : 'store')}.get-oru.com`;
 
   return (
     <header className="lg:hidden sticky top-0 z-40 bg-white border-b border-stone-200">

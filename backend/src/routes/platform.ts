@@ -159,8 +159,8 @@ platformRouter.post('/onboarding', requireAuth, async (req: Request, res: Respon
       return res.status(400).json({ error: 'Business name must be at least 2 characters' });
     }
 
-    // 2. Normalize and check subdomain conflicts
-    const rawSubdomain = business.subdomain || domain?.subdomain || business.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    // 2. Normalize and check subdomain conflicts (prioritize explicitly chosen domain.subdomain)
+    const rawSubdomain = (domain?.subdomain || business?.subdomain || business?.name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '').toString();
     if (!rawSubdomain || typeof rawSubdomain !== 'string') {
       return res.status(400).json({ error: 'Business name and subdomain are required' });
     }
@@ -297,6 +297,8 @@ platformRouter.post('/onboarding', requireAuth, async (req: Request, res: Respon
       return res.status(201).json({
         success: true,
         store_id: result.storeId,
+        name: business.name.trim(),
+        slug: subdomain,
         hostname: result.hostname,
         launch_url: result.launchUrl,
         readinessStatus: {

@@ -330,6 +330,8 @@ export interface AuthContextType {
   resendVerification: (email?: string) => Promise<{ success: boolean; message: string; retryAfterSeconds?: number }>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   refreshUser?: () => Promise<void>;
+  refreshSession: () => Promise<void>;
+  setStore: (store: Store | null) => void;
   loading: boolean;
 
   // Mobile authentication functionality

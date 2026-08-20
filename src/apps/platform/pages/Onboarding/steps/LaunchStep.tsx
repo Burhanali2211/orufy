@@ -8,7 +8,7 @@ import { apiClient } from '@/shared/lib/apiClient';
 
 export const LaunchStep: React.FC = () => {
   const { data, prevStep } = useOnboarding();
-  const { user, signUp, login } = useAuth();
+  const { user, signUp, login, setStore, refreshSession } = useAuth();
   const navigate = useNavigate();
 
   const [launchStatus, setLaunchStatus] = useState<'ready' | 'claim' | 'launching' | 'live'>(
@@ -33,9 +33,11 @@ export const LaunchStep: React.FC = () => {
     if (data.domain.type === 'custom' && data.domain.customHostname) {
       return data.domain.customHostname;
     }
-    const sub = data.business.subdomain || data.domain.subdomain || 'my-store';
-    const base = typeof window !== 'undefined' ? window.location.host : 'platform.local';
-    return `${sub}.${base.replace(/^www\./, '')}`;
+    const sub = data.domain.subdomain || data.business.subdomain || 'my-store';
+    const siteHostname = import.meta.env.VITE_SITE_URL 
+      ? new URL(import.meta.env.VITE_SITE_URL).hostname 
+      : (typeof window !== 'undefined' ? window.location.host : 'get-oru.com');
+    return `${sub}.${siteHostname.replace(/^www\./, '')}`;
   })();
 
   const deployStages = [
@@ -59,13 +61,15 @@ export const LaunchStep: React.FC = () => {
     }, 450);
 
     try {
+      const chosenSubdomain = (data.domain.subdomain || data.business.subdomain || '').trim();
       const payload = {
         business: {
-          name: data.business.name,
+          name: data.business.name.trim(),
           category: data.business.category,
-          subdomain: data.business.subdomain || data.domain.subdomain,
+          subdomain: chosenSubdomain,
           contactEmail: data.business.contactEmail || user?.email || email || '',
         },
+        domain: data.domain,
         brand: data.brand,
         initialProducts: data.initialProducts,
       };
@@ -92,12 +96,25 @@ export const LaunchStep: React.FC = () => {
       const result = await authorizedRes.json();
       clearInterval(interval);
 
-      if (authorizedRes.ok && (result.success || result.store_id)) {
+      if (authorizedRes.ok && (result.success || result.store_id || result.storeId)) {
         const finalHostname = result.hostname || displayDomain;
         setFinalStoreUrl(`https://${finalHostname}`);
         
-        // Ensure the API client knows the store we just created
+        // Ensure the API client and AuthContext know the store we just created
         apiClient.setStoreHostname(finalHostname);
+        setStore({
+          id: result.store_id || result.storeId,
+          name: result.name || storeName,
+          hostname: finalHostname,
+          slug: result.slug || chosenSubdomain,
+          is_active: true,
+        });
+
+        await refreshSession().catch(() => {});
+        try {
+          localStorage.removeItem('agy_merchant_onboarding_draft');
+          localStorage.removeItem('agy_merchant_onboarding_step');
+        } catch (_) {}
 
         setLaunchStatus('live');
       } else {

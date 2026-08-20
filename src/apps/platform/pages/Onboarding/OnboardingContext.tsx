@@ -187,16 +187,20 @@ export const OnboardingProvider: React.FC<{ children: ReactNode }> = ({ children
   const updateBusiness = (business: Partial<OnboardingData['business']>) => {
     setData((prev) => {
       const updatedBusiness = { ...prev.business, ...business };
-      if (business.name && (!prev.business.subdomain || prev.business.subdomain === prev.business.name.toLowerCase().replace(/[^a-z0-9]/g, ''))) {
-        const cleanSub = business.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-        updatedBusiness.subdomain = cleanSub;
+      let newSubdomain = prev.domain.subdomain || prev.business.subdomain;
+
+      // Auto-derive candidate subdomain from store name if not yet manually customized
+      if (business.name && (!newSubdomain || newSubdomain === prev.business.name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''))) {
+        newSubdomain = business.name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+        updatedBusiness.subdomain = newSubdomain;
       }
+
       return {
         ...prev,
         business: updatedBusiness,
         domain: {
           ...prev.domain,
-          subdomain: updatedBusiness.subdomain || prev.domain.subdomain,
+          subdomain: newSubdomain,
         },
       };
     });
@@ -225,7 +229,17 @@ export const OnboardingProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const updateDomain = (domain: Partial<OnboardingData['domain']>) => {
-    setData((prev) => ({ ...prev, domain: { ...prev.domain, ...domain } }));
+    setData((prev) => {
+      const updatedDomain = { ...prev.domain, ...domain };
+      return {
+        ...prev,
+        domain: updatedDomain,
+        business: {
+          ...prev.business,
+          subdomain: updatedDomain.subdomain || prev.business.subdomain,
+        },
+      };
+    });
   };
 
   const isMilestoneComplete = (stepId: number): boolean => {

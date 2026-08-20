@@ -36,7 +36,7 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
     if (store?.hostname && store.hostname !== 'get-oru.com' && store.hostname !== 'www.get-oru.com') {
       return store.hostname;
     }
-    const sub = store?.slug || (store?.name ? store.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'easyio');
+    const sub = store?.slug || (store?.name ? store.name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') : 'store');
     return `${sub}.get-oru.com`;
   })();
   const storeUrl = `https://${computedHostname}`;

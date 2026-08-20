@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { lucia } from "../lib/auth";
 import { db } from "../db/db";
 import { profiles, store_members, stores, email_verification_tokens } from "../db/schema";
-import { eq, and, inArray, gt } from "drizzle-orm";
+import { eq, and, inArray, gt, desc } from "drizzle-orm";
 import { Argon2id } from "oslo/password";
 import { requireAuth } from "../middleware/auth";
 import { CommunicationService } from "../services/communicationService";
@@ -257,27 +257,54 @@ authRouter.post("/login", async (req, res) => {
     const session = await lucia.createSession(existingUser.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
     
-    // Fetch associated store if owner/admin
+    // Fetch associated store if owner/admin (check active tenant context first, else most recent store)
     let store = null;
     try {
-      const [membership] = await db
-        .select({ store_id: store_members.store_id, role: store_members.role })
-        .from(store_members)
-        .where(
-          and(
-            eq(store_members.user_id, existingUser.id),
-            inArray(store_members.role, ['owner', 'admin', 'member'])
+      if (res.locals.storeId) {
+        const [specificMembership] = await db
+          .select({ store_id: store_members.store_id, role: store_members.role })
+          .from(store_members)
+          .where(
+            and(
+              eq(store_members.user_id, existingUser.id),
+              eq(store_members.store_id, res.locals.storeId),
+              inArray(store_members.role, ['owner', 'admin', 'member'])
+            )
           )
-        )
-        .limit(1);
-
-      if (membership) {
-        const [storeRow] = await db
-          .select({ id: stores.id, name: stores.name, slug: stores.slug, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
-          .from(stores)
-          .where(eq(stores.id, membership.store_id))
           .limit(1);
-        store = storeRow || null;
+
+        if (specificMembership) {
+          const [storeRow] = await db
+            .select({ id: stores.id, name: stores.name, slug: stores.slug, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
+            .from(stores)
+            .where(eq(stores.id, specificMembership.store_id))
+            .limit(1);
+          store = storeRow || null;
+        }
+      }
+
+      if (!store) {
+        const [membership] = await db
+          .select({ store_id: store_members.store_id, role: store_members.role })
+          .from(store_members)
+          .innerJoin(stores, eq(stores.id, store_members.store_id))
+          .where(
+            and(
+              eq(store_members.user_id, existingUser.id),
+              inArray(store_members.role, ['owner', 'admin', 'member'])
+            )
+          )
+          .orderBy(desc(stores.created_at))
+          .limit(1);
+
+        if (membership) {
+          const [storeRow] = await db
+            .select({ id: stores.id, name: stores.name, slug: stores.slug, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
+            .from(stores)
+            .where(eq(stores.id, membership.store_id))
+            .limit(1);
+          store = storeRow || null;
+        }
       }
     } catch (_) {}
 
@@ -359,24 +386,51 @@ authRouter.get("/me", async (req, res) => {
     // Fetch the user's owned/admin store so the dashboard can show store context
     let store = null;
     try {
-      const [membership] = await db
-        .select({ store_id: store_members.store_id, role: store_members.role })
-        .from(store_members)
-        .where(
-          and(
-            eq(store_members.user_id, user.id),
-            inArray(store_members.role, ['owner', 'admin', 'member'])
+      if (res.locals.storeId) {
+        const [specificMembership] = await db
+          .select({ store_id: store_members.store_id, role: store_members.role })
+          .from(store_members)
+          .where(
+            and(
+              eq(store_members.user_id, user.id),
+              eq(store_members.store_id, res.locals.storeId),
+              inArray(store_members.role, ['owner', 'admin', 'member'])
+            )
           )
-        )
-        .limit(1);
-
-      if (membership) {
-        const [storeRow] = await db
-          .select({ id: stores.id, name: stores.name, slug: stores.slug, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
-          .from(stores)
-          .where(eq(stores.id, membership.store_id))
           .limit(1);
-        store = storeRow || null;
+
+        if (specificMembership) {
+          const [storeRow] = await db
+            .select({ id: stores.id, name: stores.name, slug: stores.slug, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
+            .from(stores)
+            .where(eq(stores.id, specificMembership.store_id))
+            .limit(1);
+          store = storeRow || null;
+        }
+      }
+
+      if (!store) {
+        const [membership] = await db
+          .select({ store_id: store_members.store_id, role: store_members.role })
+          .from(store_members)
+          .innerJoin(stores, eq(stores.id, store_members.store_id))
+          .where(
+            and(
+              eq(store_members.user_id, user.id),
+              inArray(store_members.role, ['owner', 'admin', 'member'])
+            )
+          )
+          .orderBy(desc(stores.created_at))
+          .limit(1);
+
+        if (membership) {
+          const [storeRow] = await db
+            .select({ id: stores.id, name: stores.name, slug: stores.slug, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
+            .from(stores)
+            .where(eq(stores.id, membership.store_id))
+            .limit(1);
+          store = storeRow || null;
+        }
       }
     } catch (_) {
       // non-fatal: dashboard works without store info

@@ -916,7 +916,7 @@ export const ThemeStudio: React.FC = () => {
                 <div className="w-2 h-2 rounded-full bg-green-500/80" />
               </div>
               <span className="font-mono text-[10px] text-stone-300 truncate max-w-[200px]">
-                https://{storeInfo.hostname || 'easyio.get-oru.com'}
+                https://{storeInfo.hostname || 'store.get-oru.com'}
               </span>
               <div className="text-[9px] uppercase font-bold text-stone-400 tracking-wider">
                 {deviceMode}

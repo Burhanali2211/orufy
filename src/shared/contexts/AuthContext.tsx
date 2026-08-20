@@ -23,51 +23,74 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isMobileAuthOpen, setIsMobileAuthOpen] = useState(false);
   const [mobileAuthMode, setMobileAuthMode] = useState<'login' | 'signup' | 'profile'>('login');
 
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const response = await fetch('/api/auth/me', { credentials: 'include' });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.token) {
-            apiClient.setToken(data.token);
-          }
-          setUser({
-            ...data.user,
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.full_name || 'User',
-            fullName: data.user.full_name || 'User',
-            role: data.user.role || 'customer',
-            avatar: data.user.avatar_url || data.user.avatar,
-            phone: data.user.phone,
-            gender: data.user.gender,
-            dateOfBirth: data.user.date_of_birth || data.user.dateOfBirth,
-            email_verified: data.user.email_verified || data.user.emailVerified || false,
-            emailVerified: data.user.email_verified || data.user.emailVerified || false,
-          });
-          setStore(data.store || null);
-          if (data.store?.hostname) {
+  const setStoreWithSync = (newStore: Store | null) => {
+    setStore(newStore);
+    if (newStore?.hostname) {
+      apiClient.setStoreHostname(newStore.hostname);
+    }
+  };
+
+  const refreshSession = async () => {
+    try {
+      const headers: Record<string, string> = {};
+      const storeHostname = apiClient.getStoreHostname();
+      if (storeHostname) {
+        headers['x-store-hostname'] = storeHostname;
+      }
+      const token = apiClient.getToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include',
+        headers,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.token) {
+          apiClient.setToken(data.token);
+        }
+        setUser({
+          ...data.user,
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.full_name || 'User',
+          fullName: data.user.full_name || 'User',
+          role: data.user.role || 'customer',
+          avatar: data.user.avatar_url || data.user.avatar,
+          phone: data.user.phone,
+          gender: data.user.gender,
+          dateOfBirth: data.user.date_of_birth || data.user.dateOfBirth,
+          email_verified: data.user.email_verified || data.user.emailVerified || false,
+          emailVerified: data.user.email_verified || data.user.emailVerified || false,
+        });
+        if (data.store) {
+          setStore(data.store);
+          if (data.store.hostname) {
             apiClient.setStoreHostname(data.store.hostname);
           }
-        } else {
-          setUser(null);
-          setStore(null);
-          apiClient.setStoreHostname(null);
-          apiClient.setToken(null);
         }
-      } catch (error) {
-        console.error('Session check failed:', error);
+      } else {
         setUser(null);
         setStore(null);
         apiClient.setStoreHostname(null);
         apiClient.setToken(null);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Session check failed:', error);
+      setUser(null);
+      setStore(null);
+      apiClient.setStoreHostname(null);
+      apiClient.setToken(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    checkSession();
+  useEffect(() => {
+    refreshSession();
   }, []);
 
   const signIn = async (email: string, password: string): Promise<void> => {
@@ -277,7 +300,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     resetPassword,
     resendVerification,
-    updateProfile,
+    refreshSession,
+    setStore: setStoreWithSync,
+    refreshUser: refreshSession,
     isMobileAuthOpen,
     mobileAuthMode,
     openMobileAuth,
