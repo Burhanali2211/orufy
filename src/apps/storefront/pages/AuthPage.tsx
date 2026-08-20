@@ -384,18 +384,18 @@ const AuthPage: React.FC = () => {
 
                   {/* Form-level error banner */}
                   {authMutation.isError && (
-                    <div className="bg-red-50 border border-red-200/80 rounded-xl px-4 py-3 flex items-start gap-2.5">
-                      <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-                      <div className="text-xs space-y-1.5 flex-1">
-                        <p className="text-red-800 font-medium">
+                    <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                      <div className="text-xs space-y-2 flex-1">
+                        <p className="text-amber-900 font-medium leading-relaxed">
                           {authMutation.error instanceof Error ? authMutation.error.message : 'An error occurred during authentication.'}
                         </p>
-                        {(authMutation.error as any)?.data?.storeUrl && (
+                        {((authMutation.error as any)?.data?.storeUrl || (authMutation.error as any)?.response?.data?.storeUrl) && (
                           <a
-                            href={(authMutation.error as any).data.storeUrl}
-                            className="inline-flex items-center gap-1 font-bold text-stone-900 underline hover:text-stone-700 mt-1"
+                            href={(authMutation.error as any)?.data?.storeUrl || (authMutation.error as any)?.response?.data?.storeUrl}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg font-bold text-[11px] transition-colors shadow-xs"
                           >
-                            <span>Go to {(authMutation.error as any).data.storeName || 'your store'} sign in &rarr;</span>
+                            <span>Open {((authMutation.error as any)?.data?.storeName || (authMutation.error as any)?.response?.data?.storeName || 'Store')} Website &rarr;</span>
                           </a>
                         )}
                       </div>

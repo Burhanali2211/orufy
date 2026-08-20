@@ -131,9 +131,10 @@ class ApiClient {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
 
-    // Add store hostname if available for platform admin requests
+    // Add store hostname if available (exclude login/signup to ensure platform portal auth integrity)
+    const isAuthLoginOrSignup = endpoint === '/auth/login' || endpoint === '/auth/signup' || endpoint === '/auth/register';
     const storeHostname = this.getStoreHostname();
-    if (storeHostname) {
+    if (storeHostname && !isAuthLoginOrSignup) {
       (headers as Record<string, string>)['x-store-hostname'] = storeHostname;
     }
 

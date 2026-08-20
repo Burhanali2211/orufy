@@ -98,7 +98,9 @@ const handleSignup = async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await new Argon2id().hash(password);
-    const isPlatform = res.locals.isPlatform || !res.locals.storeId;
+    const rawHost = (req.headers.host || req.hostname || "").toString().toLowerCase().split(':')[0];
+    const isPhysicalPlatform = rawHost === 'get-oru.com' || rawHost === 'www.get-oru.com' || rawHost === 'localhost' || rawHost === '127.0.0.1';
+    const isPlatform = isPhysicalPlatform || res.locals.isPlatform || !res.locals.storeId;
     
     // Begin transaction for signup
     let newUser;
@@ -199,10 +201,12 @@ authRouter.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Incorrect email or password" });
     }
 
-    const isPlatform = res.locals.isPlatform || !res.locals.storeId;
+    // Extract physical domain to ensure customers cannot log into the Merchant Platform portal
+    const rawHost = (req.headers.host || req.hostname || "").toString().toLowerCase().split(':')[0];
+    const isPhysicalPlatform = rawHost === 'get-oru.com' || rawHost === 'www.get-oru.com' || rawHost === 'localhost' || rawHost === '127.0.0.1';
 
-    // Architectural Security Guard: Prevent Storefront Customers from Logging into Platform
-    if (isPlatform) {
+    // Architectural Security Guard: Prevent Storefront Customers from Logging into Platform Portal
+    if (isPhysicalPlatform) {
       const merchantMemberships = await db
         .select({
           store_id: store_members.store_id,
@@ -229,12 +233,14 @@ authRouter.post("/login", async (req, res) => {
           .where(eq(store_members.user_id, existingUser.id))
           .limit(1);
 
+        const storeHost = customerStore?.store_hostname || (customerStore?.store_name ? `${customerStore.store_name.toLowerCase().replace(/[^a-z0-9-]/g, '')}.get-oru.com` : null);
+
         return res.status(403).json({
           error: "CUSTOMER_ACCOUNT_ON_PLATFORM",
-          message: "This is the Merchant Platform portal. You have a customer account. Please log in directly on your store's website.",
+          message: `This account is a customer account on ${customerStore?.store_name || "your store"}. Please log in directly on your store website.`,
           storeName: customerStore?.store_name || "your store",
-          storeHostname: customerStore?.store_hostname || null,
-          storeUrl: customerStore?.store_hostname ? `https://${customerStore.store_hostname}/auth` : null
+          storeHostname: storeHost,
+          storeUrl: storeHost ? `https://${storeHost}/auth` : null
         });
       }
     }
