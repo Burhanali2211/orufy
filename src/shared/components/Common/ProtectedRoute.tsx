@@ -5,8 +5,8 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'seller' | 'customer';
-  allowedRoles?: ('admin' | 'seller' | 'customer')[];
+  requiredRole?: 'admin' | 'seller' | 'merchant' | 'customer';
+  allowedRoles?: ('admin' | 'seller' | 'merchant' | 'customer')[];
   redirectTo?: string;
 }
 
@@ -40,7 +40,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   redirectTo = '/auth'
 }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, store } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking authentication
@@ -68,9 +68,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const baseDomain = import.meta.env.VITE_SITE_URL ? new URL(import.meta.env.VITE_SITE_URL).hostname.toLowerCase() : 'get-oru.com';
   const isPlatformDomain = host === baseDomain || host === `www.${baseDomain}` || host === 'localhost' || host === '127.0.0.1';
 
-  // Access user's store context
-  const { store } = useAuth();
-
   // If a customer account attempts to access dashboard on the platform root domain, transfer them to their actual store domain
   if (isPlatformDomain && user.role === 'customer' && location.pathname.startsWith('/dashboard')) {
     if (store?.hostname && store.hostname !== baseDomain && store.hostname !== `www.${baseDomain}`) {
@@ -80,17 +77,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/" replace />;
   }
 
-  // Enforce onboarding for merchants without a store on the platform
-  if (user.role === 'merchant' && !store && location.pathname !== '/onboarding') {
-    return <Navigate to="/onboarding" replace />;
+  // Allow admins, merchants, and sellers to access admin routes
+  const isMerchantOrAdmin = user.role === 'admin' || user.role === 'merchant' || user.role === 'seller';
+  const isAccessingAdmin = location.pathname.startsWith('/admin');
+
+  if (isMerchantOrAdmin && isAccessingAdmin) {
+    return <>{children}</>;
   }
 
   // Check for required role
   if (requiredRole && user.role !== requiredRole) {
-    if (user.role === 'admin') {
-      return <Navigate to="/admin" replace />;
-    } else if (user.role === 'seller' || user.role === 'merchant') {
-      return <Navigate to={store ? "/admin" : "/onboarding"} replace />;
+    if (isMerchantOrAdmin) {
+      return <>{children}</>;
     } else {
       return <Navigate to="/dashboard" replace />;
     }
@@ -98,10 +96,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check for allowed roles
   if (allowedRoles && allowedRoles.length > 0) {
-    if (!allowedRoles.includes(user.role as 'admin' | 'seller' | 'customer')) {
-      // User doesn't have any of the allowed roles
-      if (user.role === 'admin') {
-        return <Navigate to="/admin" replace />;
+    if (!allowedRoles.includes(user.role as any)) {
+      if (isMerchantOrAdmin) {
+        return <>{children}</>;
       } else {
         return <Navigate to="/dashboard" replace />;
       }
@@ -114,4 +111,3 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 };
 
 export default ProtectedRoute;
-

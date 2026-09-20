@@ -44,6 +44,7 @@ export const SEO: React.FC<SEOProps> = ({
   const storeDesc = getSiteSetting('site_description') || (settings as any)?.site_description || 'Shop premium curated products with fast tracked delivery and secure checkout.';
   const storeKeywords = getSiteSetting('site_keywords') || (settings as any)?.site_keywords || 'online store, buy online, premium products, fast shipping, secure payment';
   const storeLogo = getSiteSetting('logo_url') || (settings as any)?.site_logo || 'https://get-oru.com/og-image.jpg';
+  const storeFavicon = getSiteSetting('site_favicon') || (settings as any)?.site_favicon || (settings as any)?.identity?.favicon;
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://get-oru.com';
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
@@ -69,6 +70,11 @@ export const SEO: React.FC<SEOProps> = ({
       <meta name="keywords" content={combinedKeywords} />
       {author && <meta name="author" content={author} />}
       <meta name="robots" content={robotsContent} />
+
+      {/* Favicon */}
+      {storeFavicon && <link rel="icon" href={storeFavicon} />}
+      {storeFavicon && <link rel="shortcut icon" href={storeFavicon} />}
+      {storeFavicon && <link rel="apple-touch-icon" href={storeFavicon} />}
 
       {/* Canonical URL */}
       <link rel="canonical" href={canonicalUrl} />

@@ -107,8 +107,8 @@ export const ProductsList: React.FC = () => {
     queryKey: ['admin-products'],
     queryFn: async () => {
       const [productsRes, categoriesRes] = await Promise.all([
-        apiClient.get('/products'),
-        apiClient.get('/categories')
+        apiClient.get('/admin/products'),
+        apiClient.get('/admin/categories')
       ]);
       
       const productsData = Array.isArray(productsRes) ? productsRes : (productsRes?.data || []);

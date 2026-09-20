@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useOnboarding } from '../OnboardingContext';
-import { ArrowRight, ArrowLeft, CheckCircle2, Globe, Lock, Copy, Check, ShieldCheck, Zap, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, Globe, Lock, Copy, Check, ShieldCheck, Zap, AlertCircle, Loader2, ShoppingCart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DomainPurchaseModal } from './DomainPurchaseModal';
 
 export const DomainStep: React.FC = () => {
   const { data, updateDomain, nextStep, prevStep } = useOnboarding();
-  const [selectedType, setSelectedType] = useState<'subdomain' | 'custom'>(
+  const [selectedType, setSelectedType] = useState<'subdomain' | 'custom' | 'buy'>(
     data.domain.type === 'custom' ? 'custom' : 'subdomain'
   );
+  
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 
   const initialSub = data.business.subdomain || data.domain.subdomain || 'my-store';
   const [subdomainInput, setSubdomainInput] = useState(initialSub);
@@ -117,6 +120,18 @@ export const DomainStep: React.FC = () => {
       isVerified: true,
     });
     setCustomSaved(true);
+  };
+
+  const handlePurchaseSuccess = (domain: string) => {
+    setIsPurchaseModalOpen(false);
+    updateDomain({
+      type: 'custom',
+      customHostname: domain,
+      isVerified: true,
+    });
+    setCustomInput(domain);
+    setCustomSaved(true);
+    setSelectedType('custom');
   };
 
   const handleCopyUrl = (e: React.MouseEvent) => {
@@ -439,6 +454,81 @@ export const DomainStep: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Buy a New Domain Card */}
+          <div
+            role="radio"
+            aria-checked={selectedType === 'buy'}
+            tabIndex={0}
+            onClick={() => {
+              setSelectedType('buy');
+              setIsPurchaseModalOpen(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === ' ' || e.key === 'Enter') {
+                setSelectedType('buy');
+                setIsPurchaseModalOpen(true);
+              }
+            }}
+            className={`p-6 sm:p-7 rounded-2xl border transition-all duration-200 cursor-pointer ${
+              selectedType === 'buy'
+                ? 'border-stone-900 bg-white ring-1 ring-stone-900 shadow-sm'
+                : 'border-stone-200/80 bg-stone-50/40 hover:border-stone-300 hover:bg-stone-50/80'
+            }`}
+          >
+            <div className="flex items-start gap-4">
+              <div
+                className={`w-5 h-5 rounded-full border mt-0.5 flex items-center justify-center shrink-0 transition-colors ${
+                  selectedType === 'buy'
+                    ? 'border-stone-900 bg-stone-900 text-white'
+                    : 'border-stone-300 bg-white'
+                }`}
+              >
+                {selectedType === 'buy' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-2 h-2 bg-white rounded-full"
+                  />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-base font-bold text-stone-900">Buy a New Domain</h3>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 tracking-wide uppercase">
+                    Automated
+                  </span>
+                </div>
+                <p className="text-sm text-stone-500 leading-relaxed mb-1">
+                  Search and buy a brand new domain name right here.
+                </p>
+                <p className="text-xs text-stone-400 font-medium">
+                  DNS and SSL will be set up automatically instantly.
+                </p>
+
+                {selectedType === 'buy' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="mt-4 pt-4 border-t border-stone-100"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setIsPurchaseModalOpen(true)}
+                      className="px-6 py-2.5 sm:py-3 w-full sm:w-auto flex items-center justify-center gap-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-bold active:scale-95 transition-all cursor-pointer shadow-sm"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      Open Domain Store
+                    </button>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Navigation Actions */}
@@ -467,6 +557,13 @@ export const DomainStep: React.FC = () => {
           </button>
         </div>
       </motion.div>
+
+      {/* Domain Purchase Modal */}
+      <DomainPurchaseModal 
+        isOpen={isPurchaseModalOpen}
+        onClose={() => setIsPurchaseModalOpen(false)}
+        onSuccess={handlePurchaseSuccess}
+      />
     </div>
   );
 };

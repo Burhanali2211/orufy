@@ -6,6 +6,7 @@ import { profiles, store_members, stores, email_verification_tokens } from "../d
 import { eq, and, inArray, gt, desc } from "drizzle-orm";
 import { Argon2id } from "oslo/password";
 import { requireAuth } from "../middleware/auth";
+import { getUserPrimaryStore } from "../middleware/storeResolver";
 import { CommunicationService } from "../services/communicationService";
 
 export const authRouter = Router();
@@ -392,47 +393,7 @@ authRouter.get("/me", async (req, res) => {
     // Fetch the user's owned/admin store so the dashboard can show store context
     let store = null;
     try {
-      if (res.locals.storeId) {
-        const [specificMembership] = await db
-          .select({ store_id: store_members.store_id, role: store_members.role })
-          .from(store_members)
-          .where(
-            and(
-              eq(store_members.user_id, user.id),
-              eq(store_members.store_id, res.locals.storeId),
-              inArray(store_members.role, ['owner', 'admin', 'member'])
-            )
-          )
-          .limit(1);
-
-        if (specificMembership) {
-          const [storeRow] = await db
-            .select({ id: stores.id, name: stores.name, slug: stores.slug, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
-            .from(stores)
-            .where(eq(stores.id, specificMembership.store_id))
-            .limit(1);
-          store = storeRow || null;
-        }
-      }
-
-      if (!store) {
-        const [membership] = await db
-          .select({ store_id: store_members.store_id, role: store_members.role })
-          .from(store_members)
-          .innerJoin(stores, eq(stores.id, store_members.store_id))
-          .where(eq(store_members.user_id, user.id))
-          .orderBy(desc(stores.created_at))
-          .limit(1);
-
-        if (membership) {
-          const [storeRow] = await db
-            .select({ id: stores.id, name: stores.name, slug: stores.slug, hostname: stores.hostname, logo_url: stores.logo_url, is_active: stores.is_active })
-            .from(stores)
-            .where(eq(stores.id, membership.store_id))
-            .limit(1);
-          store = storeRow || null;
-        }
-      }
+      store = await getUserPrimaryStore(user.id);
     } catch (_) {
       // non-fatal: dashboard works without store info
     }

@@ -382,8 +382,19 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         writeCache(resolved);
         applyBrandTheme(resolved.theme, resolved.branding.primary, resolved.branding.accent);
 
-        if (typeof document !== 'undefined' && resolved.identity.siteName) {
-          document.title = resolved.identity.siteName;
+        if (typeof document !== 'undefined') {
+          if (resolved.identity.siteName) {
+            document.title = resolved.identity.siteName;
+          }
+          if (resolved.identity.favicon) {
+            let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+            if (!link) {
+              link = document.createElement('link');
+              link.rel = 'shortcut icon';
+              document.head.appendChild(link);
+            }
+            link.href = resolved.identity.favicon;
+          }
         }
       } else {
         throw new Error('Failed to load store settings');

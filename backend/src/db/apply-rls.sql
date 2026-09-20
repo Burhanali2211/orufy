@@ -239,7 +239,12 @@ CREATE POLICY "Users can read own memberships" ON public.store_members
   
 DROP POLICY IF EXISTS "Admins can manage members" ON public.store_members;
 CREATE POLICY "Admins can manage members" ON public.store_members
-  FOR INSERT WITH CHECK (store_id = public.app_store_id() AND public.is_store_admin());
+  FOR INSERT WITH CHECK (
+    (store_id = public.app_store_id() AND (
+      public.is_store_admin() OR
+      NOT EXISTS (SELECT 1 FROM public.store_members sm WHERE sm.store_id = public.app_store_id())
+    )) OR user_id = public.app_user_id()
+  );
   
 DROP POLICY IF EXISTS "Admins can update members" ON public.store_members;
 CREATE POLICY "Admins can update members" ON public.store_members
@@ -351,6 +356,8 @@ CREATE TABLE IF NOT EXISTS public.custom_domains (
 
 DROP POLICY IF EXISTS "Public can resolve active custom domains" ON public.custom_domains;
 DROP POLICY IF EXISTS "Merchants can manage custom domains" ON public.custom_domains;
+DROP POLICY IF EXISTS "Custom domains read policy" ON public.custom_domains;
+DROP POLICY IF EXISTS "Merchants can modify custom domains" ON public.custom_domains;
 
 CREATE POLICY "Custom domains read policy" ON public.custom_domains
   FOR SELECT USING (
@@ -410,3 +417,6 @@ CREATE POLICY "Merchants can manage own domain registrations" ON public.domain_r
   );
 
 GRANT ALL PRIVILEGES ON TABLE public.domain_registrations TO platform_app;
+
+-- Ensure UNIQUE index exists on site_settings (store_id, setting_key) for ON CONFLICT DO UPDATE
+CREATE UNIQUE INDEX IF NOT EXISTS site_settings_store_key_idx ON public.site_settings (store_id, setting_key);

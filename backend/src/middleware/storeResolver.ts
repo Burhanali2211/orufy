@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { db } from "../db/db";
 import { stores, custom_domains, store_members } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import { LRUCache } from "lru-cache";
 import { normalizeHostname } from "../lib/domainUtils";
+import { withUserContext } from "../db/utils";
 
 // In-memory cache to prevent DB hit on every request
 const storeCache = new LRUCache<string, any>({
@@ -39,6 +40,41 @@ const getPlatformDomain = () => {
 };
 
 const PLATFORM_DOMAIN = getPlatformDomain();
+
+/**
+ * Retrieves the primary store owned or managed by a user
+ */
+export async function getUserPrimaryStore(userId: string) {
+  try {
+    return await withUserContext(userId, async (tx) => {
+      const [membership] = await tx
+        .select({ store_id: store_members.store_id })
+        .from(store_members)
+        .innerJoin(stores, eq(stores.id, store_members.store_id))
+        .where(
+          and(
+            eq(store_members.user_id, userId),
+            inArray(store_members.role, ['owner', 'admin', 'seller', 'member'])
+          )
+        )
+        .orderBy(desc(stores.created_at))
+        .limit(1);
+
+      if (membership) {
+        const [foundStore] = await tx
+          .select()
+          .from(stores)
+          .where(eq(stores.id, membership.store_id))
+          .limit(1);
+        return foundStore || null;
+      }
+      return null;
+    });
+  } catch (error) {
+    console.error("Error fetching user primary store:", error);
+  }
+  return null;
+}
 
 /**
  * Ensures there is always at least one active store available in the system
@@ -168,7 +204,19 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
 
 export const requireStore = async (req: Request, res: Response, next: NextFunction) => {
   if (!res.locals.storeId || !res.locals.store) {
-    // If running on localhost in development, try resolving default store
+    // 1. If user is authenticated, resolve to user's primary owned/managed store
+    const user = res.locals.user;
+    if (user?.id) {
+      const userStore = await getUserPrimaryStore(user.id);
+      if (userStore) {
+        res.locals.storeId = userStore.id;
+        res.locals.store = userStore;
+        res.locals.isPlatform = false;
+        return next();
+      }
+    }
+
+    // 2. If running on localhost in development, fall back to default store
     const host = (req.headers.host || req.hostname || "").toString().toLowerCase();
     if (host.includes('localhost') || host.includes('127.0.0.1')) {
       const fallback = await getOrCreateDefaultStore();

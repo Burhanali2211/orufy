@@ -54,7 +54,7 @@ export const CategoryFormPage: React.FC = () => {
   const { data: categories = [] } = useQuery({
     queryKey: ['admin-categories-options'],
     queryFn: async () => {
-      const res = await apiClient.get('/categories');
+      const res = await apiClient.get('/admin/categories');
       const list = Array.isArray(res) ? res : (res?.data || []);
       return list.filter((cat: any) => cat.is_active !== false && cat.id !== id);
     }
@@ -111,7 +111,7 @@ export const CategoryFormPage: React.FC = () => {
       if (isEditMode) {
         return apiClient.put(`/categories/${id}`, payload);
       } else {
-        return apiClient.post('/categories', payload);
+        return apiClient.post('/admin/categories', payload);
       }
     },
     onSuccess: () => {
@@ -127,6 +127,23 @@ export const CategoryFormPage: React.FC = () => {
 
   const onSubmit = (data: CategoryFormData) => {
     mutation.mutate(data);
+  };
+
+  const onError = (formErrors: any) => {
+    const keys = Object.keys(formErrors);
+    if (keys.length > 0) {
+      const firstKey = keys[0];
+      const messages = keys.map(k => `${k}: ${formErrors[k]?.message || 'Required'}`);
+      showError('Validation Required', `Please fix: ${messages.join(', ')}`);
+      
+      setTimeout(() => {
+        const el = document.querySelector(`[name="${firstKey}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          (el as HTMLElement).focus?.();
+        }
+      }, 100);
+    }
   };
 
   if (fetchingCategory) {
@@ -157,7 +174,7 @@ export const CategoryFormPage: React.FC = () => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+        <form onSubmit={handleSubmit(onSubmit, onError)} className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Main Column */}
           <div className="flex-1 space-y-6">
             <div className="bg-white border border-stone-200 rounded-2xl p-6 sm:p-8">
@@ -308,7 +325,7 @@ export const CategoryFormPage: React.FC = () => {
           </button>
           <button
             type="submit"
-            onClick={handleSubmit(onSubmit)}
+            onClick={handleSubmit(onSubmit, onError)}
             disabled={mutation.isPending}
             className="px-8 py-3 text-sm font-bold tracking-wide uppercase text-white bg-stone-900 hover:bg-stone-800 rounded-xl disabled:opacity-50 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
           >

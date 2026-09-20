@@ -51,8 +51,8 @@ export const CategoriesList: React.FC = () => {
     queryKey: ['admin-categories'],
     queryFn: async () => {
       const [catsRes, productsRes] = await Promise.all([
-        apiClient.get('/categories'),
-        apiClient.get('/products'),
+        apiClient.get('/admin/categories'),
+        apiClient.get('/admin/products'),
       ]);
       
       const cats = Array.isArray(catsRes) ? catsRes : (catsRes?.data || []);

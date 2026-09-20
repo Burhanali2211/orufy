@@ -1,8 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { db } from '../db/db';
 import { requireAuth } from '../middleware/auth';
-import { requireStore } from '../middleware/storeResolver';
-import { withStoreContext } from '../db/utils';
+import { requireStore, getUserPrimaryStore, getOrCreateDefaultStore } from '../middleware/storeResolver';
+import { withStoreContext, withUserContext } from '../db/utils';
 import { products, store_members } from '../db/schema';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,26 +12,53 @@ const router = Router();
 // Middleware: Verify store admin / owner / seller membership
 const requireStoreMember = async (req: Request, res: Response, next: NextFunction) => {
   const user = res.locals.user;
-  const storeId = res.locals.storeId;
+  let storeId = res.locals.storeId;
 
-  if (!user || !storeId) {
+  if (!user) {
     return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  if (!storeId && user.id) {
+    let userStore = await getUserPrimaryStore(user.id);
+    if (!userStore) {
+      const host = (req.headers.host || req.hostname || "").toString().toLowerCase();
+      if (host.includes('localhost') || host.includes('127.0.0.1')) {
+        userStore = await getOrCreateDefaultStore();
+        if (userStore) {
+          await withUserContext(user.id, async (tx) => {
+            await tx.insert(store_members).values({ store_id: userStore.id, user_id: user.id, role: 'owner' }).onConflictDoNothing();
+          });
+        }
+      }
+    }
+    if (userStore) {
+      storeId = userStore.id;
+      res.locals.storeId = userStore.id;
+      res.locals.store = userStore;
+    }
+  }
+
+  if (!storeId) {
+    return res.status(403).json({ error: 'Forbidden: Store context required' });
   }
 
   if (user.role === 'admin') {
     return next();
   }
 
-  const [membership] = await db
-    .select()
-    .from(store_members)
-    .where(
-      and(
-        eq(store_members.store_id, storeId),
-        eq(store_members.user_id, user.id),
-        inArray(store_members.role, ['owner', 'admin', 'seller'])
-      )
-    );
+  const membership = await withStoreContext(storeId, async (tx) => {
+    const [m] = await tx
+      .select()
+      .from(store_members)
+      .where(
+        and(
+          eq(store_members.store_id, storeId),
+          eq(store_members.user_id, user.id),
+          inArray(store_members.role, ['owner', 'admin', 'seller', 'member'])
+        )
+      );
+    return m;
+  }, user.id);
 
   if (!membership) {
     return res.status(403).json({ error: 'Forbidden: Store merchant permissions required' });
@@ -40,86 +67,45 @@ const requireStoreMember = async (req: Request, res: Response, next: NextFunctio
   next();
 };
 
-// Get all products (Tenant Scoped via withStoreContext)
+// Admin / Merchant routes
+router.use(requireAuth);
+router.use(requireStoreMember);
+
+// GET /api/admin/products - List all products for the resolved store
 router.get('/', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = res.locals.storeId;
     const userId = res.locals.user?.id;
-    
-    const allProducts = await withStoreContext(storeId, async (tx) => {
-      const query = tx.select().from(products).where(eq(products.store_id, storeId));
-      return await query.orderBy(desc(products.created_at));
+
+    const items = await withStoreContext(storeId, async (tx) => {
+      return tx.select().from(products).where(eq(products.store_id, storeId)).orderBy(desc(products.created_at));
     }, userId);
 
-    res.json(allProducts);
+    res.json({ data: items, total: items.length });
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('Error fetching admin products:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
 
-// Get featured products
-router.get('/featured', requireStore, async (req: Request, res: Response) => {
-  try {
-    const storeId = res.locals.storeId;
-    const userId = res.locals.user?.id;
-    
-    const featured = await withStoreContext(storeId, async (tx) => {
-      // First try explicit featured products
-      const specificFeatured = await tx.select().from(products)
-        .where(and(eq(products.store_id, storeId), eq(products.is_featured, true), eq(products.is_active, true)))
-        .orderBy(desc(products.created_at));
-
-      if (specificFeatured.length > 0) {
-        return specificFeatured;
-      }
-
-      // If no explicit featured, return products marked for homepage
-      const homepageProducts = await tx.select().from(products)
-        .where(and(eq(products.store_id, storeId), eq(products.show_on_homepage, true), eq(products.is_active, true)))
-        .orderBy(desc(products.created_at));
-
-      if (homepageProducts.length > 0) {
-        return homepageProducts;
-      }
-
-      // Otherwise return all active products
-      return await tx.select().from(products)
-        .where(and(eq(products.store_id, storeId), eq(products.is_active, true)))
-        .orderBy(desc(products.created_at));
-    }, userId);
-
-    res.json(featured);
-  } catch (error) {
-    console.error('Error fetching featured products:', error);
-    res.status(500).json({ error: 'Failed to fetch featured products' });
-  }
-});
-
-// Get product by id
+// GET /api/admin/products/:id - Get single product detail
 router.get('/:id', requireStore, async (req: Request, res: Response) => {
   try {
     const storeId = res.locals.storeId;
     const userId = res.locals.user?.id;
+    const id = req.params.id as string;
 
-    const product = await withStoreContext(storeId, async (tx) => {
-      const [p] = await tx.select()
-        .from(products)
-        .where(and(eq(products.id, req.params.id as string), eq(products.store_id, storeId)));
-      return p;
+    const [product] = await withStoreContext(storeId, async (tx) => {
+      return tx.select().from(products).where(and(eq(products.id, id), eq(products.store_id, storeId)));
     }, userId);
 
     if (!product) return res.status(404).json({ error: 'Product not found' });
     res.json(product);
   } catch (error) {
-    console.error('Error fetching product:', error);
-    res.status(500).json({ error: 'Failed to fetch product' });
+    console.error('Error fetching product detail:', error);
+    res.status(500).json({ error: 'Failed to fetch product detail' });
   }
 });
-
-// Admin / Merchant mutation routes
-router.use(requireAuth);
-router.use(requireStoreMember);
 
 router.post('/', requireStore, async (req: Request, res: Response) => {
   try {

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { stores, store_members, products, categories, profiles, site_settings, custom_domains } from '../db/schema';
-import { eq, and, inArray, or } from 'drizzle-orm';
+import { eq, and, inArray, or, sql } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth';
 import { RESERVED_SUBDOMAINS, invalidateStoreCache } from '../middleware/storeResolver';
 import crypto from 'crypto';
@@ -213,6 +213,9 @@ platformRouter.post('/onboarding', requireAuth, async (req: Request, res: Respon
     // 4. Execute store creation atomically in a database transaction
     try {
       const result = await db.transaction(async (tx) => {
+        // Set RLS user context
+        await tx.execute(sql`SELECT set_config('app.current_user_id', ${userId}, true)`);
+
         // A. Insert Store
         const [newStore] = await tx.insert(stores).values({
           name: business.name.trim(),
@@ -223,6 +226,9 @@ platformRouter.post('/onboarding', requireAuth, async (req: Request, res: Respon
           is_active: true,
           tax_rate_percent: 18,
         }).returning({ id: stores.id });
+
+        // Set RLS store context
+        await tx.execute(sql`SELECT set_config('app.current_store_id', ${newStore.id}, true)`);
 
         // B. Assign Creator as Owner
         await tx.insert(store_members).values({
@@ -311,6 +317,7 @@ platformRouter.post('/onboarding', requireAuth, async (req: Request, res: Respon
         }
       });
     } catch (dbError: any) {
+      console.error('DB Error in Onboarding:', dbError);
       if (dbError.code === '23505') {
         return res.status(409).json({ error: 'This subdomain or store address is already registered.' });
       }

@@ -15,6 +15,8 @@ import { customerRouter } from './routes/customer';
 import { adminSettingsRouter } from './routes/adminSettings';
 import { productsRouter } from './routes/products';
 import { categoriesRouter } from './routes/categories';
+import { storefrontProductsRouter } from './routes/storefrontProducts';
+import { storefrontCategoriesRouter } from './routes/storefrontCategories';
 import { healthRouter } from './routes/health';
 import { requestLogger } from './middleware/requestLogger';
 import { WorkerManager } from './workers/workerManager';
@@ -55,13 +57,22 @@ app.use('/api/platform/domains', domainsRouter);
 app.use('/api/platform/domains/purchase', domainPurchasingRouter);
 app.use('/api/merchant/orders', merchantOrdersRouter);
 app.use('/api/admin/settings', adminSettingsRouter);
+app.use('/api/admin/upload', adminSettingsRouter);
+
+// Admin headless endpoints (requires auth & permissions)
+app.use('/api/admin/products', productsRouter);
+app.use('/api/products', productsRouter);
+app.use('/api/admin/categories', categoriesRouter);
+app.use('/api/categories', categoriesRouter);
+
+// Storefront headless endpoints (public read access for active entities)
+app.use('/api/storefront/products', storefrontProductsRouter);
+app.use('/api/storefront/categories', storefrontCategoriesRouter);
+
+// Maintain legacy customer and root fallback routes
 app.use('/api/customer/orders', checkoutLimiter, customerOrdersRouter);
 app.use('/api/customer', customerRouter);
 app.use('/api', customerRouter);
-
-// Mount products and categories routes
-app.use('/api/products', productsRouter);
-app.use('/api/categories', categoriesRouter);
 
 // Dynamic Public Storefront Configuration Contract (Zero exposure of private merchant secrets)
 app.get('/api/store/settings', requireStore, async (req, res) => {

@@ -53,7 +53,7 @@ export const AdminPOSPage: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get('/products');
+      const res = await apiClient.get('/admin/products');
       setProducts(Array.isArray(res) ? res : (res?.data || []));
     } catch (error: any) {
       console.error('Error fetching products:', error);

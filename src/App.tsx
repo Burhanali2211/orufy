@@ -150,11 +150,11 @@ function App() {
             <ScrollToTop />
             <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
-              {/* Admin routes - Protected, requires admin role, NO Layout wrapper (has its own AdminLayout) */}
+              {/* Admin routes - Protected, requires admin/merchant role, NO Layout wrapper (has its own AdminLayout) */}
               <Route 
                 path="/admin/*" 
                 element={
-                  <ProtectedRoute requiredRole="admin">
+                  <ProtectedRoute allowedRoles={['admin', 'merchant', 'seller']}>
                     <AdminDashboard />
                   </ProtectedRoute>
                 } 

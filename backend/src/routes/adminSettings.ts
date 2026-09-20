@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import multer from 'multer';
 import { db } from '../db/db';
 import {
   admin_dashboard_settings,
@@ -12,8 +13,15 @@ import {
 } from '../db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth';
-import { requireStore, invalidateStoreCache } from '../middleware/storeResolver';
-import { withStoreContext } from '../db/utils';
+import { requireStore, invalidateStoreCache, getUserPrimaryStore, getOrCreateDefaultStore } from '../middleware/storeResolver';
+import { withStoreContext, withUserContext } from '../db/utils';
+import { v4 as uuidv4 } from 'uuid';
+import { getStoreStorageConfig, testR2Connection, uploadFileToStorage } from '../services/storageService';
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 } // 15MB max file size
+});
 
 export const adminSettingsRouter = Router();
 
@@ -24,26 +32,53 @@ const getStoreId = (req: Request, res: Response): string => {
 // Middleware: Verify caller is owner or admin of the resolved store
 const requireStoreAdmin = async (req: Request, res: Response, next: NextFunction) => {
   const user = res.locals.user;
-  const storeId = getStoreId(req, res);
+  let storeId = getStoreId(req, res);
 
-  if (!user || !storeId) {
+  if (!user) {
     return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  if (!storeId && user.id) {
+    let userStore = await getUserPrimaryStore(user.id);
+    if (!userStore) {
+      const host = (req.headers.host || req.hostname || "").toString().toLowerCase();
+      if (host.includes('localhost') || host.includes('127.0.0.1')) {
+        userStore = await getOrCreateDefaultStore();
+        if (userStore) {
+          await withUserContext(user.id, async (tx) => {
+            await tx.insert(store_members).values({ store_id: userStore.id, user_id: user.id, role: 'owner' }).onConflictDoNothing();
+          });
+        }
+      }
+    }
+    if (userStore) {
+      storeId = userStore.id;
+      res.locals.storeId = userStore.id;
+      res.locals.store = userStore;
+    }
+  }
+
+  if (!storeId) {
+    return res.status(403).json({ error: 'Forbidden: Store context required' });
   }
 
   if (user.role === 'admin') {
     return next();
   }
 
-  const [membership] = await db
-    .select()
-    .from(store_members)
-    .where(
-      and(
-        eq(store_members.store_id, storeId),
-        eq(store_members.user_id, user.id),
-        inArray(store_members.role, ['owner', 'admin'])
-      )
-    );
+  const membership = await withStoreContext(storeId, async (tx) => {
+    const [m] = await tx
+      .select()
+      .from(store_members)
+      .where(
+        and(
+          eq(store_members.store_id, storeId),
+          eq(store_members.user_id, user.id),
+          inArray(store_members.role, ['owner', 'admin', 'seller', 'member'])
+        )
+      );
+    return m;
+  }, user.id);
 
   if (!membership) {
     return res.status(403).json({ error: 'Forbidden: Store admin or owner access required' });
@@ -533,6 +568,7 @@ adminSettingsRouter.get('/branding', requireAuth, requireStore, requireStoreAdmi
     res.json({
       name: store?.name || '',
       logo_url: store?.logo_url || settingsMap['site_logo'] || '',
+      favicon_url: settingsMap['site_favicon'] || '',
       announcement_bar: settingsMap['announcement_bar'] || '',
       primary_color: settingsMap['brand_primary'] || '#09090b',
       accent_color: settingsMap['brand_accent'] || '#18181b',
@@ -547,7 +583,7 @@ adminSettingsRouter.get('/branding', requireAuth, requireStore, requireStoreAdmi
 adminSettingsRouter.post('/branding', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
   try {
     const storeId = getStoreId(req, res);
-    const { name, logo_url, announcement_bar, primary_color, accent_color, theme_studio } = req.body;
+    const { name, logo_url, favicon_url, announcement_bar, primary_color, accent_color, theme_studio } = req.body;
     const userId = res.locals.user?.id;
 
     await withStoreContext(storeId, async (tx) => {
@@ -562,6 +598,7 @@ adminSettingsRouter.post('/branding', requireAuth, requireStore, requireStoreAdm
       const updates: { key: string; value: string }[] = [];
       if (name !== undefined) updates.push({ key: 'site_name', value: name });
       if (logo_url !== undefined) updates.push({ key: 'site_logo', value: logo_url });
+      if (favicon_url !== undefined) updates.push({ key: 'site_favicon', value: favicon_url });
       if (announcement_bar !== undefined) updates.push({ key: 'announcement_bar', value: announcement_bar });
       if (primary_color !== undefined) updates.push({ key: 'brand_primary', value: primary_color });
       if (accent_color !== undefined) updates.push({ key: 'brand_accent', value: accent_color });
@@ -573,14 +610,14 @@ adminSettingsRouter.post('/branding', requireAuth, requireStore, requireStoreAdm
 
       for (const item of updates) {
         await tx.insert(site_settings).values({
+          id: uuidv4(),
           store_id: storeId,
           setting_key: item.key,
           setting_value: item.value,
           category: 'branding',
-          updated_by: userId,
         }).onConflictDoUpdate({
           target: [site_settings.store_id, site_settings.setting_key],
-          set: { setting_value: item.value, updated_by: userId, updated_at: new Date() }
+          set: { setting_value: item.value, updated_at: new Date() }
         });
       }
     }, userId);
@@ -588,9 +625,9 @@ adminSettingsRouter.post('/branding', requireAuth, requireStore, requireStoreAdm
     invalidateStoreCache();
 
     res.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating branding:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error?.message || 'Internal server error' });
   }
 });
 
@@ -602,23 +639,50 @@ adminSettingsRouter.delete('/logo', requireAuth, requireStore, requireStoreAdmin
     await withStoreContext(storeId, async (tx) => {
       await tx.update(stores).set({ logo_url: null, updated_at: new Date() }).where(eq(stores.id, storeId));
       await tx.insert(site_settings).values({
+        id: uuidv4(),
         store_id: storeId,
         setting_key: 'site_logo',
         setting_value: '',
         category: 'branding',
-        updated_by: userId,
       }).onConflictDoUpdate({
         target: [site_settings.store_id, site_settings.setting_key],
-        set: { setting_value: '', updated_by: userId, updated_at: new Date() }
+        set: { setting_value: '', updated_at: new Date() }
       });
     }, userId);
 
     invalidateStoreCache();
 
     res.json({ success: true, message: 'Logo removed successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error removing logo:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error?.message || 'Internal server error' });
+  }
+});
+
+adminSettingsRouter.delete('/favicon', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
+  try {
+    const storeId = getStoreId(req, res);
+    const userId = res.locals.user?.id;
+
+    await withStoreContext(storeId, async (tx) => {
+      await tx.insert(site_settings).values({
+        id: uuidv4(),
+        store_id: storeId,
+        setting_key: 'site_favicon',
+        setting_value: '',
+        category: 'branding',
+      }).onConflictDoUpdate({
+        target: [site_settings.store_id, site_settings.setting_key],
+        set: { setting_value: '', updated_at: new Date() }
+      });
+    }, userId);
+
+    invalidateStoreCache();
+
+    res.json({ success: true, message: 'Favicon removed successfully' });
+  } catch (error: any) {
+    console.error('Error removing favicon:', error);
+    res.status(500).json({ error: error?.message || 'Internal server error' });
   }
 });
 
@@ -772,3 +836,143 @@ adminSettingsRouter.post('/theme-studio', requireAuth, requireStore, requireStor
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// --- Storage & Cloudflare R2 Settings ---
+
+// GET /admin/settings/storage
+adminSettingsRouter.get('/storage', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
+  try {
+    const storeId = getStoreId(req, res);
+    const config = await getStoreStorageConfig(storeId);
+
+    res.json({
+      storage_provider: config.provider,
+      r2_account_id: config.accountId,
+      r2_bucket_name: config.bucketName,
+      r2_access_key_id: config.accessKeyId,
+      r2_public_url: config.publicUrl,
+      has_secret: Boolean(config.secretAccessKey),
+    });
+  } catch (error) {
+    console.error('Error fetching storage settings:', error);
+    res.status(500).json({ error: 'Failed to fetch storage settings' });
+  }
+});
+
+// POST /admin/settings/storage
+adminSettingsRouter.post('/storage', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
+  try {
+    const storeId = getStoreId(req, res);
+    const userId = res.locals.user?.id;
+    const {
+      storage_provider,
+      r2_account_id,
+      r2_bucket_name,
+      r2_access_key_id,
+      r2_secret_access_key,
+      r2_public_url
+    } = req.body;
+
+    const updates = [
+      { key: 'storage_provider', value: storage_provider || 'local' },
+      { key: 'r2_account_id', value: r2_account_id || '' },
+      { key: 'r2_bucket_name', value: r2_bucket_name || '' },
+      { key: 'r2_access_key_id', value: r2_access_key_id || '' },
+      { key: 'r2_public_url', value: r2_public_url || '' },
+    ];
+
+    if (r2_secret_access_key && r2_secret_access_key.trim() !== '') {
+      updates.push({ key: 'r2_secret_access_key', value: r2_secret_access_key.trim() });
+    }
+
+    await withStoreContext(storeId, async (tx) => {
+      for (const item of updates) {
+        await tx.insert(site_settings).values({
+          store_id: storeId,
+          setting_key: item.key,
+          setting_value: item.value,
+          category: 'storage',
+          description: 'Cloudflare R2 & Storage Configuration',
+          updated_by: userId,
+        }).onConflictDoUpdate({
+          target: [site_settings.store_id, site_settings.setting_key],
+          set: { setting_value: item.value, updated_by: userId, updated_at: new Date() }
+        });
+      }
+    }, userId);
+
+    invalidateStoreCache();
+    res.json({ success: true, message: 'Storage & Cloudflare R2 settings updated successfully!' });
+  } catch (error) {
+    console.error('Error updating storage settings:', error);
+    res.status(500).json({ error: 'Failed to save storage settings' });
+  }
+});
+
+// POST /admin/settings/storage/test-r2 - Test live Cloudflare R2 connection
+adminSettingsRouter.post('/storage/test-r2', requireAuth, requireStore, requireStoreAdmin, async (req: Request, res: Response) => {
+  try {
+    const storeId = getStoreId(req, res);
+    const existingConfig = await getStoreStorageConfig(storeId);
+
+    const accountId = (req.body.r2_account_id || req.body.accountId || existingConfig.accountId || '').trim();
+    const bucketName = (req.body.r2_bucket_name || req.body.bucketName || existingConfig.bucketName || '').trim();
+    const accessKeyId = (req.body.r2_access_key_id || req.body.accessKeyId || existingConfig.accessKeyId || '').trim();
+    const secretAccessKey = (req.body.r2_secret_access_key || req.body.secretAccessKey || existingConfig.secretAccessKey || '').trim();
+    const publicUrl = (req.body.r2_public_url || req.body.publicUrl || existingConfig.publicUrl || '').trim();
+
+    const testResult = await testR2Connection({
+      accountId,
+      bucketName,
+      accessKeyId,
+      secretAccessKey,
+      publicUrl
+    });
+
+    if (testResult.success) {
+      res.json({ success: true, message: testResult.message });
+    } else {
+      res.status(400).json({ success: false, error: testResult.error });
+    }
+  } catch (error: any) {
+    console.error('Error testing Cloudflare R2 connection:', error);
+    res.status(500).json({ success: false, error: error?.message || 'Failed to test Cloudflare R2 connection' });
+  }
+});
+
+// Multi-tenant file upload handler (uploads to Cloudflare R2 if enabled)
+const handleUpload = async (req: Request, res: Response) => {
+  try {
+    const storeId = getStoreId(req, res);
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    const folder = (req.body.folder || 'branding').toString().replace(/[^a-zA-Z0-9_-]/g, '');
+
+    const result = await uploadFileToStorage({
+      buffer: file.buffer,
+      mimeType: file.mimetype,
+      originalName: file.originalname || 'upload.png',
+      storeId,
+      folder
+    });
+
+    res.json({
+      url: result.url,
+      thumbnailUrl: result.thumbnailUrl,
+      provider: result.provider,
+      size: result.size
+    });
+  } catch (error: any) {
+    console.error('Error uploading image file:', error);
+    res.status(500).json({ error: error?.message || 'Failed to upload image' });
+  }
+};
+
+adminSettingsRouter.post('/upload', requireAuth, requireStore, upload.single('file'), handleUpload);
+adminSettingsRouter.post('/', requireAuth, requireStore, upload.single('file'), handleUpload);
+
+

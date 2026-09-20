@@ -151,7 +151,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
 
     try {
-      const data = await apiClient.get('/categories');
+      const data = await apiClient.get('/storefront/categories');
       const list = Array.isArray(data) ? data : (data?.data || []);
       const mapped = list.map(mapDbCategoryToAppCategory);
       setCategories(mapped);
@@ -177,7 +177,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     setLoading(true);
     try {
-      const data = await apiClient.get('/products');
+      const data = await apiClient.get('/storefront/products');
       const list = Array.isArray(data) ? data : (data?.data || []);
       const mapped = list.map(mapDbProductToAppProduct);
       setProducts(mapped);
@@ -202,7 +202,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     setFeaturedLoading(true);
     try {
-      const data = await apiClient.get('/products/featured');
+      const data = await apiClient.get('/storefront/products/featured');
       const list = Array.isArray(data) ? data : (data?.data || []);
       const mapped = list.map(mapDbProductToAppProduct).slice(0, limit);
       setFeaturedProducts(mapped);
@@ -226,7 +226,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     setBestSellersLoading(true);
     try {
-      const data = await apiClient.get('/products');
+      const data = await apiClient.get('/storefront/products');
       const list = Array.isArray(data) ? data : (data?.data || []);
       const mapped = list.map(mapDbProductToAppProduct).slice(0, limit);
       setBestSellers(mapped);
@@ -249,7 +249,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     setLatestLoading(true);
     try {
-      const data = await apiClient.get('/products');
+      const data = await apiClient.get('/storefront/products');
       const list = Array.isArray(data) ? data : (data?.data || []);
       const mapped = list.map(mapDbProductToAppProduct).slice(0, limit);
       setLatestProducts(mapped);
@@ -266,9 +266,9 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (local) return local;
 
     try {
-      const data = await apiClient.get(`/products/${id}`);
-      if (data) {
-        return mapDbProductToAppProduct(data?.data || data);
+      const product = await apiClient.get(`/storefront/products/${id}`);
+      if (product) {
+        return mapDbProductToAppProduct(product?.data || product);
       }
     } catch {
       // Fall through

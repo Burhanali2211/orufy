@@ -16,16 +16,20 @@ import { requireAuth } from '../middleware/auth';
 import { withStoreContext } from '../db/utils';
 import { CommunicationService } from '../services/communicationService';
 import { AuditService } from '../services/auditService';
-import { getOrCreateDefaultStore } from '../middleware/storeResolver';
+import { getOrCreateDefaultStore, getUserPrimaryStore } from '../middleware/storeResolver';
 
 export const merchantOrdersRouter = Router();
 
-// Helper: Resolve store reliably from context, header, or fallback
+// Helper: Resolve store reliably from context, header, or logged in user's primary store
 async function resolveMerchantStore(req: Request, res: Response) {
   let store = res.locals?.store;
   if (!store && req.headers && req.headers['x-store-hostname']) {
     const [found] = await db.select().from(stores).where(eq(stores.hostname, req.headers['x-store-hostname'] as string));
     if (found) store = found;
+  }
+  if (!store && res.locals?.user?.id) {
+    const userStore = await getUserPrimaryStore(res.locals.user.id);
+    if (userStore) store = userStore;
   }
   if (!store) {
     store = await getOrCreateDefaultStore();
@@ -37,20 +41,23 @@ async function resolveMerchantStore(req: Request, res: Response) {
 async function verifyMerchantAccess(userId: string, storeId: string, userRole?: string) {
   if (userRole === 'admin') return true;
 
-  const [membership] = await db
-    .select()
-    .from(store_members)
-    .where(
-      and(
-        eq(store_members.store_id, storeId),
-        eq(store_members.user_id, userId)
-      )
-    );
+  const membership = await withStoreContext(storeId, async (tx) => {
+    const [m] = await tx
+      .select()
+      .from(store_members)
+      .where(
+        and(
+          eq(store_members.store_id, storeId),
+          eq(store_members.user_id, userId)
+        )
+      );
+    return m;
+  }, userId);
 
   if (!membership) {
     return false;
   }
-  return membership.role === 'owner' || membership.role === 'admin' || membership.role === 'seller';
+  return membership.role === 'owner' || membership.role === 'admin' || membership.role === 'seller' || membership.role === 'member';
 }
 
 // 0. Get Customers List for Merchant & Admin Dashboard (Strictly scoped to current store)

@@ -199,28 +199,47 @@ export class CommunicationService {
       }
 
       // Record in communications log
-      const [entry] = await db
-        .insert(communications_log)
-        .values({
-          store_id: payload.storeId,
-          order_id: payload.orderId || null,
-          recipient,
-          channel: payload.recipientEmail ? 'EMAIL' : 'SMS',
-          event_type: payload.eventType,
-          subject,
-          content: plainText,
-          status: sendSuccess ? 'DELIVERED' : 'FAILED',
-          metadata: {
-            ...payload.metadata,
-            html_content: html,
-            resend_message_id: resendMessageId,
-            error: sendError,
-            carrier: payload.carrier,
-            tracking_number: payload.trackingNumber,
-            tracking_token: payload.trackingToken,
-          },
-        })
-        .returning();
+      let validStoreId = payload.storeId;
+      let entry: any;
+      try {
+        if (validStoreId && validStoreId !== '00000000-0000-0000-0000-000000000000') {
+          const [exists] = await db.select({ id: stores.id }).from(stores).where(eq(stores.id, validStoreId));
+          if (!exists) {
+            const defaultStore = await getOrCreateDefaultStore();
+            validStoreId = defaultStore?.id || payload.storeId;
+          }
+        } else {
+          const defaultStore = await getOrCreateDefaultStore();
+          validStoreId = defaultStore?.id || payload.storeId;
+        }
+
+        if (validStoreId) {
+          [entry] = await db
+            .insert(communications_log)
+            .values({
+              store_id: validStoreId,
+              order_id: payload.orderId || null,
+              recipient,
+              channel: payload.recipientEmail ? 'EMAIL' : 'SMS',
+              event_type: payload.eventType,
+              subject,
+              content: plainText,
+              status: sendSuccess ? 'DELIVERED' : 'FAILED',
+              metadata: {
+                ...payload.metadata,
+                html_content: html,
+                resend_message_id: resendMessageId,
+                error: sendError,
+                carrier: payload.carrier,
+                tracking_number: payload.trackingNumber,
+                tracking_token: payload.trackingToken,
+              },
+            })
+            .returning();
+        }
+      } catch (logErr) {
+        console.warn('Notice: Failed to insert communication log:', logErr);
+      }
 
       return {
         success: sendSuccess,

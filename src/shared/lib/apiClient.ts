@@ -174,16 +174,11 @@ class ApiClient {
         error.status = response.status;
         error.response = { status: response.status, data };
         
-        // Handle 401 Unauthorized immediately
+        // Handle 401 Unauthorized cleanly without hard page reloads
         if (response.status === 401) {
           this.setToken(null);
           localStorage.removeItem('auth_token');
           localStorage.removeItem('user');
-          
-          // Only redirect if not already on auth page
-          if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth')) {
-            window.location.href = '/auth';
-          }
         }
         
         throw error;
@@ -410,19 +405,19 @@ class ApiClient {
   }
 
   async getProduct(id: string) {
-    return this.get(`/products/${id}`);
+    return this.get(`/admin/products/${id}`);
   }
 
   async createProduct(data: any) {
-    return this.post('/products', data);
+    return this.post('/admin/products', data);
   }
 
   async updateProduct(id: string, data: any) {
-    return this.put(`/products/${id}`, data);
+    return this.put(`/admin/products/${id}`, data);
   }
 
   async deleteProduct(id: string) {
-    return this.delete(`/products/${id}`);
+    return this.delete(`/admin/products/${id}`);
   }
 
   // ==========================================
@@ -430,23 +425,23 @@ class ApiClient {
   // ==========================================
 
   async getCategories() {
-    return this.get('/categories');
+    return this.get('/admin/categories');
   }
 
   async getCategory(id: string) {
-    return this.get(`/categories/${id}`);
+    return this.get(`/admin/categories/${id}`);
   }
 
   async createCategory(data: any) {
-    return this.post('/categories', data);
+    return this.post('/admin/categories', data);
   }
 
   async updateCategory(id: string, data: any) {
-    return this.put(`/categories/${id}`, data);
+    return this.put(`/admin/categories/${id}`, data);
   }
 
   async deleteCategory(id: string) {
-    return this.delete(`/categories/${id}`);
+    return this.delete(`/admin/categories/${id}`);
   }
 
   // ==========================================

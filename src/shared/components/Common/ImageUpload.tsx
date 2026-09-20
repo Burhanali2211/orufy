@@ -55,30 +55,45 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     }
 
     try {
-      const base64Promises = files.map(
-        (file) =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          })
-      );
+      const uploadPromises = files.map(async (file) => {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('folder', folder || 'uploads');
 
-      const base64Images = await Promise.all(base64Promises);
+          const response: any = await apiClient.post('/admin/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          
+          if (response?.url) {
+            return response.url;
+          }
+        } catch (uploadErr) {
+          console.warn('Direct server upload failed, falling back to data URL:', uploadErr);
+        }
+
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
       
       if (multiple) {
         onChange((prev) => {
           const prevImages = Array.isArray(prev) ? prev : prev ? [prev] : [];
-          return [...prevImages, ...base64Images];
+          return [...prevImages, ...uploadedUrls];
         });
       } else {
-        onChange(base64Images[0]);
+        onChange(uploadedUrls[0]);
       }
       
-      showSuccess('Success', 'Images uploaded successfully');
+      showSuccess('Success', 'Image uploaded successfully');
     } catch (err) {
-      showError('Error', 'Failed to read image files.');
+      showError('Error', 'Failed to upload image file.');
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }

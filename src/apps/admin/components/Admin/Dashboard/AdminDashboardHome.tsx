@@ -101,7 +101,7 @@ export const AdminDashboardHome: React.FC = () => {
 
       const [ordersRes, productsRes, customersRes] = await Promise.all([
         apiClient.get('/merchant/orders'),
-        apiClient.get('/products'),
+        apiClient.get('/admin/products'),
         apiClient.get('/merchant/orders/customers/list'),
       ]);
 
