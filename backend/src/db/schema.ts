@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, uuid, integer, jsonb, numeric, primaryKey, time, date } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, uuid, integer, jsonb, numeric, primaryKey, time, date, unique } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 export const profiles = pgTable('profiles', {
@@ -100,7 +100,7 @@ export const products = pgTable('products', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (t) => ({
-  unq_store_slug: sql`UNIQUE (${t.store_id}, ${t.slug})`,
+  unq_store_slug: unique('unq_store_slug').on(t.store_id, t.slug),
 }));
 
 export const orders = pgTable('orders', {
@@ -169,7 +169,7 @@ export const checkout_idempotency = pgTable('checkout_idempotency', {
   response_payload: jsonb('response_payload'),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
 }, (t) => ({
-  unq_store_idempotency: sql`UNIQUE (${t.store_id}, ${t.idempotency_key})`,
+  unq_store_idempotency: unique('unq_store_idempotency').on(t.store_id, t.idempotency_key),
 }));
 
 export const payment_transfers = pgTable('payment_transfers', {
@@ -316,7 +316,7 @@ export const cart_items = pgTable('cart_items', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (t) => ({
-  unq_cart_user_product_variant: sql`UNIQUE (${t.store_id}, ${t.user_id}, ${t.product_id}, ${t.variant_id})`,
+  unq_cart_user_product_variant: unique('unq_cart_user_product_variant').on(t.store_id, t.user_id, t.product_id, t.variant_id),
 }));
 
 export const wishlist_items = pgTable('wishlist_items', {
@@ -326,7 +326,7 @@ export const wishlist_items = pgTable('wishlist_items', {
   product_id: uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
 }, (t) => ({
-  unq_wishlist_user_product: sql`UNIQUE (${t.store_id}, ${t.user_id}, ${t.product_id})`,
+  unq_wishlist_user_product: unique('unq_wishlist_user_product').on(t.store_id, t.user_id, t.product_id),
 }));
 
 export const order_tracking = pgTable('order_tracking', {
@@ -406,7 +406,7 @@ export const notification_preferences = pgTable('notification_preferences', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (t) => ({
-  unq_notif_store_user: sql`UNIQUE (${t.store_id}, ${t.user_id})`,
+  unq_notif_store_user: unique('unq_notif_store_user').on(t.store_id, t.user_id),
 }));
 
 export const site_settings = pgTable('site_settings', {
@@ -422,7 +422,7 @@ export const site_settings = pgTable('site_settings', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (t) => ({
-  unq_site_settings_store_key: sql`UNIQUE (${t.store_id}, ${t.setting_key})`,
+  unq_site_settings_store_key: unique('unq_site_settings_store_key').on(t.store_id, t.setting_key),
 }));
 
 export const admin_dashboard_settings = pgTable('admin_dashboard_settings', {
@@ -438,7 +438,7 @@ export const admin_dashboard_settings = pgTable('admin_dashboard_settings', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (t) => ({
-  unq_admin_settings_store_key: sql`UNIQUE (${t.store_id}, ${t.setting_key})`,
+  unq_admin_settings_store_key: unique('unq_admin_settings_store_key').on(t.store_id, t.setting_key),
 }));
 
 export const business_hours = pgTable('business_hours', {
@@ -453,7 +453,7 @@ export const business_hours = pgTable('business_hours', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (t) => ({
-  unq_business_hours_store_day: sql`UNIQUE (${t.store_id}, ${t.day_of_week})`,
+  unq_business_hours_store_day: unique('unq_business_hours_store_day').on(t.store_id, t.day_of_week),
 }));
 
 export const contact_information = pgTable('contact_information', {
