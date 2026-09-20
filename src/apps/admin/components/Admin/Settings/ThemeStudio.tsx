@@ -36,8 +36,59 @@ import {
   Edit3,
   SlidersHorizontal,
   FolderTree,
-  Sliders
+  ImagePlus
 } from 'lucide-react';
+
+/* ─── Reusable hero image field (upload + URL + preview) ─── */
+const HeroImageField: React.FC<{ label: string; value: string; onChange: (url: string) => void }> = ({ label, value, onChange }) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('folder', 'hero');
+      const res: any = await (apiClient.post as any)('/admin/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      if (res?.url) onChange(res.url);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => onChange(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+  return (
+    <div>
+      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">{label}</label>
+      <div className="flex gap-1.5">
+        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder="Paste URL or upload" className="flex-1 px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-mono min-w-0" />
+        <label className="flex items-center gap-1 px-3 py-2 rounded-xl bg-stone-900 text-white text-xs font-bold cursor-pointer hover:bg-stone-700 transition-colors shrink-0" title="Upload from device">
+          <ImagePlus className="w-3.5 h-3.5" />
+          <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+        </label>
+      </div>
+      {value && <img src={value} alt="preview" className="mt-2 w-full h-20 object-cover rounded-lg border border-stone-200" />}
+    </div>
+  );
+};
+
+/* ─── Reusable hero text fields (badge / headline / subtitle) ─── */
+const HeroTextFields: React.FC<{ badge: string; headline: string; subtitle: string; onBadge: (v: string) => void; onHeadline: (v: string) => void; onSubtitle: (v: string) => void }> = ({ badge, headline, subtitle, onBadge, onHeadline, onSubtitle }) => (
+  <>
+    <div>
+      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Badge Text</label>
+      <input type="text" value={badge} onChange={(e) => onBadge(e.target.value)} placeholder="e.g. New Collection" className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-medium" />
+    </div>
+    <div>
+      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Headline</label>
+      <input type="text" value={headline} onChange={(e) => onHeadline(e.target.value)} placeholder="e.g. Pure Artisanal Fragrances" className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-bold" />
+    </div>
+    <div>
+      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Subtitle</label>
+      <textarea rows={2} value={subtitle} onChange={(e) => onSubtitle(e.target.value)} className="w-full px-3 py-1.5 rounded-xl bg-stone-50 border border-stone-200 text-xs resize-none" />
+    </div>
+  </>
+);
 
 /* ─── Luxury Preset Palettes ─── */
 const CURATED_PALETTES = [
@@ -288,12 +339,18 @@ export const ThemeStudio: React.FC = () => {
     setActiveSlideIndex(Math.max(0, idx - 1));
   };
 
-  const updateCurrentSlide = (field: keyof HeroSlide, val: string) => {
+  const updateSlide = (field: keyof HeroSlide, val: string) => {
     const slides = [...(hero.slides || [])];
     if (slides[activeSlideIndex]) {
       slides[activeSlideIndex] = { ...slides[activeSlideIndex], [field]: val };
       setHero({ ...hero, slides });
     }
+  };
+
+  /* Centralises the two-line select+mobile-redirect used ~10x in JSX */
+  const selectSection = (id: string) => {
+    setSelectedSectionId(id);
+    if (window.innerWidth < 1024) setMobileViewTab('editor');
   };
 
   const currentSlide = hero.slides?.[activeSlideIndex] || hero.slides?.[0] || {
@@ -547,84 +604,20 @@ export const ThemeStudio: React.FC = () => {
                     </div>
 
                     <div className="space-y-2.5 pt-1">
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Badge Text</label>
-                        <input
-                          type="text"
-                          value={currentSlide.topTitle || ''}
-                          onChange={(e) => updateCurrentSlide('topTitle', e.target.value)}
-                          placeholder="e.g. New Collection"
-                          className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-medium"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Headline</label>
-                        <input
-                          type="text"
-                          value={currentSlide.titleMain || ''}
-                          onChange={(e) => updateCurrentSlide('titleMain', e.target.value)}
-                          placeholder="e.g. Pure Artisanal Fragrances"
-                          className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-bold"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Subtitle</label>
-                        <textarea
-                          rows={2}
-                          value={currentSlide.subtitle || ''}
-                          onChange={(e) => updateCurrentSlide('subtitle', e.target.value)}
-                          className="w-full px-3 py-1.5 rounded-xl bg-stone-50 border border-stone-200 text-xs resize-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Photo URL</label>
-                        <input
-                          type="text"
-                          value={currentSlide.image || ''}
-                          onChange={(e) => updateCurrentSlide('image', e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-mono"
-                        />
-                      </div>
+                      <HeroTextFields
+                        badge={currentSlide.topTitle || ''} headline={currentSlide.titleMain || ''} subtitle={currentSlide.subtitle || ''}
+                        onBadge={(v) => updateSlide('topTitle', v)} onHeadline={(v) => updateSlide('titleMain', v)} onSubtitle={(v) => updateSlide('subtitle', v)}
+                      />
+                      <HeroImageField label="Photo" value={currentSlide.image || ''} onChange={(url) => updateSlide('image', url)} />
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-2.5 pt-2 border-t border-stone-100">
-                    <div>
-                      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Badge Text</label>
-                      <input
-                        type="text"
-                        value={hero.topTitle || ''}
-                        onChange={(e) => setHero({ ...hero, topTitle: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-medium"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Headline</label>
-                      <input
-                        type="text"
-                        value={hero.titleMain || ''}
-                        onChange={(e) => setHero({ ...hero, titleMain: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-bold"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Subtitle</label>
-                      <textarea
-                        rows={2}
-                        value={hero.subtitle || ''}
-                        onChange={(e) => setHero({ ...hero, subtitle: e.target.value })}
-                        className="w-full px-3 py-1.5 rounded-xl bg-stone-50 border border-stone-200 text-xs resize-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">Background Photo URL</label>
-                      <input
-                        type="text"
-                        value={hero.backgroundImage || ''}
-                        onChange={(e) => setHero({ ...hero, backgroundImage: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-mono"
-                      />
-                    </div>
+                    <HeroTextFields
+                      badge={hero.topTitle || ''} headline={hero.titleMain || ''} subtitle={hero.subtitle || ''}
+                      onBadge={(v) => setHero({ ...hero, topTitle: v })} onHeadline={(v) => setHero({ ...hero, titleMain: v })} onSubtitle={(v) => setHero({ ...hero, subtitle: v })}
+                    />
+                    <HeroImageField label="Background Photo" value={hero.backgroundImage || ''} onChange={(url) => setHero({ ...hero, backgroundImage: url })} />
                   </div>
                 )}
 
@@ -638,7 +631,7 @@ export const ThemeStudio: React.FC = () => {
                         type="button"
                         onClick={() => {
                           if (hero.layout === 'carousel') {
-                            updateCurrentSlide('image', img.url);
+                            updateSlide('image', img.url);
                           } else {
                             setHero({ ...hero, backgroundImage: img.url });
                           }
@@ -987,8 +980,7 @@ export const ThemeStudio: React.FC = () => {
                       <div
                         key="sim-hero"
                         onClick={() => {
-                          setSelectedSectionId('hero');
-                          if (window.innerWidth < 1024) setMobileViewTab('editor');
+                          selectSection('hero');
                         }}
                         onMouseEnter={() => setHoveredSectionId('hero')}
                         onMouseLeave={() => setHoveredSectionId(null)}
@@ -1101,8 +1093,7 @@ export const ThemeStudio: React.FC = () => {
                       <div
                         key="sim-features"
                         onClick={() => {
-                          setSelectedSectionId('features');
-                          if (window.innerWidth < 1024) setMobileViewTab('editor');
+                          selectSection('features');
                         }}
                         onMouseEnter={() => setHoveredSectionId('features')}
                         onMouseLeave={() => setHoveredSectionId(null)}
@@ -1131,8 +1122,7 @@ export const ThemeStudio: React.FC = () => {
                       <div
                         key="sim-categories"
                         onClick={() => {
-                          setSelectedSectionId('categories');
-                          if (window.innerWidth < 1024) setMobileViewTab('editor');
+                          selectSection('categories');
                         }}
                         onMouseEnter={() => setHoveredSectionId('categories')}
                         onMouseLeave={() => setHoveredSectionId(null)}
@@ -1200,8 +1190,7 @@ export const ThemeStudio: React.FC = () => {
                       <div
                         key="sim-promo"
                         onClick={() => {
-                          setSelectedSectionId('promo_banner');
-                          if (window.innerWidth < 1024) setMobileViewTab('editor');
+                          selectSection('promo_banner');
                         }}
                         onMouseEnter={() => setHoveredSectionId('promo_banner')}
                         onMouseLeave={() => setHoveredSectionId(null)}
@@ -1223,8 +1212,7 @@ export const ThemeStudio: React.FC = () => {
                       <div
                         key="sim-newsletter"
                         onClick={() => {
-                          setSelectedSectionId('newsletter');
-                          if (window.innerWidth < 1024) setMobileViewTab('editor');
+                          selectSection('newsletter');
                         }}
                         onMouseEnter={() => setHoveredSectionId('newsletter')}
                         onMouseLeave={() => setHoveredSectionId(null)}
@@ -1272,3 +1260,4 @@ export const ThemeStudio: React.FC = () => {
 };
 
 export default ThemeStudio;
+

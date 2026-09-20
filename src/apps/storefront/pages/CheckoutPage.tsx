@@ -137,6 +137,15 @@ export const CheckoutPage: React.FC = () => {
       return;
     }
 
+    if (!user.emailVerified && !user.email_verified) {
+      showNotification({ 
+        type: 'error', 
+        title: 'Email Verification Required', 
+        message: 'Please verify your email address to complete this purchase. Check your inbox for the verification link.' 
+      });
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const shippingAddress = {
@@ -451,7 +460,7 @@ export const CheckoutPage: React.FC = () => {
                         <p className="font-medium text-gray-900 truncate">{item.product.name}</p>
                         <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                       </div>
-                      <span className="font-semibold text-gray-900">₹{(item.product.price * item.quantity).toLocaleString('en-IN')}</span>
+                      <span className="font-semibold text-gray-900">₹{((item.product.price * item.quantity) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   ))}
                 </div>

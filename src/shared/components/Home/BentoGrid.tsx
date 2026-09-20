@@ -64,20 +64,20 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ categories, loading }) => 
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pb-4 sm:pb-0 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0"
+          className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6 px-1 sm:px-0"
         >
           {displayCats.map((cat) => {
             return (
               <motion.div
                 key={cat.id}
                 variants={itemVariants}
-                className="w-[70vw] sm:w-auto min-w-[240px] sm:min-w-0 shrink-0 snap-center"
+                className="w-full"
               >
                 <Link
                   to={`/products?category=${cat.id}`}
-                  className="group flex flex-col bg-white border border-gray-200 rounded-[24px] overflow-hidden hover:shadow-md transition-shadow duration-300"
+                  className="group flex flex-col bg-white border border-gray-200 rounded-xl sm:rounded-[24px] overflow-hidden hover:shadow-md transition-shadow duration-300"
                 >
-                  <div className="relative w-full aspect-[4/3] bg-[#f8f9fa] overflow-hidden">
+                  <div className="relative w-full aspect-square sm:aspect-[4/3] bg-[#f8f9fa] overflow-hidden">
                     <img
                       src={getCatImage(cat)}
                       alt={cat.name}
@@ -86,11 +86,11 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ categories, loading }) => 
                     />
                   </div>
                   
-                  <div className="p-5 flex flex-col items-center sm:items-start text-center sm:text-left">
-                    <h3 className="text-[#202124] text-[18px] font-medium mb-1">
+                  <div className="p-2 sm:p-5 flex flex-col items-center sm:items-start text-center sm:text-left">
+                    <h3 className="text-[#202124] text-[10px] sm:text-[18px] font-medium sm:mb-1 leading-tight line-clamp-1">
                       {cat.name}
                     </h3>
-                    <p className="text-[#5f6368] text-[14px] line-clamp-2">
+                    <p className="hidden sm:block text-[#5f6368] text-[14px] line-clamp-2">
                       {cat.description || 'Explore our exclusive collection.'}
                     </p>
                   </div>

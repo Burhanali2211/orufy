@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { Settings, LogOut, User as UserIcon, Store, ExternalLink } from 'lucide-react';
+import { Settings, LogOut, User as UserIcon, Store, ExternalLink, Building, Shield } from 'lucide-react';
 import { User } from '@/shared/types';
 import { useAuth } from '@/shared/contexts/AuthContext';
 
@@ -127,12 +127,34 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
             <button
               onClick={() => {
                 setIsDropdownOpen(false);
-                navigate('/admin/settings');
+                navigate('/admin/settings/account');
               }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors text-left cursor-pointer"
             >
               <UserIcon className="w-4 h-4 text-stone-400" />
-              Profile & Store Settings
+              Account Settings
+            </button>
+
+            <button
+              onClick={() => {
+                setIsDropdownOpen(false);
+                navigate('/admin/settings/store');
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors text-left cursor-pointer"
+            >
+              <Building className="w-4 h-4 text-stone-400" />
+              Billing & GST
+            </button>
+
+            <button
+              onClick={() => {
+                setIsDropdownOpen(false);
+                navigate('/admin/settings/policy-pages');
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors text-left cursor-pointer"
+            >
+              <Shield className="w-4 h-4 text-stone-400" />
+              Policies & Legal
             </button>
 
             <button

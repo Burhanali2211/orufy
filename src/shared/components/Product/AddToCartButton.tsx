@@ -32,12 +32,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
-    // Require login — show clean modal instead of guest cart
-    if (!user) {
-      showAuthModal(product, 'cart');
-      return;
-    }
-
     if (product.stock > 0 && !isAdding) {
       setIsAdding(true);
       try {

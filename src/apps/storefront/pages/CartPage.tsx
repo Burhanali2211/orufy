@@ -7,7 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 const fmt = (n: number | string) => {
   const v = typeof n === 'string' ? parseFloat(n) : n;
   if (isNaN(v)) return '₹0';
-  return `₹${v.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  return `₹${(v / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 export const CartPage: React.FC = () => {
@@ -94,7 +94,7 @@ export const CartPage: React.FC = () => {
             <span className="flex items-center gap-1.5 text-stone-800">
               <Truck className="w-4 h-4 text-stone-700" />
               {remainingForFreeShipping > 0 ? (
-                <span>Add <strong>{fmt(remainingForFreeShipping)}</strong> more to qualify for <strong>Free Shipping</strong></span>
+                <span>Add <strong>{fmt(remainingForFreeShipping * 100)}</strong> more to qualify for <strong>Free Shipping</strong></span>
               ) : (
                 <span className="text-emerald-700">Congratulations! You have unlocked Free Express Shipping</span>
               )}

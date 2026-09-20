@@ -1,6 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { X, ExternalLink, LogOut, LayoutDashboard, Store } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { X, ExternalLink, LogOut, LayoutDashboard, Store, ChevronDown, ChevronUp } from 'lucide-react';
 import { NavItem } from './types';
 import { User } from '@/shared/types';
 import { useAuth } from '@/shared/contexts/AuthContext';
@@ -25,6 +25,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   user,
   getInitials,
 }) => {
+  const [localExpanded, setLocalExpanded] = useState<Record<string, boolean>>({});
+  const location = useLocation();
+
+  const handleToggle = (e: React.MouseEvent, path: string) => {
+    e.preventDefault();
+    setLocalExpanded(prev => ({ ...prev, [path]: !prev[path] }));
+  };
   const { store } = useAuth();
   const computedHostname = (() => {
     if (store?.hostname && store.hostname !== 'get-oru.com' && store.hostname !== 'www.get-oru.com') {
@@ -81,20 +88,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
+          const hasChildren = item.children && item.children.length > 0;
+          const isExpanded = localExpanded[item.path] || (active && hasChildren);
 
           return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                active
-                  ? 'bg-stone-900 text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-stone-500'}`} />
-              <span className="flex-1">{item.name}</span>
-            </Link>
+            <div key={item.path} className="flex flex-col">
+              <Link
+                to={hasChildren ? '#' : item.path}
+                onClick={hasChildren ? (e) => handleToggle(e, item.path) : undefined}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  active && !hasChildren
+                    ? 'bg-stone-900 text-white shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                }`}
+              >
+                <Icon className={`w-4 h-4 flex-shrink-0 ${active && !hasChildren ? 'text-white' : 'text-stone-500'}`} />
+                <span className="flex-1">{item.name}</span>
+                {hasChildren && (
+                  isExpanded ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />
+                )}
+              </Link>
+              
+              {hasChildren && isExpanded && (
+                <div className="mt-1 ml-4 pl-3 border-l border-stone-200 space-y-1">
+                  {item.children!.map((child) => {
+                    const ChildIcon = child.icon;
+                    const childActive = location.pathname === child.path;
+                    
+                    return (
+                      <Link
+                        key={child.path}
+                        to={child.path}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                          childActive
+                            ? 'text-stone-900 bg-stone-100 font-bold'
+                            : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
+                        }`}
+                      >
+                        <ChildIcon className={`w-3.5 h-3.5 flex-shrink-0 ${childActive ? 'text-stone-700' : 'text-stone-400'}`} />
+                        <span className="flex-1">{child.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>

@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { useNotification } from '@/shared/contexts/NotificationContext';
+import { apiClient } from '@/shared/lib/apiClient';
 import { normalizeImageUrl, isValidImageUrl } from '../../utils/imageUrlUtils';
 
 type ImageUploadValue = string | string[];
@@ -32,6 +33,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   onMainImageChange,
   mainImageIndex = 0,
+  folder = 'uploads',
   placeholder = 'Upload an image',
   className = '',
   disabled = false,
@@ -61,9 +63,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           formData.append('file', file);
           formData.append('folder', folder || 'uploads');
 
-          const response: any = await apiClient.post('/admin/upload', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
+          const response: any = await apiClient.upload('/admin/upload', formData);
           
           if (response?.url) {
             return response.url;

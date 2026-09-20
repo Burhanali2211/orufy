@@ -199,7 +199,7 @@ export const BrandingSettings: React.FC = () => {
               <ImageUpload
                 value={form.logo_url}
                 onChange={(url) => {
-                  const logoUrl = Array.isArray(url) ? url[0] || '' : url;
+                  const logoUrl = typeof url === 'function' ? '' : Array.isArray(url) ? url[0] || '' : url;
                   setForm(prev => ({ ...prev, logo_url: logoUrl }));
                   setLogoPreviewError(false);
                 }}
@@ -234,7 +234,7 @@ export const BrandingSettings: React.FC = () => {
               <ImageUpload
                 value={form.favicon_url}
                 onChange={(url) => {
-                  const favUrl = Array.isArray(url) ? url[0] || '' : url;
+                  const favUrl = typeof url === 'function' ? '' : Array.isArray(url) ? url[0] || '' : url;
                   setForm(prev => ({ ...prev, favicon_url: favUrl }));
                   setFaviconPreviewError(false);
                 }}

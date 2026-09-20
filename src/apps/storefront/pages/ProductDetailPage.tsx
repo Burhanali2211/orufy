@@ -99,7 +99,6 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    if (!user) { showAuthModal(product, 'cart'); return; }
     if (!cartButtonState.isInCart) {
       addToCart(product, quantity);
       cartButtonState.markAsJustAdded();

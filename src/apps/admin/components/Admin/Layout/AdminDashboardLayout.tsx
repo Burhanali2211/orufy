@@ -8,6 +8,11 @@ import {
   Tag,
   BarChart3,
   Settings,
+  Sliders,
+  Palette,
+  Cloud,
+  Building,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { AdminDashboardLayoutProps, NavItem } from './AdminDashboardLayout/types';
@@ -22,7 +27,17 @@ const navItems: NavItem[] = [
   { name: 'Categories', path: '/admin/categories', icon: Tag },
   { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
   { name: 'Customers', path: '/admin/users', icon: Users },
-  { name: 'Settings', path: '/admin/settings', icon: Settings },
+  { 
+    name: 'Store Editor', 
+    path: '/admin/settings', 
+    icon: Settings,
+    children: [
+      { name: 'Theme Studio', path: '/admin/settings/theme-studio', icon: Sliders },
+      { name: 'Store Identity', path: '/admin/settings/branding', icon: Palette },
+      { name: 'Store Details', path: '/admin/settings/store', icon: Building },
+      { name: 'Policies', path: '/admin/settings/policy-pages', icon: Shield },
+    ]
+  },
 ];
 
 export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({

@@ -26,27 +26,27 @@ const PromoBanner: React.FC = memo(() => (
         <h3 className="text-2xl sm:text-3xl font-bold text-stone-900">Why shop with us</h3>
         <p className="text-stone-500 text-sm mt-1">Exceptional quality and seamless customer experience</p>
       </div>
-      <div className="flex overflow-x-auto md:grid md:grid-cols-3 gap-4 sm:gap-6 pb-4 sm:pb-0 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="bg-stone-50 rounded-3xl p-6 sm:p-8 text-center flex flex-col items-center border border-stone-100 min-w-[280px] md:min-w-0 snap-center">
-          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm text-stone-900 shrink-0">
-            <ShieldCheck className="h-6 w-6" />
+      <div className="grid grid-cols-3 gap-2 sm:gap-6 pb-4 sm:pb-0 px-2 sm:px-0">
+        <div className="bg-stone-50 rounded-xl sm:rounded-3xl p-3 sm:p-8 text-center flex flex-col items-center border border-stone-100">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-white rounded-lg sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4 shadow-sm text-stone-900 shrink-0">
+            <ShieldCheck className="h-4 w-4 sm:h-6 sm:w-6" />
           </div>
-          <h4 className="text-base sm:text-lg font-bold text-stone-900 mb-2">Authentic Products</h4>
-          <p className="text-xs sm:text-sm text-stone-600">100% genuine and verified premium items curated for you.</p>
+          <h4 className="text-[10px] sm:text-lg font-bold text-stone-900 mb-1 sm:mb-2 leading-tight">Authentic</h4>
+          <p className="hidden sm:block text-xs sm:text-sm text-stone-600">100% genuine and verified premium items curated for you.</p>
         </div>
-        <div className="bg-stone-50 rounded-3xl p-6 sm:p-8 text-center flex flex-col items-center border border-stone-100 min-w-[280px] md:min-w-0 snap-center">
-          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm text-stone-900 shrink-0">
-            <Truck className="h-6 w-6" />
+        <div className="bg-stone-50 rounded-xl sm:rounded-3xl p-3 sm:p-8 text-center flex flex-col items-center border border-stone-100">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-white rounded-lg sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4 shadow-sm text-stone-900 shrink-0">
+            <Truck className="h-4 w-4 sm:h-6 sm:w-6" />
           </div>
-          <h4 className="text-base sm:text-lg font-bold text-stone-900 mb-2">Fast Delivery</h4>
-          <p className="text-xs sm:text-sm text-stone-600">Carefully packaged and expedited directly to your doorstep.</p>
+          <h4 className="text-[10px] sm:text-lg font-bold text-stone-900 mb-1 sm:mb-2 leading-tight">Fast Delivery</h4>
+          <p className="hidden sm:block text-xs sm:text-sm text-stone-600">Carefully packaged and expedited directly to your doorstep.</p>
         </div>
-        <div className="bg-stone-50 rounded-3xl p-6 sm:p-8 text-center flex flex-col items-center border border-stone-100 min-w-[280px] md:min-w-0 snap-center">
-          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm text-stone-900 shrink-0">
-            <Headphones className="h-6 w-6" />
+        <div className="bg-stone-50 rounded-xl sm:rounded-3xl p-3 sm:p-8 text-center flex flex-col items-center border border-stone-100">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-white rounded-lg sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4 shadow-sm text-stone-900 shrink-0">
+            <Headphones className="h-4 w-4 sm:h-6 sm:w-6" />
           </div>
-          <h4 className="text-base sm:text-lg font-bold text-stone-900 mb-2">Dedicated Support</h4>
-          <p className="text-xs sm:text-sm text-stone-600">Always here to assist with your orders, questions, and inquiries.</p>
+          <h4 className="text-[10px] sm:text-lg font-bold text-stone-900 mb-1 sm:mb-2 leading-tight">Support</h4>
+          <p className="hidden sm:block text-xs sm:text-sm text-stone-600">Always here to assist with your orders, questions, and inquiries.</p>
         </div>
       </div>
     </div>
