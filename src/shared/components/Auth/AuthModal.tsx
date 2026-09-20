@@ -6,7 +6,7 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: 'login' | 'signup';
-  action?: 'cart' | 'wishlist' | 'compare' | null;
+  action?: 'cart' | 'wishlist' | 'compare' | 'checkout' | 'login' | null;
   product?: Product | null;
 }
 
@@ -20,7 +20,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, action, product 
   // AuthModalProvider lives outside the Router — use window.location instead of useNavigate
   const go = (mode: 'login' | 'signup') => {
     onClose();
-    window.location.href = `/auth?mode=${mode}`;
+    const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/auth?mode=${mode}&redirect=${currentPath}`;
   };
 
   return (

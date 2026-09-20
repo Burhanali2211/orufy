@@ -4,10 +4,10 @@ import { Product } from '../types';
 import AuthModal from '../components/Auth/AuthModal';
 
 interface AuthModalContextType {
-  showAuthModal: (product: Product, action: 'cart' | 'wishlist' | 'compare') => void;
+  showAuthModal: (product: Product | null, action: 'cart' | 'wishlist' | 'compare' | 'checkout' | 'login') => void;
   hideAuthModal: () => void;
   isModalOpen: boolean;
-  modalAction: 'cart' | 'wishlist' | 'compare' | null;
+  modalAction: 'cart' | 'wishlist' | 'compare' | 'checkout' | 'login' | null;
   selectedProduct: Product | null;
 }
 
@@ -27,10 +27,10 @@ interface AuthModalProviderProps {
 
 export const AuthModalProvider: React.FC<AuthModalProviderProps> = ({ children }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalAction, setModalAction] = useState<'cart' | 'wishlist' | 'compare' | null>(null);
+  const [modalAction, setModalAction] = useState<'cart' | 'wishlist' | 'compare' | 'checkout' | 'login' | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const showAuthModal = (product: Product, action: 'cart' | 'wishlist' | 'compare') => {
+  const showAuthModal = (product: Product | null, action: 'cart' | 'wishlist' | 'compare' | 'checkout' | 'login') => {
     setSelectedProduct(product);
     setModalAction(action);
     setIsModalOpen(true);

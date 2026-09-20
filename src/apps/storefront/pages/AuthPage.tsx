@@ -70,6 +70,12 @@ const AuthPage: React.FC = () => {
           return;
         }
       }
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get('redirect');
+      if (redirectUrl && redirectUrl.startsWith('/')) {
+        navigate(redirectUrl);
+        return;
+      }
       navigate(user.role === 'admin' || user.role === 'merchant' ? '/admin' : '/dashboard');
     }
   }, [user, isPlatform, store, baseDomain, navigate]);
