@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../db/db';
 import { stores, store_members, custom_domains, domain_registrations } from '../db/schema';
 import { eq, and, sql, inArray } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth';
@@ -55,9 +54,10 @@ domainPurchasingRouter.get('/search', async (req: Request, res: Response) => {
       provider: provider.providerName,
       results: suggestions,
     });
-  } catch (error: any) {
-    console.error('Error searching domains:', error);
-    return res.status(500).json({ error: error.message || 'Domain search failed' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error searching domains:', err);
+    return res.status(500).json({ error: err.message || 'Domain search failed' });
   }
 });
 
@@ -71,12 +71,13 @@ domainPurchasingRouter.post('/order', requireAuth, async (req: Request, res: Res
       return res.status(403).json({ error: 'Forbidden: You must be a store owner/admin to purchase domains' });
     }
 
-    const { domain, periodYears = 1, contactInfo, isPrimary = true } = req.body;
+    const { domain, periodYears = 1, contactInfo } = req.body;
 
     let normalizedDomain: string;
     try {
       normalizedDomain = normalizeHostname(domain);
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       return res.status(400).json({ error: err.message });
     }
 
@@ -141,12 +142,13 @@ domainPurchasingRouter.post('/order', requireAuth, async (req: Request, res: Res
       currency: registration.currency,
       periodYears: registration.registration_period_years,
     });
-  } catch (error: any) {
-    if (error.message === 'DOMAIN_ALREADY_REGISTERED_ON_PLATFORM') {
+  } catch (error: unknown) {
+    const err = error as Error;
+    if (err.message === 'DOMAIN_ALREADY_REGISTERED_ON_PLATFORM') {
       return res.status(409).json({ error: 'This domain is already registered on our platform' });
     }
-    console.error('Error creating domain purchase order:', error);
-    return res.status(500).json({ error: error.message || 'Failed to create domain order' });
+    console.error('Error creating domain purchase order:', err);
+    return res.status(500).json({ error: err.message || 'Failed to create domain order' });
   }
 });
 
@@ -194,13 +196,13 @@ domainPurchasingRouter.post('/confirm', requireAuth, async (req: Request, res: R
       return res.status(200).json({ success: true, message: 'Domain is already active', domain: registration.domain_name });
     }
 
-    const provider = getRegistrarProvider(registration.provider as any);
+    const provider = getRegistrarProvider(registration.provider as 'HOSTINGER');
 
     // Register Domain with Registrar
     const purchaseResult = await provider.purchaseDomain({
       domain: registration.domain_name,
       periodYears: registration.registration_period_years,
-      contactInfo: (registration.contact_info as any) || {
+      contactInfo: (registration.contact_info as unknown as Parameters<typeof provider.purchaseDomain>[0]['contactInfo']) || {
         firstName: 'Store',
         lastName: 'Owner',
         email: 'owner@example.com',
@@ -312,9 +314,10 @@ domainPurchasingRouter.post('/confirm', requireAuth, async (req: Request, res: R
       storeLive: true,
       message: `Domain ${updatedReg.domain_name} successfully purchased, DNS configured via ${updatedReg.provider}, SSL provisioned, and store is now LIVE!`,
     });
-  } catch (error: any) {
-    console.error('Error confirming domain purchase:', error);
-    return res.status(500).json({ error: error.message || 'Purchase confirmation failed' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error confirming domain purchase:', err);
+    return res.status(500).json({ error: err.message || 'Purchase confirmation failed' });
   }
 });
 
@@ -339,7 +342,8 @@ domainPurchasingRouter.get('/registrations', requireAuth, async (req: Request, r
       success: true,
       registrations,
     });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message || 'Failed to list domain registrations' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    return res.status(500).json({ error: err.message || 'Failed to list domain registrations' });
   }
 });

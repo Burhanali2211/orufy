@@ -3,6 +3,7 @@ import { DrizzlePostgreSQLAdapter } from "@lucia-auth/adapter-drizzle";
 import { db } from "../db/db";
 import { sessions, profiles } from "../db/schema";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const adapter = new DrizzlePostgreSQLAdapter(db as any, sessions as any, profiles as any);
 
 export const lucia = new Lucia(adapter, {

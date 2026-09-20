@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useOnboarding } from '../OnboardingContext';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { Rocket, Globe, CreditCard, Store, ExternalLink, ArrowRight, ArrowLeft, Copy, CheckCircle2, ShieldCheck, Mail, User, Lock, Phone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Rocket, Globe, Store, ExternalLink, ArrowRight, ArrowLeft, Copy, CheckCircle2, ShieldCheck, Mail, User, Lock, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/shared/lib/apiClient';
 
@@ -123,7 +123,7 @@ export const LaunchStep: React.FC = () => {
         setAuthError(errMsg);
         setLaunchStatus(user ? 'ready' : 'claim');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearInterval(interval);
       setAuthError(err.message || 'An error occurred during launch.');
       setLaunchStatus(user ? 'ready' : 'claim');
@@ -163,7 +163,7 @@ export const LaunchStep: React.FC = () => {
         });
       }
       await handleLaunch(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setAuthError(err.message || 'Failed to authenticate. Please check your details.');
       setIsAuthLoading(false);
       setLaunchStatus('claim');

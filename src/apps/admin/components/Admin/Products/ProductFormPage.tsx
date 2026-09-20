@@ -137,7 +137,7 @@ export const ProductFormPage: React.FC = () => {
 
       // Re-fetch categories and select the new one
       await fetchCategories(newId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("CATEGORY CREATE ERROR:", err, "Status:", err?.status);
       if (err?.status === 401 || err?.message?.toLowerCase().includes('log in') || err?.message?.toLowerCase().includes('session')) {
         setCatModalError(`Problem: Session expired (API 401). Raw Error: ${err?.message}. Status: ${err?.status}. Where: Account login. What to do: Please log in again.`);
@@ -176,7 +176,7 @@ export const ProductFormPage: React.FC = () => {
           images: product.images || [],
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       showError('Error', error.message || 'Failed to load product');
       navigate('/admin/products');
     } finally {
@@ -313,7 +313,7 @@ export const ProductFormPage: React.FC = () => {
       }
 
       navigate('/admin/products');
-    } catch (error: any) {
+    } catch (error: unknown) {
       showError('Error', error?.message || 'Failed to save product');
     } finally {
       setLoading(false);

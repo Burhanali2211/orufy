@@ -20,7 +20,7 @@ export const useCustomerProfile = () => {
       queryClient.invalidateQueries({ queryKey: ['customer', 'stats', user?.id] });
       showSuccess('Success', 'Profile updated successfully');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error', err.message || 'Failed to update profile');
     }
   });
@@ -37,7 +37,7 @@ export const useCustomerProfile = () => {
         reader.readAsDataURL(file);
       });
 
-      const result = await apiClient.post<any>('/customer/profiles/avatar', { data: dataUrl });
+      const result = await apiClient.post<Record<string, unknown>>('/customer/profiles/avatar', { data: dataUrl });
       const publicUrl = result?.url || result?.publicUrl || dataUrl;
 
       await authUpdateProfile({ avatar: publicUrl });
@@ -46,7 +46,7 @@ export const useCustomerProfile = () => {
     onSuccess: () => {
       showSuccess('Avatar updated', 'Your profile picture has been updated.');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error', err.message || 'Failed to update avatar');
     }
   });

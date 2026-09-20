@@ -7,7 +7,7 @@ export interface AuditLogPayload {
   action: string;
   resourceType: string;
   resourceId?: string | null;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   ipAddress?: string | null;
   userAgent?: string | null;
 }

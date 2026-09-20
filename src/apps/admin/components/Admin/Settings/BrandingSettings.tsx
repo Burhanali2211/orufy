@@ -13,8 +13,7 @@ import {
   Eye,
   Megaphone,
   Store,
-  Globe,
-  Check
+  Globe
 } from 'lucide-react';
 
 interface BrandingData {
@@ -70,7 +69,7 @@ export const BrandingSettings: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-branding-settings'] });
       queryClient.invalidateQueries({ queryKey: ['store'] });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError(err?.message || 'Failed to save branding');
     }
   });
@@ -84,7 +83,7 @@ export const BrandingSettings: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-branding-settings'] });
       queryClient.invalidateQueries({ queryKey: ['store'] });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError(err?.message || 'Failed to remove logo');
     }
   });
@@ -98,7 +97,7 @@ export const BrandingSettings: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-branding-settings'] });
       queryClient.invalidateQueries({ queryKey: ['store'] });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError(err?.message || 'Failed to remove favicon');
     }
   });

@@ -40,7 +40,7 @@ export const initSentry = (dsn?: string) => {
       beforeSend(event, hint) {
         // Don't send events in development
         if (import.meta.env.MODE === 'development') {
-          console.log('Sentry event (dev mode):', event);
+          console.info('Sentry event (dev mode):', event);
           return null;
         }
         
@@ -85,7 +85,7 @@ export const initSentry = (dsn?: string) => {
       ],
     });
 
-    console.log('Sentry initialized:', sentryDsn.substring(0, 20) + '...');
+    console.info('Sentry initialized:', sentryDsn.substring(0, 20) + '...');
   } catch (error) {
     console.error('Failed to initialize Sentry:', error);
   }
@@ -96,7 +96,7 @@ export const captureException = (
   error: Error,
   context?: {
     tags?: Record<string, string>;
-    extra?: Record<string, any>;
+    extra?: Record<string, unknown>;
     level?: Sentry.SeverityLevel;
   }
 ) => {
@@ -131,7 +131,7 @@ export const captureMessage = (
   level: Sentry.SeverityLevel = 'info',
   context?: {
     tags?: Record<string, string>;
-    extra?: Record<string, any>;
+    extra?: Record<string, unknown>;
   }
 ) => {
   try {
@@ -161,7 +161,7 @@ export const setUser = (user: {
   id?: string;
   email?: string;
   username?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 } | null) => {
   try {
     Sentry.setUser(user);
@@ -175,7 +175,7 @@ export const addBreadcrumb = (breadcrumb: {
   message: string;
   category?: string;
   level?: Sentry.SeverityLevel;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }) => {
   try {
     Sentry.addBreadcrumb(breadcrumb);
@@ -187,7 +187,7 @@ export const addBreadcrumb = (breadcrumb: {
 // Track performance
 export const trackPerformance = {
   // Start a transaction
-  startTransaction: (name: string, op: string) => {
+  startTransaction: (_name: string, _op: string) => {
     try {
       // Transactions are handled automatically by Sentry
       // This is a no-op for compatibility

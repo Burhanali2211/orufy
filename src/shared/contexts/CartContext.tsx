@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import React, { createContext, ReactNode, useMemo } from 'react';
 import { CartItem, CartContextType, Product } from '../types';
 import { useCartStore } from '../stores/useCartStore';
 

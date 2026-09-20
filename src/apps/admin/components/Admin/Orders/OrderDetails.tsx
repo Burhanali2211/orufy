@@ -8,7 +8,6 @@ import {
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { ConfirmModal } from '@/shared/components/Common/Modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Address } from '@/shared/types';
 import {
   getOrderStatusConfig,
   getPaymentStatusConfig,
@@ -53,15 +52,18 @@ interface OrderData {
   payment_method: string;
   razorpay_payment_id?: string;
   razorpay_order_id?: string;
-  payment_method_details?: any;
+  payment_method_details?: Record<string, unknown>;
+  payment_id?: string;
   subtotal: string;
   tax_amount: string;
   shipping_amount: string;
   discount_amount: string;
   total_amount: string;
-  shipping_address: any;
-  billing_address: any;
-  tracking_number: string;
+  shipping_address: Record<string, unknown>;
+  billing_address: Record<string, unknown>;
+  tracking_number?: string;
+  shipped_at?: string;
+  delivered_at?: string;
   notes?: string;
   created_at: string;
   items: OrderItem[];
@@ -111,7 +113,7 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
         setNewStatus(res.status);
         setNewPaymentStatus(res.payment_status);
         setTrackingNumber(res.tracking_number || '');
-        setEmailRecipient(res.customer_email || res.user_email || res.shipping_address?.email || '');
+        setEmailRecipient(res.customer_email || res.user_email || (res.shipping_address?.email as string) || '');
         return res;
     }),
   });
@@ -119,8 +121,8 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
   const { data: communications, isLoading: communicationsLoading, refetch: refetchCommunications } = useQuery({
     queryKey: ['order-communications', orderId],
     queryFn: async () => {
-      const res = await apiClient.get<any>(`/merchant/orders/${orderId}/communications`);
-      return res?.communications || [];
+      const res = await apiClient.get<Record<string, unknown>>(`/merchant/orders/${orderId}/communications`);
+      return (res?.communications as unknown[]) || [];
     },
     enabled: !!orderId,
   });
@@ -128,24 +130,25 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
   const resendEmailMutation = useMutation({
     mutationFn: (payload: { eventType: string; recipientEmail?: string; customSubject?: string }) =>
       apiClient.post(`/merchant/orders/${orderId}/resend-email`, payload),
-    onSuccess: (data: any) => {
-      showSuccess('Email Sent', data.message || 'Notification email dispatched successfully');
+    onSuccess: (data: unknown) => {
+      const resData = data as { message?: string };
+      showSuccess('Email Sent', resData.message || 'Notification email dispatched successfully');
       setShowEmailModal(false);
       refetchCommunications();
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Failed to Send', err.message || 'Failed to dispatch notification email');
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (updates: Record<string, unknown>) => apiClient.put(`/merchant/orders/${orderId}`, updates),
-    onSuccess: () => {
+    onSuccess: (data: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-order', orderId] });
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
     },
-    onError: (error: Error) => {
-      showError('Error', error.message || 'Failed to update order');
+    onError: (err: Error) => {
+      showError('Error', err.message || 'Failed to update order');
     }
   });
 
@@ -635,7 +638,7 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {communications.map((comm: any) => (
+                  {communications.map((comm: { id: string; type: string; subject: string; created_at: string; status: string; sent_at?: string; read_at?: string; error_message?: string; recipient: string }) => (
                     <div
                       key={comm.id}
                       className="p-3 bg-stone-50 border border-stone-200/80 rounded-xl space-y-1 text-xs"

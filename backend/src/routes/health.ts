@@ -32,8 +32,9 @@ healthRouter.get('/ready', async (req: Request, res: Response) => {
       latencyMs: dbLatencyMs,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
-    console.error('Readiness probe failed:', error?.message);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Readiness probe failed:', err?.message);
     return res.status(503).json({
       status: 'unready',
       database: 'disconnected',
@@ -56,7 +57,7 @@ healthRouter.get('/detailed', async (req: Request, res: Response) => {
       const start = Date.now();
       await db.execute(sql`SELECT 1;`);
       dbLatencyMs = Date.now() - start;
-    } catch (dbErr) {
+    } catch {
       dbStatus = 'unreachable';
     }
 
@@ -102,7 +103,8 @@ healthRouter.get('/detailed', async (req: Request, res: Response) => {
 
     const statusCode = dbStatus === 'healthy' ? 200 : 503;
     return res.status(statusCode).json(report);
-  } catch (error: any) {
-    return res.status(500).json({ status: 'error', message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    return res.status(500).json({ status: 'error', message: err.message });
   }
 });

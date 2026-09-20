@@ -7,9 +7,6 @@ import {
   Edit,
   Trash2,
   Tag,
-  CheckCircle2,
-  Layers,
-  X,
   ChevronUp,
   ChevronDown as ChevronDownIcon,
   Download,
@@ -58,7 +55,7 @@ export const CategoriesList: React.FC = () => {
       const cats = Array.isArray(catsRes) ? catsRes : (catsRes?.data || []);
       const products = Array.isArray(productsRes) ? productsRes : (productsRes?.data || []);
 
-      const countMap = products.reduce((acc: Record<string, number>, p: any) => {
+      const countMap = products.reduce((acc: Record<string, number>, p: { category_id?: string }) => {
         if (p.category_id || p.categoryId) {
           const catId = p.category_id || p.categoryId;
           acc[catId] = (acc[catId] || 0) + 1;
@@ -129,8 +126,8 @@ export const CategoriesList: React.FC = () => {
         return matchesSearch && matchesStatus;
       })
       .sort((a: Category, b: Category) => {
-        let valA: any = a[sortKey] ?? '';
-        let valB: any = b[sortKey] ?? '';
+        let valA: unknown = (a as Record<string, unknown>)[sortKey] ?? '';
+        let valB: unknown = (b as Record<string, unknown>)[sortKey] ?? '';
         if (typeof valA === 'string') valA = valA.toLowerCase();
         if (typeof valB === 'string') valB = valB.toLowerCase();
 

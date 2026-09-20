@@ -1,7 +1,7 @@
 import { S3Client, PutObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { db } from '../db/db';
 import { site_settings } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { saveOptimizedImage } from './imageOptimizer';
 
 export interface R2Config {
@@ -101,7 +101,8 @@ export async function testR2Connection(config: R2Config): Promise<{ success: boo
       success: true,
       message: `Successfully connected to Cloudflare R2 bucket "${config.bucketName.trim()}"!`
     };
-  } catch (err: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     console.error('R2 Connection test failed:', err);
     return {
       success: false,

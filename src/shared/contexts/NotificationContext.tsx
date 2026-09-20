@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, ReactNode, useCallback } from 'react';
 import { toast } from 'sonner';
 
 type NotificationType = 'success' | 'error' | 'warning' | 'info';

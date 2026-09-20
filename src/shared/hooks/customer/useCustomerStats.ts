@@ -1,7 +1,6 @@
 import { apiClient } from '@/shared/lib/apiClient';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useNotification } from '@/shared/contexts/NotificationContext';
 
 export const useCustomerStats = () => {
   const { user } = useAuth();

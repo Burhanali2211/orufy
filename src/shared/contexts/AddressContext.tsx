@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { Address, AddressContextType } from '../types';
-import { apiClient } from '../lib/apiClient';
 import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 

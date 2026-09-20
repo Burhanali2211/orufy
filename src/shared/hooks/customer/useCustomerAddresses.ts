@@ -51,7 +51,7 @@ export const useCustomerAddresses = () => {
       queryClient.invalidateQueries({ queryKey: ['customer', 'addresses', user?.id] });
       showSuccess('Success', 'Address added successfully');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error', err.message || 'Failed to add address');
     }
   });
@@ -61,7 +61,7 @@ export const useCustomerAddresses = () => {
     mutationFn: async ({ id, ...updates }: Partial<Address> & { id: string }) => {
       if (!user) throw new Error('User not authenticated');
 
-      const dbData: any = {};
+      const dbData: Record<string, unknown> = {};
       if (updates.fullName) dbData.full_name = updates.fullName;
       if (updates.streetAddress) dbData.street_address = updates.streetAddress;
       if (updates.city) dbData.city = updates.city;
@@ -81,7 +81,7 @@ export const useCustomerAddresses = () => {
       queryClient.invalidateQueries({ queryKey: ['customer', 'addresses', user?.id] });
       showSuccess('Success', 'Address updated successfully');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error', err.message || 'Failed to update address');
     }
   });
@@ -96,7 +96,7 @@ export const useCustomerAddresses = () => {
       queryClient.invalidateQueries({ queryKey: ['customer', 'addresses', user?.id] });
       showSuccess('Success', 'Address deleted successfully');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error', err.message || 'Failed to delete address');
     }
   });
@@ -113,7 +113,7 @@ export const useCustomerAddresses = () => {
       queryClient.invalidateQueries({ queryKey: ['customer', 'addresses', user?.id] });
       showSuccess('Success', 'Default address updated');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error', err.message || 'Failed to update default address');
     }
   });

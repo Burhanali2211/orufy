@@ -7,7 +7,7 @@ import { normalizeHostname } from "../lib/domainUtils";
 import { withUserContext } from "../db/utils";
 
 // In-memory cache to prevent DB hit on every request
-const storeCache = new LRUCache<string, any>({
+const storeCache = new LRUCache<string, Record<string, unknown> & { id: string }>({
   max: 1000,
   ttl: 1000 * 60 * 5, // 5 minutes TTL
 });
@@ -121,7 +121,7 @@ export const storeResolver = async (req: Request, res: Response, next: NextFunct
       host === `${sub}.${PLATFORM_DOMAIN}`
     ) || host === PLATFORM_DOMAIN || host === 'localhost' || host === '127.0.0.1';
 
-    let explicitHost = req.headers['x-store-hostname'];
+    const explicitHost = req.headers['x-store-hostname'];
     if (typeof explicitHost === 'string' && explicitHost.trim()) {
       try {
         host = normalizeHostname(explicitHost.trim());

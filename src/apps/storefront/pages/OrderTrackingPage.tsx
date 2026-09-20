@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  Package, Truck, CheckCircle2, MapPin,
-  ArrowRight, AlertCircle,
-  Copy, Check, Search, Sparkles
+  Package, Truck, AlertCircle,
+  Copy, Check, Search
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -78,7 +77,7 @@ export const OrderTrackingPage: React.FC = () => {
         throw new Error(data.error || 'Failed to fetch order details');
       }
       setOrder(data.order);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Order not found');
       setOrder(null);
     } finally {
@@ -116,7 +115,7 @@ export const OrderTrackingPage: React.FC = () => {
 
       // Fetch full order with the returned tracking token
       await fetchOrderById(data.orderId, data.trackingToken);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLookupError(err.message || 'Order lookup failed');
     } finally {
       setLookupLoading(false);

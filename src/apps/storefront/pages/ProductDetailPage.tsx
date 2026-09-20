@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Heart, ShieldCheck, Truck, Plus, Minus,
   MessageSquare, ShoppingCart, ShoppingBag, Check,
-  ArrowRight, Package, TrendingUp, FileText, Star, X, ThumbsUp
+  ArrowRight, Package, FileText, Star, X
 } from 'lucide-react';
 import { useProducts } from '@/shared/contexts/ProductContext';
 import { useCart } from '@/shared/contexts/CartContext';
@@ -19,7 +19,6 @@ import { Modal } from '@/shared/components/Common/Modal';
 
 import { Review, Product } from '@/shared/types';
 import { useCartButtonState } from '@/shared/hooks/useCartButton';
-import { LuxuryGallery } from '@/shared/components/Product/LuxuryGallery';
 import { ProductSEO } from '@/shared/components/SEO/SEO';
 import { ProductStructuredData, BreadcrumbStructuredData } from '@/shared/components/SEO/StructuredData';
 

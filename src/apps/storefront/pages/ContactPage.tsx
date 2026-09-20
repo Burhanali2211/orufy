@@ -24,8 +24,8 @@ interface FormErrors {
 
 export const ContactPage: React.FC = () => {
   const { settings } = useSettings();
-  const contactInfo: any[] = (settings as any)?.contactInfo || [];
-  const businessHours: any[] = (settings as any)?.businessHours || [];
+  const contactInfo: Record<string, unknown>[] = ((settings as Record<string, unknown>)?.contactInfo as Record<string, unknown>[]) || [];
+  const businessHours: Record<string, unknown>[] = ((settings as Record<string, unknown>)?.businessHours as Record<string, unknown>[]) || [];
 
   const [formData, setFormData] = useState<FormData>({
     name: '', email: '', phone: '', subject: '', message: '',
@@ -35,22 +35,22 @@ export const ContactPage: React.FC = () => {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [submitMessage, setSubmitMessage] = useState('');
 
-  const emailContact = contactInfo.find((c: any) => c.contact_type === 'email' && c.is_primary) ||
-                       contactInfo.find((c: any) => c.contact_type === 'email');
-  const phoneContact = contactInfo.find((c: any) => c.contact_type === 'phone' && c.is_primary) ||
-                       contactInfo.find((c: any) => c.contact_type === 'phone');
-  const addressContact = contactInfo.find((c: any) => c.contact_type === 'address' && c.is_primary) ||
-                         contactInfo.find((c: any) => c.contact_type === 'address');
+  const emailContact = contactInfo.find((c) => c.contact_type === 'email' && c.is_primary) ||
+                       contactInfo.find((c) => c.contact_type === 'email');
+  const phoneContact = contactInfo.find((c) => c.contact_type === 'phone' && c.is_primary) ||
+                       contactInfo.find((c) => c.contact_type === 'phone');
+  const addressContact = contactInfo.find((c) => c.contact_type === 'address' && c.is_primary) ||
+                         contactInfo.find((c) => c.contact_type === 'address');
 
-  const email = emailContact?.value || (settings as any)?.contact_email || (settings as any)?.email || 'support@store.local';
-  const phone = phoneContact?.value || (settings as any)?.contact_phone || (settings as any)?.phone || '+91 98765 43210';
-  const address = addressContact?.value || (settings as any)?.contact_address || (settings as any)?.address || 'Flagship Store, India';
+  const email = emailContact?.value || (settings as Record<string, unknown>)?.contact_email || (settings as Record<string, unknown>)?.email || 'support@store.local';
+  const phone = phoneContact?.value || (settings as Record<string, unknown>)?.contact_phone || (settings as Record<string, unknown>)?.phone || '+91 98765 43210';
+  const address = addressContact?.value || (settings as Record<string, unknown>)?.contact_address || (settings as Record<string, unknown>)?.address || 'Flagship Store, India';
 
   const formatBusinessHours = () => {
     if (!businessHours || businessHours.length === 0) return 'Monday - Sunday: 10:00 AM - 9:00 PM';
-    const openDays = businessHours.filter((bh: any) => bh.is_open);
+    const openDays = businessHours.filter((bh: Record<string, unknown>) => bh.is_open);
     if (openDays.length === 7) {
-      const firstDay = businessHours.find((bh: any) => bh.is_open);
+      const firstDay = businessHours.find((bh: Record<string, unknown>) => bh.is_open);
       if (firstDay?.is_24_hours) return 'Open 24/7';
       if (firstDay?.open_time && firstDay?.close_time) {
         return `Monday - Sunday: ${firstDay.open_time} - ${firstDay.close_time}`;
@@ -107,7 +107,7 @@ export const ContactPage: React.FC = () => {
       setSubmitStatus('success');
       setSubmitMessage('Thank you for contacting us! We will get back to you soon.');
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Contact form error:', error);
       setSubmitStatus('error');
       setSubmitMessage(error.message || 'Failed to send message. Please try again later.');

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FileText, ShoppingBag, CreditCard, Package, AlertCircle, Scale, ShieldAlert, Award } from 'lucide-react';
+import { FileText, ShoppingBag, CreditCard, Package, Scale, ShieldAlert, Award } from 'lucide-react';
 import { ContactInfoSection } from '@/shared/components/Legal/ContactInfoSection';
 
 import { useSettings } from '@/shared/contexts/SettingsContext';

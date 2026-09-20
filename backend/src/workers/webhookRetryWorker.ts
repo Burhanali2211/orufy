@@ -22,7 +22,7 @@ export class WebhookRetryWorker {
       await this.runSweep();
     }, intervalMs);
 
-    console.log(`[WebhookRetryWorker] Background worker started with ${intervalMs}ms interval.`);
+    console.info(`[WebhookRetryWorker] Background worker started with ${intervalMs}ms interval.`);
   }
 
   /**
@@ -34,7 +34,7 @@ export class WebhookRetryWorker {
       clearInterval(this.intervalTimer);
       this.intervalTimer = null;
     }
-    console.log('[WebhookRetryWorker] Background worker stopped gracefully.');
+    console.info('[WebhookRetryWorker] Background worker stopped gracefully.');
   }
 
   /**
@@ -49,10 +49,12 @@ export class WebhookRetryWorker {
 
     try {
       // 1. Try to acquire PostgreSQL session advisory lock to ensure singleton execution
-      const lockRes: any = await db.execute(
+      const lockRes: unknown = await db.execute(
         sql`SELECT pg_try_advisory_lock(${this.ADVISORY_LOCK_ID}) as acquired;`
       );
-      const lockAcquired = lockRes?.[0]?.acquired || lockRes?.rows?.[0]?.acquired;
+      const resArr = lockRes as Array<{ acquired: boolean }>;
+      const resObj = lockRes as { rows?: Array<{ acquired: boolean }> };
+      const lockAcquired = resArr?.[0]?.acquired || resObj?.rows?.[0]?.acquired;
 
       if (!lockAcquired) {
         return { processed: 0, deadLettered: 0 };
@@ -96,7 +98,7 @@ export class WebhookRetryWorker {
           // Attempt processing in transaction
           try {
             await db.transaction(async (tx) => {
-              await processWebhookBusinessEvent(evt.payload as any, tx);
+              await processWebhookBusinessEvent(evt.payload as { event: string; payload: Record<string, unknown> }, tx);
 
               await tx
                 .update(payment_webhook_events)
@@ -112,7 +114,8 @@ export class WebhookRetryWorker {
             });
 
             processedCount++;
-          } catch (retryErr: any) {
+          } catch (retryErr: unknown) {
+            const err = retryErr as Error;
             // Calculate exponential backoff (e.g. 30s * 2^(attempt-1))
             const backoffSeconds = Math.min(3600, 30 * Math.pow(2, nextAttempt - 1));
             const nextRetryDate = new Date(Date.now() + backoffSeconds * 1000);
@@ -125,7 +128,7 @@ export class WebhookRetryWorker {
                 last_attempt_at: sql`now()`,
                 next_retry_at: nextRetryDate,
                 updated_at: sql`now()`,
-                error_message: retryErr?.message || 'Retry attempt failed',
+                error_message: err?.message || 'Retry attempt failed',
               })
               .where(eq(payment_webhook_events.id, evt.id));
 

@@ -1,5 +1,4 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { db } from '../db/db';
 import { requireAuth } from '../middleware/auth';
 import { requireStore, getUserPrimaryStore, getOrCreateDefaultStore } from '../middleware/storeResolver';
 import { withStoreContext, withUserContext } from '../db/utils';
@@ -26,7 +25,7 @@ const requireStoreMember = async (req: Request, res: Response, next: NextFunctio
         userStore = await getOrCreateDefaultStore();
         if (userStore) {
           await withUserContext(user.id, async (tx) => {
-            await tx.insert(store_members).values({ store_id: userStore.id, user_id: user.id, role: 'owner' }).onConflictDoNothing();
+            await tx.insert(store_members).values({ store_id: userStore!.id, user_id: user.id, role: 'owner' }).onConflictDoNothing();
           });
         }
       }
@@ -113,7 +112,7 @@ router.post('/', requireStore, async (req: Request, res: Response) => {
     const userId = res.locals.user?.id;
     
     const body = req.body || {};
-    const newProduct: any = {
+    const newProduct: Record<string, unknown> = {
       id: uuidv4(),
       store_id: storeId,
       name: body.name?.trim(),
@@ -156,7 +155,7 @@ router.put('/:id', requireStore, async (req: Request, res: Response) => {
     const userId = res.locals.user?.id;
     const body = req.body || {};
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date(),
     };
 

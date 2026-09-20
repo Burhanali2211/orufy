@@ -27,7 +27,7 @@ export const initGA = (measurementId?: string) => {
 
     // Only log in development
     if (import.meta.env.DEV) {
-      console.log('Google Analytics initialized:', gaId);
+      console.info('Google Analytics initialized:', gaId);
     }
   } catch (error) {
     // Silently fail if blocked by ad blocker in development
@@ -68,7 +68,7 @@ export const trackEvent = (
       label,
       value
     });
-  } catch (error) {
+  } catch {
     // silent
   }
 };
@@ -149,7 +149,7 @@ export const trackUserEngagement = {
 };
 
 // Set user properties
-export const setUserProperties = (properties: { userId?: string; userType?: 'customer' | 'admin';[key: string]: any }) => {
+export const setUserProperties = (properties: { userId?: string; userType?: 'customer' | 'admin';[key: string]: unknown }) => {
   if (!gaInitialized) return;
   try {
     if (properties.userId) ReactGA.set({ userId: properties.userId });

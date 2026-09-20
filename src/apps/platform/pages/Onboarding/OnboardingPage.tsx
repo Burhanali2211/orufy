@@ -8,7 +8,7 @@ import { BrandThemeStep } from './steps/BrandThemeStep';
 import { PaymentStep } from './steps/PaymentStep';
 import { DomainStep } from './steps/DomainStep';
 import { LaunchStep } from './steps/LaunchStep';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 
 

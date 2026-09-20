@@ -57,7 +57,7 @@ export const AdminInventoryPage: React.FC = () => {
       if (response.success) {
         setItems(response.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       showError(error?.message || 'Failed to fetch inventory');
     } finally {
       setLoading(false);
@@ -70,7 +70,7 @@ export const AdminInventoryPage: React.FC = () => {
       if (response.success) {
         setMovements(response.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch movements', error);
     }
   };
@@ -94,7 +94,7 @@ export const AdminInventoryPage: React.FC = () => {
         fetchInventory();
         fetchMovements();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       showError(error?.message || 'Failed to update stock');
     }
   };

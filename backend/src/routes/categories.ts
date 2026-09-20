@@ -1,5 +1,4 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { db } from '../db/db';
 import { requireAuth } from '../middleware/auth';
 import { requireStore, getUserPrimaryStore, getOrCreateDefaultStore } from '../middleware/storeResolver';
 import { withStoreContext, withUserContext } from '../db/utils';
@@ -26,7 +25,7 @@ const requireStoreMember = async (req: Request, res: Response, next: NextFunctio
         userStore = await getOrCreateDefaultStore();
         if (userStore) {
           await withUserContext(user.id, async (tx) => {
-            await tx.insert(store_members).values({ store_id: userStore.id, user_id: user.id, role: 'owner' }).onConflictDoNothing();
+            await tx.insert(store_members).values({ store_id: userStore!.id, user_id: user.id, role: 'owner' }).onConflictDoNothing();
           });
         }
       }
@@ -151,7 +150,7 @@ router.put('/:id', requireStore, async (req: Request, res: Response) => {
     const userId = res.locals.user?.id;
     const { name, slug, description, image_url, sort_order, is_active, parent_id } = req.body;
 
-    const updateData: any = { updated_at: new Date() };
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
     if (name !== undefined) updateData.name = name.trim();
     if (slug !== undefined) updateData.slug = slug;
     if (description !== undefined) updateData.description = description;

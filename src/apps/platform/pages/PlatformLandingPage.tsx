@@ -3,36 +3,16 @@ import { motion, AnimatePresence, useScroll, useSpring, Variants } from 'framer-
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
-  CheckCircle2,
   Lock,
   Smartphone,
-  Sparkles,
   ShoppingBag,
-  CreditCard,
   Store,
   ChevronRight,
   ShieldCheck,
   Zap,
   Check,
-  TrendingUp,
-  Globe,
-  Database,
-  ArrowUpRight,
   Banknote,
-  Percent,
-  SlidersHorizontal,
-  Building2,
-  ExternalLink,
-  PackageCheck,
-  BadgeCheck,
-  RefreshCw,
-  Share2,
-  Flame,
-  Send,
-  Layers,
-  Heart,
-  Eye,
-  Sliders
+  BadgeCheck
 } from 'lucide-react';
 import { SEO } from '@/shared/components/SEO/SEO';
 import { StoreStructuredData } from '@/shared/components/SEO/StructuredData';

@@ -25,16 +25,16 @@ export class DataService {
   /**
    * Log method for debugging
    */
-  protected static log(message: string, ...args: any[]) {
+  protected static log(message: string, ...args: unknown[]) {
     if (import.meta.env.DEV) {
-      console.log(`[${this.serviceName}] ${message}`, ...args);
+      console.info(`[${this.serviceName}] ${message}`, ...args);
     }
   }
 
   /**
    * Error log method
    */
-  protected static logError(message: string, error: any) {
+  protected static logError(message: string, error: unknown) {
     console.error(`[${this.serviceName}] ${message}`, error);
   }
 }

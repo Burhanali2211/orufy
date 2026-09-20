@@ -1,9 +1,7 @@
-export const downloadAsCSV = (data: any[], filename: string) => {
+export const downloadAsCSV = (data: Record<string, unknown>[], filename: string) => {
   if (!data || !data.length) return;
 
-  const getNestedValue = (obj: any, path: string) => {
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-  };
+
 
   // Get headers from first object
   const headers: string[] = Array.from(

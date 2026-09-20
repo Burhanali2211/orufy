@@ -1,8 +1,7 @@
 import { apiClient } from '@/shared/lib/apiClient';
 import React, { useState, useRef, useCallback } from 'react';
 import {
-  Search, Eye, X, ShoppingCart, DollarSign, Clock, ChevronLeft, ChevronRight,
-  BarChart3, RefreshCw, ArrowUpRight, CheckCircle2, AlertCircle
+  Search, Eye, ShoppingCart, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { OrderDetails } from './OrderDetails';
 import { useQuery } from '@tanstack/react-query';
@@ -61,16 +60,17 @@ export const OrdersList: React.FC = () => {
 
   const { data: stats, isLoading: statsLoading } = useQuery<OrderStats>({
     queryKey: ['admin-orders-stats'],
-    queryFn: () => apiClient.get('/merchant/orders').then((res: any) => {
-      const q = res?.attentionQueue || {};
-      const allOrders = res?.orders || [];
-      const totalRev = allOrders.reduce((sum: number, o: any) => sum + (parseFloat(o.total_amount) || 0), 0);
+    queryFn: () => apiClient.get('/merchant/orders').then((res: Record<string, unknown> | unknown) => {
+      const resp = res as Record<string, unknown>;
+      const q = (resp?.attentionQueue || {}) as Record<string, unknown>;
+      const allOrders = (resp?.orders || []) as Order[];
+      const totalRev = allOrders.reduce((sum: number, o: Order) => sum + (parseFloat(String(o.total_amount || 0)) || 0), 0);
       const avgVal = allOrders.length > 0 ? totalRev / allOrders.length : 0;
       return {
-        totalOrders: allOrders.length || q.totalActiveOrders || 0,
+        totalOrders: allOrders.length || (q.totalActiveOrders as number) || 0,
         totalRevenue: totalRev,
-        pendingOrders: q.toPackCount || allOrders.filter((o: any) => o.status === 'processing' || o.status === 'pending').length || 0,
-        ordersToday: q.newOrdersCount || 0,
+        pendingOrders: (q.toPackCount as number) || allOrders.filter((o: Order) => o.status === 'processing' || o.status === 'pending').length || 0,
+        ordersToday: (q.newOrdersCount as number) || 0,
         revenueToday: 0,
         avgOrderValue: avgVal,
         statusBreakdown: {}
@@ -81,9 +81,10 @@ export const OrdersList: React.FC = () => {
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ['admin-orders', currentPage, searchTerm, statusFilter, paymentStatusFilter],
     queryFn: () => {
-      return apiClient.get(`/merchant/orders`).then((res: any) => {
-        const allOrders = res?.orders || [];
-        return { data: allOrders, total: allOrders.length };
+      return apiClient.get(`/merchant/orders`).then((res: Record<string, unknown> | unknown) => {
+        const resp = res as Record<string, unknown>;
+        const allOrders = resp?.orders || [];
+        return { data: allOrders, total: Array.isArray(allOrders) ? allOrders.length : 0 };
       });
     },
   });

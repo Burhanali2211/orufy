@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
-  CheckCircle2, Package, MapPin, CreditCard,
-  Truck, ArrowRight, ShoppingBag, Copy, Check, AlertCircle, Sparkles, Printer,
-  Phone, Mail, ShieldCheck, Clock, ArrowLeft, RefreshCw
+  CheckCircle2, Package, MapPin,
+  Truck, ArrowRight, Copy, Check, AlertCircle, Printer,
+  Phone, Mail, Clock, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateInvoicePrintWindow } from '@/shared/utils/invoiceGenerator';
@@ -32,7 +31,7 @@ interface ConfirmationOrder {
   discount_amount: number;
   total_amount: number;
   currency: string;
-  shipping_address: any;
+  shipping_address: Record<string, unknown>;
   carrier?: string;
   tracking_number?: string;
   shipped_at?: string;
@@ -106,7 +105,7 @@ export const OrderConfirmationPage: React.FC = () => {
 
       toast.success(data.message || 'Order confirmation receipt sent to your email!');
       setResendCooldown(60);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(err.message || 'Failed to resend receipt');
     } finally {
       setIsResendingReceipt(false);
@@ -134,7 +133,7 @@ export const OrderConfirmationPage: React.FC = () => {
 
       setOrder(data.order);
       if (data.store) setStore(data.store);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Order not found');
     } finally {
       setLoading(false);

@@ -46,7 +46,7 @@ export const VerifyEmailPage: React.FC = () => {
 
         setStatus('success');
         toast.success('Email verified successfully!');
-      } catch (err: any) {
+      } catch (err: unknown) {
         setStatus('error');
         setErrorMessage(err.message || 'This verification link is invalid or has expired.');
       }

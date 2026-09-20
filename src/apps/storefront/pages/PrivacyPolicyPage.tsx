@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Lock, Eye, Database, Server, UserCheck } from 'lucide-react';
+import { Shield, Lock, Eye, Database, UserCheck } from 'lucide-react';
 import { ContactInfoSection } from '@/shared/components/Legal/ContactInfoSection';
 
 import { useSettings } from '@/shared/contexts/SettingsContext';

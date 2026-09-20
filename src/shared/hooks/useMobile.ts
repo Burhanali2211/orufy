@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/shared/contexts/AuthContext';
 
 // ==================== MOBILE AUTH ====================
@@ -11,7 +11,7 @@ export const useMobileAuth = () => {
 // ==================== MOBILE DETECTION ====================
 
 export const useMobileDetection = () => {
-  const [isMobile, setIsMobile] = useState<boolean>(() => {
+  const [isMobile] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return /iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(navigator.userAgent);
   });

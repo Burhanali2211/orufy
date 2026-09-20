@@ -49,20 +49,20 @@ export const sendEmail = async (options: EmailOptions): Promise<{ success: boole
         throw new Error(data.message || 'Failed to send email via Resend');
       }
 
-      console.log('✉️ Email sent successfully via Resend:', data.id);
+      console.info('✉️ Email sent successfully via Resend:', data.id);
       return { success: true, messageId: data.id };
     }
 
     // Dev Fallback mode if no API key is set yet
-    console.log('✉️ [DEV EMAIL SIMULATOR]');
-    console.log(`  To: ${options.to}`);
-    console.log(`  Subject: ${options.subject}`);
-    console.log(`  Preview: ${options.text || options.html.slice(0, 100)}...`);
+    console.info('✉️ [DEV EMAIL SIMULATOR]');
+    console.info(`  To: ${options.to}`);
+    console.info(`  Subject: ${options.subject}`);
+    console.info(`  Preview: ${options.text || options.html.slice(0, 100)}...`);
 
     return { success: true, messageId: `dev-sim-${Date.now()}` };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Email sending error:', error);
-    return { success: false, error: error.message || 'Email service error' };
+    return { success: false, error: (error as Error).message || 'Email service error' };
   }
 };
 

@@ -6,11 +6,9 @@ import {
   ShoppingCart,
   Users,
   Tag,
-  BarChart3,
   Settings,
   Sliders,
   Palette,
-  Cloud,
   Building,
   Shield,
 } from 'lucide-react';

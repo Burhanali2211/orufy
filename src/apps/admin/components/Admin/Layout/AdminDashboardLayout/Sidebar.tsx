@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, ExternalLink, LogOut, LayoutDashboard, Store, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, ExternalLink, LogOut, Store, ChevronDown, ChevronUp } from 'lucide-react';
 import { NavItem } from './types';
 import { User } from '@/shared/types';
 import { useAuth } from '@/shared/contexts/AuthContext';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOnboarding } from '../OnboardingContext';
 import { ArrowRight, ArrowLeft, CheckCircle2, Globe, Lock, Copy, Check, ShieldCheck, Zap, AlertCircle, Loader2, ShoppingCart } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { DomainPurchaseModal } from './DomainPurchaseModal';
 
 export const DomainStep: React.FC = () => {
@@ -83,7 +83,7 @@ export const DomainStep: React.FC = () => {
             message: json.reason || 'This store address is already taken. Please choose another.',
           });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (err.name !== 'AbortError') {
           // Fallback to valid format
           setSubdomainCheck({

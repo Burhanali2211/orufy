@@ -72,7 +72,8 @@ export async function verifyDnsTxtRecord(
       success: matched,
       foundRecords: flatRecords,
     };
-  } catch (err: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { code?: string };
     return {
       success: false,
       foundRecords: [],

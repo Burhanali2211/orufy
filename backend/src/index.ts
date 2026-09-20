@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { db } from './db/db';
-import { products, categories, stores, site_settings } from './db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { products, categories, site_settings } from './db/schema';
+import { eq } from 'drizzle-orm';
 import { authRouter } from './routes/auth';
 import { platformRouter } from './routes/platform';
 import { paymentRouter } from './routes/payment';
@@ -23,7 +23,7 @@ import { WorkerManager } from './workers/workerManager';
 import { storeResolver, requireStore } from './middleware/storeResolver';
 import { withStoreContext } from './db/utils';
 import helmet from 'helmet';
-import { authLimiter, checkoutLimiter, apiLimiter } from './middleware/rateLimiter';
+import { authLimiter, checkoutLimiter } from './middleware/rateLimiter';
 import { runMigrations } from './db/migrate';
 
 dotenv.config();
@@ -41,7 +41,7 @@ app.use(helmet({
 app.use(cors());
 app.use(express.json({
   limit: '5mb',
-  verify: (req: any, res, buf) => {
+  verify: (req: express.Request & { rawBody?: string }, res, buf) => {
     req.rawBody = buf.toString();
   }
 }));
@@ -93,14 +93,14 @@ app.get('/api/store/settings', requireStore, async (req, res) => {
     if (settingsMap['hero_settings']) {
       try {
         heroConfig = JSON.parse(settingsMap['hero_settings']);
-      } catch (_) {}
+      } catch { }
     }
 
     let themeStudioConfig = null;
     if (settingsMap['theme_studio_settings'] || settingsMap['theme_studio']) {
       try {
         themeStudioConfig = JSON.parse(settingsMap['theme_studio_settings'] || settingsMap['theme_studio']);
-      } catch (_) {}
+      } catch { }
     }
 
     res.json({
@@ -176,8 +176,8 @@ app.get(['/sitemap.xml', '/api/sitemap.xml'], async (req, res) => {
       : (process.env.FRONTEND_URL || 'https://get-oru.com');
     const today = new Date().toISOString().split('T')[0];
 
-    let storeProducts: any[] = [];
-    let storeCategories: any[] = [];
+    let storeProducts: { id: string; slug: string | null; updated_at: Date | null }[] = [];
+    let storeCategories: { id: string; slug: string | null; updated_at: Date | null }[] = [];
 
     if (store?.id) {
       storeProducts = await db
@@ -249,7 +249,7 @@ app.get(['/affiliate-onboarding.html', '/affiliate-onboarding', '/affiliate'], (
 });
 
 const server = app.listen(port, async () => {
-  console.log(`🚀 Server running on http://localhost:${port}`);
+  console.info(`🚀 Server running on http://localhost:${port}`);
   if (process.env.NODE_ENV !== 'test') {
     await runMigrations();
     WorkerManager.startAll();
@@ -258,10 +258,10 @@ const server = app.listen(port, async () => {
 
 // Graceful shutdown
 const handleShutdown = (signal: string) => {
-  console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+  console.info(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
   WorkerManager.stopAll();
   server.close(() => {
-    console.log('✅ HTTP server closed. Process terminating cleanly.');
+    console.info('✅ HTTP server closed. Process terminating cleanly.');
     process.exit(0);
   });
 

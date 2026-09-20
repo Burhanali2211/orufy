@@ -1,9 +1,11 @@
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export async function withStoreContext<T>(
   storeId: string,
-  callback: (tx: any) => Promise<T>,
+  callback: (tx: DbTransaction) => Promise<T>,
   userId?: string
 ): Promise<T> {
   return await db.transaction(async (tx) => {
@@ -25,7 +27,7 @@ export async function withStoreContext<T>(
 
 export async function withUserContext<T>(
   userId: string,
-  callback: (tx: any) => Promise<T>
+  callback: (tx: DbTransaction) => Promise<T>
 ): Promise<T> {
   return await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT set_config('app.current_user_id', ${userId}, true)`);

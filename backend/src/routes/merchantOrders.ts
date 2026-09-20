@@ -91,7 +91,12 @@ merchantOrdersRouter.get('/customers/list', requireAuth, async (req: Request, re
         .innerJoin(profiles, eq(orders.user_id, profiles.id))
         .where(eq(orders.store_id, store.id));
 
-      const customerMap = new Map<string, any>();
+      type CustomerRecord = {
+        id: string; email: string | null; full_name: string | null;
+        role: string | null; avatar_url: string | null; created_at: Date | null;
+        is_active: boolean; order_count: number; total_spent: number;
+      };
+      const customerMap = new Map<string, CustomerRecord>();
       for (const row of orderRows) {
         if (!customerMap.has(row.id)) {
           customerMap.set(row.id, {
@@ -106,7 +111,7 @@ merchantOrdersRouter.get('/customers/list', requireAuth, async (req: Request, re
             total_spent: 0,
           });
         }
-        const record = customerMap.get(row.id);
+        const record = customerMap.get(row.id)!;
         record.order_count += 1;
         record.total_spent += (row.order_amount || 0);
       }
@@ -146,7 +151,7 @@ merchantOrdersRouter.get('/', requireAuth, async (req: Request, res: Response) =
 
       // Fetch items for each order
       const populatedOrders = await Promise.all(
-        orderList.map(async (ord: any) => {
+        orderList.map(async (ord: typeof orderList[0]) => {
           const items = await tx
             .select()
             .from(order_items)
@@ -164,7 +169,7 @@ merchantOrdersRouter.get('/', requireAuth, async (req: Request, res: Response) =
       let toPackCount = 0;
       let needTrackingCount = 0;
 
-      for (const ord of orderList as any[]) {
+      for (const ord of orderList) {
         if (ord.status !== 'CANCELLED') {
           if (ord.fulfillment_status === 'UNFULFILLED') {
             if (ord.payment_status === 'PAYMENT_CAPTURED' || ord.payment_status === 'ORDER_PAID' || ord.payment_method === 'cod') {
@@ -196,15 +201,16 @@ merchantOrdersRouter.get('/', requireAuth, async (req: Request, res: Response) =
           toPackCount,
           needTrackingCount,
           lowStockCount: lowStockProducts.length,
-          totalActiveOrders: (orderList as any[]).filter((o: any) => o.status !== 'CANCELLED').length,
+          totalActiveOrders: orderList.filter((o) => o.status !== 'CANCELLED').length,
         },
       };
     }, user.id);
 
     return res.status(200).json(storeOrders);
-  } catch (error: any) {
-    console.error('Error fetching merchant orders:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error fetching merchant orders:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -250,9 +256,10 @@ merchantOrdersRouter.get('/:id', requireAuth, async (req: Request, res: Response
     }
 
     return res.status(200).json(orderDetail);
-  } catch (error: any) {
-    console.error('Error fetching order detail:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error fetching order detail:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -315,19 +322,20 @@ merchantOrdersRouter.post('/:id/pack', requireAuth, async (req: Request, res: Re
       storeName: store.name,
       orderId: updated.id,
       orderNumber: updated.order_number,
-      recipientEmail: updated.guest_email || (updated.shipping_address as any)?.email,
-      recipientPhone: updated.guest_phone || (updated.shipping_address as any)?.phone,
-      recipientName: (updated.shipping_address as any)?.full_name || (updated.shipping_address as any)?.name,
+      recipientEmail: updated.guest_email || (updated.shipping_address as { email?: string })?.email || undefined,
+      recipientPhone: updated.guest_phone || (updated.shipping_address as { phone?: string })?.phone || undefined,
+      recipientName: (updated.shipping_address as { full_name?: string; name?: string })?.full_name || (updated.shipping_address as { name?: string })?.name || undefined,
       totalAmountPaise: updated.total_amount,
-      trackingToken: updated.tracking_token,
+      trackingToken: updated.tracking_token || undefined,
     }).catch(err => console.warn('Communication dispatch error:', err));
 
     return res.status(200).json({ success: true, order: updated });
-  } catch (error: any) {
-    if (error.message === 'ORDER_NOT_FOUND') {
+  } catch (error: unknown) {
+    const err = error as Error;
+    if (err.message === 'ORDER_NOT_FOUND') {
       return res.status(404).json({ error: 'Order not found' });
     }
-    return res.status(400).json({ error: error.message || 'Failed to pack order' });
+    return res.status(400).json({ error: err.message || 'Failed to pack order' });
   }
 });
 
@@ -395,21 +403,22 @@ merchantOrdersRouter.post('/:id/ship', requireAuth, async (req: Request, res: Re
       storeName: store.name,
       orderId: updated.id,
       orderNumber: updated.order_number,
-      carrier: updated.carrier,
-      trackingNumber: updated.tracking_number,
-      recipientEmail: updated.guest_email || (updated.shipping_address as any)?.email,
-      recipientPhone: updated.guest_phone || (updated.shipping_address as any)?.phone,
-      recipientName: (updated.shipping_address as any)?.full_name || (updated.shipping_address as any)?.name,
+      carrier: updated.carrier || undefined,
+      trackingNumber: updated.tracking_number || undefined,
+      recipientEmail: updated.guest_email || (updated.shipping_address as { email?: string })?.email || undefined,
+      recipientPhone: updated.guest_phone || (updated.shipping_address as { phone?: string })?.phone || undefined,
+      recipientName: (updated.shipping_address as { full_name?: string; name?: string })?.full_name || (updated.shipping_address as { name?: string })?.name || undefined,
       totalAmountPaise: updated.total_amount,
-      trackingToken: updated.tracking_token,
+      trackingToken: updated.tracking_token || undefined,
     }).catch(err => console.warn('Communication dispatch error:', err));
 
     return res.status(200).json({ success: true, order: updated });
-  } catch (error: any) {
-    if (error.message === 'ORDER_NOT_FOUND') {
+  } catch (error: unknown) {
+    const err = error as Error;
+    if (err.message === 'ORDER_NOT_FOUND') {
       return res.status(404).json({ error: 'Order not found' });
     }
-    return res.status(400).json({ error: error.message || 'Failed to ship order' });
+    return res.status(400).json({ error: err.message || 'Failed to ship order' });
   }
 });
 
@@ -468,21 +477,22 @@ merchantOrdersRouter.post('/:id/deliver', requireAuth, async (req: Request, res:
       storeName: store.name,
       orderId: updated.id,
       orderNumber: updated.order_number,
-      carrier: updated.carrier,
-      trackingNumber: updated.tracking_number,
-      recipientEmail: updated.guest_email || (updated.shipping_address as any)?.email,
-      recipientPhone: updated.guest_phone || (updated.shipping_address as any)?.phone,
-      recipientName: (updated.shipping_address as any)?.full_name || (updated.shipping_address as any)?.name,
+      carrier: updated.carrier || undefined,
+      trackingNumber: updated.tracking_number || undefined,
+      recipientEmail: updated.guest_email || (updated.shipping_address as { email?: string })?.email || undefined,
+      recipientPhone: updated.guest_phone || (updated.shipping_address as { phone?: string })?.phone || undefined,
+      recipientName: (updated.shipping_address as { full_name?: string; name?: string })?.full_name || (updated.shipping_address as { name?: string })?.name || undefined,
       totalAmountPaise: updated.total_amount,
-      trackingToken: updated.tracking_token,
+      trackingToken: updated.tracking_token || undefined,
     }).catch(err => console.warn('Communication dispatch error:', err));
 
     return res.status(200).json({ success: true, order: updated });
-  } catch (error: any) {
-    if (error.message === 'ORDER_NOT_FOUND') {
+  } catch (error: unknown) {
+    const err = error as Error;
+    if (err.message === 'ORDER_NOT_FOUND') {
       return res.status(404).json({ error: 'Order not found' });
     }
-    return res.status(400).json({ error: error.message || 'Failed to deliver order' });
+    return res.status(400).json({ error: err.message || 'Failed to deliver order' });
   }
 });
 
@@ -568,11 +578,11 @@ merchantOrdersRouter.post('/:id/cancel', requireAuth, async (req: Request, res: 
       storeName: store.name,
       orderId: updated.id,
       orderNumber: updated.order_number,
-      recipientEmail: updated.guest_email || (updated.shipping_address as any)?.email,
-      recipientPhone: updated.guest_phone || (updated.shipping_address as any)?.phone,
-      recipientName: (updated.shipping_address as any)?.full_name || (updated.shipping_address as any)?.name,
+      recipientEmail: updated.guest_email || (updated.shipping_address as { email?: string })?.email || undefined,
+      recipientPhone: updated.guest_phone || (updated.shipping_address as { phone?: string })?.phone || undefined,
+      recipientName: (updated.shipping_address as { full_name?: string; name?: string })?.full_name || (updated.shipping_address as { name?: string })?.name || undefined,
       totalAmountPaise: updated.total_amount,
-      trackingToken: updated.tracking_token,
+      trackingToken: updated.tracking_token || undefined,
     }).catch(err => console.warn('Communication dispatch error:', err));
 
     // Record audit log
@@ -591,11 +601,12 @@ merchantOrdersRouter.post('/:id/cancel', requireAuth, async (req: Request, res: 
     }).catch(err => console.warn('Audit dispatch error:', err));
 
     return res.status(200).json({ success: true, order: updated });
-  } catch (error: any) {
-    if (error.message === 'ORDER_NOT_FOUND') {
+  } catch (error: unknown) {
+    const err = error as Error;
+    if (err.message === 'ORDER_NOT_FOUND') {
       return res.status(404).json({ error: 'Order not found' });
     }
-    return res.status(400).json({ error: error.message || 'Failed to cancel order' });
+    return res.status(400).json({ error: err.message || 'Failed to cancel order' });
   }
 });
 
@@ -617,7 +628,7 @@ merchantOrdersRouter.put('/:id', requireAuth, async (req: Request, res: Response
       const [ord] = await tx.select().from(orders).where(and(eq(orders.id, orderId), eq(orders.store_id, store.id)));
       if (!ord) throw new Error('ORDER_NOT_FOUND');
 
-      const toUpdate: any = { updated_at: sql`now()` };
+      const toUpdate: Record<string, unknown> = { updated_at: sql`now()` };
       if (updates.status !== undefined) toUpdate.status = updates.status;
       if (updates.payment_status !== undefined) toUpdate.payment_status = updates.payment_status;
       if (updates.tracking_number !== undefined) toUpdate.tracking_number = updates.tracking_number;
@@ -629,9 +640,10 @@ merchantOrdersRouter.put('/:id', requireAuth, async (req: Request, res: Response
     }, user.id);
 
     return res.status(200).json({ success: true, order: updated });
-  } catch (error: any) {
-    if (error.message === 'ORDER_NOT_FOUND') return res.status(404).json({ error: 'Order not found' });
-    return res.status(400).json({ error: error.message || 'Failed to update order' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    if (err.message === 'ORDER_NOT_FOUND') return res.status(404).json({ error: 'Order not found' });
+    return res.status(400).json({ error: err.message || 'Failed to update order' });
   }
 });
 
@@ -653,8 +665,9 @@ merchantOrdersRouter.get('/:id/communications', requireAuth, async (req: Request
 
     const logs = await CommunicationService.getOrderCommunications(store.id, orderId);
     return res.status(200).json({ communications: logs });
-  } catch (error: any) {
-    console.error('Error fetching order communications:', error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error fetching order communications:', err);
     return res.status(500).json({ error: 'Failed to fetch communication logs' });
   }
 });
@@ -664,7 +677,7 @@ merchantOrdersRouter.post('/:id/resend-email', requireAuth, async (req: Request,
   try {
     const user = res.locals.user;
     const orderId = String(req.params.id);
-    const eventType = (req.body.eventType || req.body.event_type || 'ORDER_CONFIRMED') as any;
+    const eventType = (req.body.eventType || req.body.event_type || 'ORDER_CONFIRMED') as 'ORDER_CONFIRMED';
     const customEmail = (req.body.recipientEmail || req.body.email || '').trim().toLowerCase();
 
     const store = await resolveMerchantStore(req, res);
@@ -680,7 +693,7 @@ merchantOrdersRouter.post('/:id/resend-email', requireAuth, async (req: Request,
 
     if (!ord) return res.status(404).json({ error: 'Order not found' });
 
-    const recipientEmail = customEmail || ord.guest_email || (ord.shipping_address as any)?.email;
+    const recipientEmail = customEmail || ord.guest_email || (ord.shipping_address as { email?: string })?.email;
     if (!recipientEmail) {
       return res.status(400).json({ error: 'Recipient email is required to resend notification' });
     }
@@ -688,14 +701,14 @@ merchantOrdersRouter.post('/:id/resend-email', requireAuth, async (req: Request,
     // Fetch order items
     const items = await db.select().from(order_items).where(eq(order_items.order_id, ord.id));
     const populatedItems = await Promise.all(
-      items.map(async (item: any) => {
+      items.map(async (item: typeof items[0]) => {
         let productName = 'Product';
         if (item.product_id) {
           const [p] = await db.select().from(products).where(eq(products.id, item.product_id));
           if (p) productName = p.name;
         }
         return {
-          name: (item.product_snapshot as any)?.name || productName,
+          name: (item.product_snapshot as { name?: string })?.name || productName,
           quantity: item.quantity,
           pricePaise: item.unit_price,
           sku: item.variant_id || undefined,
@@ -711,8 +724,8 @@ merchantOrdersRouter.post('/:id/resend-email', requireAuth, async (req: Request,
       orderId: ord.id,
       orderNumber: ord.order_number,
       recipientEmail,
-      recipientPhone: ord.guest_phone || (ord.shipping_address as any)?.phone,
-      recipientName: (ord.shipping_address as any)?.full_name || (ord.shipping_address as any)?.name || 'Valued Customer',
+      recipientPhone: ord.guest_phone || (ord.shipping_address as { phone?: string })?.phone,
+      recipientName: (ord.shipping_address as { full_name?: string; name?: string })?.full_name || (ord.shipping_address as { name?: string })?.name || 'Valued Customer',
       totalAmountPaise: ord.total_amount,
       subtotalPaise: ord.subtotal,
       taxAmountPaise: ord.tax_amount,
@@ -750,8 +763,9 @@ merchantOrdersRouter.post('/:id/resend-email', requireAuth, async (req: Request,
       success: true,
       message: `Email (${eventType}) sent successfully to ${recipientEmail}`,
     });
-  } catch (error: any) {
-    console.error('Error resending merchant order email:', error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error resending merchant order email:', err);
     return res.status(500).json({ error: 'Failed to resend email' });
   }
 });
@@ -790,7 +804,7 @@ merchantOrdersRouter.post('/customers/:id/resend-verification', requireAuth, asy
     const baseUrl = store.hostname ? `https://${store.hostname}` : (process.env.FRONTEND_URL || 'https://get-oru.com');
     const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
 
-    const result = await CommunicationService.dispatchEvent({
+    await CommunicationService.dispatchEvent({
       eventType: 'EMAIL_VERIFICATION',
       storeId: store.id,
       storeName: store.name,
@@ -804,8 +818,9 @@ merchantOrdersRouter.post('/customers/:id/resend-verification', requireAuth, asy
       success: true,
       message: `Verification email dispatched to ${targetUser.email}`,
     });
-  } catch (error: any) {
-    console.error('Error sending customer verification email:', error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error sending customer verification email:', err);
     return res.status(500).json({ error: 'Failed to send verification email' });
   }
 });

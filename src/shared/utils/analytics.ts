@@ -7,7 +7,7 @@ interface UserInteractionEvent {
   type: string;
   element: string;
   timestamp: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface PageViewEvent {
@@ -21,7 +21,7 @@ interface ConversionEvent {
   type: string;
   value?: number;
   timestamp: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class Analytics {
@@ -102,7 +102,7 @@ class Analytics {
     });
   }
 
-  trackUserInteraction(type: string, element: string, metadata?: Record<string, any>) {
+  trackUserInteraction(type: string, element: string, metadata?: Record<string, unknown>) {
     if (!this.isEnabled) return;
 
     const interaction: UserInteractionEvent = {
@@ -115,7 +115,7 @@ class Analytics {
     this.userInteractions.push(interaction);
   }
 
-  trackConversion(type: string, value?: number, metadata?: Record<string, any>) {
+  trackConversion(type: string, value?: number, metadata?: Record<string, unknown>) {
     if (!this.isEnabled) return;
 
     const conversion: ConversionEvent = {

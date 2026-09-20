@@ -29,7 +29,7 @@ const AuthCallbackPage: React.FC = () => {
 
         if (result?.email) setEmail(result.email);
         setStatus('success');
-      } catch (err: any) {
+      } catch (err: unknown) {
         setErrorMsg(err?.message || 'Verification failed. The link may have expired.');
         setStatus('error');
       }

@@ -1,6 +1,5 @@
 import React, { useEffect, memo, useRef, useState, useCallback } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useProducts } from '@/shared/contexts/ProductContext';
 import { ProductGridSkeleton } from '../Common/ProductCardSkeleton';
 import { ProductCard } from '../Product/ProductCard';

@@ -44,19 +44,21 @@ export class HostingerProvider implements DomainRegistrarProvider {
       headers,
     });
 
-    const data: any = await response.json().catch(() => ({}));
+    const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
 
     if (!response.ok) {
-      throw new Error(data.message || data.error || `Hostinger API error: ${response.status} ${response.statusText}`);
+      const msg = typeof data.message === 'string' ? data.message : '';
+      const err = typeof data.error === 'string' ? data.error : '';
+      throw new Error(msg || err || `Hostinger API error: ${response.status} ${response.statusText}`);
     }
 
-    return data as T;
+    return data as unknown as T;
   }
 
   public async checkAvailability(domain: string): Promise<DomainAvailabilityResult> {
     const safeDomain = normalizeHostname(domain);
     try {
-      const res: any = await this.request(`/domains/available?domain=${encodeURIComponent(safeDomain)}`);
+      const res = await this.request<{ available?: boolean; price?: number; currency?: string; period?: number; premium?: boolean }>(`/domains/available?domain=${encodeURIComponent(safeDomain)}`);
       // Standard Hostinger availability payload
       return {
         domain: safeDomain,
@@ -66,7 +68,7 @@ export class HostingerProvider implements DomainRegistrarProvider {
         periodYears: res.period || 1,
         isPremium: Boolean(res.premium),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Fallback for API structure differences / mock integration in test harness
       if (process.env.NODE_ENV === 'test' || !this.apiToken) {
         return {
@@ -135,7 +137,7 @@ export class HostingerProvider implements DomainRegistrarProvider {
     };
 
     try {
-      const res: any = await this.request('/domains/order', {
+      const res = await this.request<{ domain_id?: string; id?: string; order_id?: string; registered_at?: string; expires_at?: string }>('/domains/order', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -150,7 +152,8 @@ export class HostingerProvider implements DomainRegistrarProvider {
         autoRenew: params.autoRenew ?? true,
         privacyEnabled: params.privacyEnabled ?? true,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       return {
         success: false,
         provider: 'HOSTINGER',
@@ -160,7 +163,7 @@ export class HostingerProvider implements DomainRegistrarProvider {
         expiresAt: new Date(),
         autoRenew: false,
         privacyEnabled: false,
-        error: error.message || 'HOSTINGER_ORDER_FAILED',
+        error: err.message || 'HOSTINGER_ORDER_FAILED',
       };
     }
   }
@@ -185,13 +188,14 @@ export class HostingerProvider implements DomainRegistrarProvider {
         domain: safeDomain,
         configuredRecords: records,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       return {
         success: false,
         provider: 'HOSTINGER',
         domain: safeDomain,
         configuredRecords: records,
-        error: error.message || 'HOSTINGER_DNS_UPDATE_FAILED',
+        error: err.message || 'HOSTINGER_DNS_UPDATE_FAILED',
       };
     }
   }
@@ -199,7 +203,7 @@ export class HostingerProvider implements DomainRegistrarProvider {
   public async getDomainDetails(providerDomainId: string, domainName?: string): Promise<DomainDetailsResult> {
     const safeDomain = domainName ? normalizeHostname(domainName) : '';
     try {
-      const res: any = await this.request(`/domains/${encodeURIComponent(providerDomainId || safeDomain)}`);
+      const res = await this.request<{ domain?: string; id?: string; status?: string; expires_at?: string; auto_renew?: boolean; nameservers?: string[] }>(`/domains/${encodeURIComponent(providerDomainId || safeDomain)}`);
       return {
         domain: res.domain || safeDomain,
         provider: 'HOSTINGER',
@@ -209,7 +213,7 @@ export class HostingerProvider implements DomainRegistrarProvider {
         autoRenew: Boolean(res.auto_renew),
         nameservers: res.nameservers || ['ns1.hostinger.com', 'ns2.hostinger.com'],
       };
-    } catch (error: any) {
+    } catch {
       return {
         domain: safeDomain,
         provider: 'HOSTINGER',
@@ -222,9 +226,9 @@ export class HostingerProvider implements DomainRegistrarProvider {
     }
   }
 
-  public async renewDomain(providerDomainId: string, years: number, domainName?: string): Promise<DomainRenewalResult> {
+  public async renewDomain(providerDomainId: string, years: number, _domainName?: string): Promise<DomainRenewalResult> {
     try {
-      const res: any = await this.request(`/domains/${encodeURIComponent(providerDomainId)}/renew`, {
+      const res = await this.request<{ expires_at?: string }>(`/domains/${encodeURIComponent(providerDomainId)}/renew`, {
         method: 'POST',
         body: JSON.stringify({ period: years }),
       });
@@ -235,13 +239,14 @@ export class HostingerProvider implements DomainRegistrarProvider {
         providerDomainId,
         expiresAt: new Date(res.expires_at || Date.now() + years * 365 * 24 * 60 * 60 * 1000),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       return {
         success: false,
         provider: 'HOSTINGER',
         providerDomainId,
         expiresAt: new Date(),
-        error: error.message || 'HOSTINGER_RENEWAL_FAILED',
+        error: err.message || 'HOSTINGER_RENEWAL_FAILED',
       };
     }
   }

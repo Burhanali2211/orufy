@@ -77,13 +77,13 @@ export class RateLimiter extends DataService {
   // Decorator for applying rate limiting to methods
   static limit(config: RateLimitConfig = RATE_LIMIT_CONFIGS.ANONYMOUS) {
     return function(
-      _target: any,
+      _target: unknown,
       _propertyKey: string,
       descriptor: PropertyDescriptor
     ) {
       const originalMethod = descriptor.value;
       
-      descriptor.value = async function(...args: any[]) {
+      descriptor.value = async function(...args: unknown[]) {
         // Generate a unique identifier for this client
         // In browser, we use localStorage or generate a random one
         let clientId = localStorage.getItem('client_rate_limit_id');

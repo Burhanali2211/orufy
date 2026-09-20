@@ -2,15 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   Package,
-  Truck,
-  CheckCircle,
-  Clock,
   MapPin,
   Heart,
   ShoppingBag,
-  ArrowRight,
-  ArrowUpRight,
-  ExternalLink
+  ArrowRight
 } from 'lucide-react';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
@@ -33,11 +28,11 @@ export const DashboardOverview: React.FC = () => {
   const { items: wishlistItems } = useWishlist();
 
   const loading = statsLoading || ordersLoading;
-  const ordersList: any[] = ordersData || [];
+  const ordersList: Record<string, unknown>[] = (ordersData as Record<string, unknown>[]) || [];
   const recentOrders = ordersList.slice(0, 5);
   const latestOrder = ordersList[0];
 
-  const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
+  const defaultAddress = addresses.find((a: Record<string, unknown>) => a.isDefault) || addresses[0];
 
   const totalSpent = ordersList.reduce((sum, o) => sum + (parseFloat(o.total_amount || o.totalAmount || '0') || 0), 0);
   const activeOrdersCount = ordersList.filter(o => o.status === 'pending' || o.status === 'processing' || o.status === 'shipped').length;
@@ -201,7 +196,7 @@ export const DashboardOverview: React.FC = () => {
                   <div className="space-y-2">
                     <p className="text-xs font-bold text-stone-700 uppercase tracking-wider">Items in Package</p>
                     <div className="divide-y divide-stone-100 border border-stone-200 rounded-xl overflow-hidden">
-                      {latestOrder.items.map((item: any, idx: number) => (
+                      {(latestOrder.items as Record<string, unknown>[]).map((item: Record<string, unknown>, idx: number) => (
                         <div key={idx} className="p-3 flex items-center justify-between hover:bg-stone-50/50">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-stone-100 overflow-hidden flex-shrink-0 border border-stone-200 flex items-center justify-center">

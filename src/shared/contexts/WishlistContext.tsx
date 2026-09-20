@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import React, { createContext, ReactNode, useMemo } from 'react';
 import { Product, WishlistItem, WishlistContextType } from '../types';
 import { useWishlistStore } from '../stores/useWishlistStore';
 

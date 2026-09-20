@@ -21,8 +21,8 @@ export class PerformanceMonitor {
   trackDatabaseQuery(_query: string, _duration: number, _success: boolean): void {}
   trackImageLoad(_url: string, _time: number, _success: boolean): void {}
   trackApiResponse(_endpoint: string, _time: number, _success: boolean): void {}
-  getPerformanceSummary(): Record<string, any> { return {}; }
-  getDetailedMetrics(): Record<string, any> { return {}; }
+  getPerformanceSummary(): Record<string, unknown> { return {}; }
+  getDetailedMetrics(): Record<string, unknown> { return {}; }
   clearMetrics(): void {}
   destroy(): void {}
 }

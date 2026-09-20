@@ -9,9 +9,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 
-type AuthMode = 'login' | 'signup' | 'forgot';
+type AuthMode = 'otp' | 'login' | 'signup' | 'forgot';
 
 // --- Zod Validation Schemas ---
+const requestOtpSchema = z.object({
+  phone: z.string().min(10, 'Please enter a valid phone number'),
+});
+
+const verifyOtpSchema = z.object({
+  phone: z.string().min(10, 'Please enter a valid phone number'),
+  otp: z.string().length(6, 'OTP must be exactly 6 digits'),
+});
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
@@ -40,7 +48,9 @@ const AuthPage: React.FC = () => {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isResending, setIsResending] = useState(false);
 
-  const { signIn, signUp, resetPassword, resendVerification, user, store } = useAuth();
+  const [otpSent, setOtpSent] = useState(false);
+
+  const { signIn, signUp, resetPassword, resendVerification, requestOtp, verifyOtp, user, store } = useAuth();
   const { getSiteSetting } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,7 +91,7 @@ const AuthPage: React.FC = () => {
   }, [user, isPlatform, store, baseDomain, navigate]);
 
   // Dynamic form configuration based on the current mode
-  const currentSchema = mode === 'login' ? loginSchema : mode === 'signup' ? signupSchema : forgotSchema;
+  const currentSchema = mode === 'otp' ? (otpSent ? verifyOtpSchema : requestOtpSchema) : mode === 'login' ? loginSchema : mode === 'signup' ? signupSchema : forgotSchema;
 
   const {
     register,
@@ -105,7 +115,8 @@ const AuthPage: React.FC = () => {
 
     if (p === 'signup' && !isPlatform) setMode('signup');
     else if (p === 'forgot') setMode('forgot');
-    else setMode('login'); // default
+    else if (p === 'login') setMode('login');
+    else setMode(isPlatform ? 'login' : 'otp'); // Default: password for platform, OTP for storefront
 
     const preEmail = params.get('email');
     if (preEmail) setValue('email', decodeURIComponent(preEmail));
@@ -126,7 +137,7 @@ const AuthPage: React.FC = () => {
       const res = await resendVerification(signupConfirmEmail);
       toast.success(res.message || 'Verification email resent! Please check your inbox.');
       setResendCooldown(60);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err.retryAfterSeconds) {
         setResendCooldown(err.retryAfterSeconds);
       }
@@ -139,34 +150,46 @@ const AuthPage: React.FC = () => {
   const switchMode = (next: AuthMode) => {
     setMode(next);
     setForgotSent(false);
+    setOtpSent(false);
     reset(); // Clear form state when switching modes
   };
 
   // --- React Query Mutations ---
   const authMutation = useMutation({
-    mutationFn: async (data: any) => {
-      if (mode === 'login') {
-        return await signIn(data.email.trim(), data.password);
+    mutationFn: async (data: Record<string, unknown>) => {
+      if (mode === 'otp') {
+        if (!otpSent) {
+          await requestOtp(data.phone as string);
+          return { isOtpRequest: true };
+        } else {
+          await verifyOtp(data.phone as string, data.otp as string);
+          return { isOtpVerify: true };
+        }
+      } else if (mode === 'login') {
+        return await signIn(data.email as string, data.password as string);
       } else if (mode === 'signup') {
-        await signUp(data.email.trim(), data.password, { fullName: data.fullName });
+        await signUp(data.email as string, data.password as string, { fullName: data.fullName as string });
         sendEmail({ type: 'welcome', email: data.email, name: data.fullName, siteName });
         return { isSignup: true, email: data.email };
       } else if (mode === 'forgot') {
-        await resetPassword(data.email.trim());
+        await resetPassword(data.email as string);
         sendEmail({ type: 'reset', email: data.email, siteName });
         return { isForgot: true };
       }
     },
     onSuccess: (result) => {
-      if (result?.isSignup) {
-        setSignupConfirmEmail(result.email);
+      if (result?.isOtpRequest) {
+        setOtpSent(true);
+        toast.success('OTP sent successfully!');
+      } else if (result?.isSignup) {
+        setSignupConfirmEmail(result.email as string);
       } else if (result?.isForgot) {
         setForgotSent(true);
       }
     }
   });
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: Record<string, unknown>) => {
     authMutation.mutate(data);
   };
 
@@ -288,39 +311,68 @@ const AuthPage: React.FC = () => {
             <div className="bg-white rounded-3xl border border-stone-200/90 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-7 sm:p-9">
 
               {/* Segmented Mode Switcher (Pill Style) */}
-              {mode !== 'forgot' && !isPlatform && (
+              {mode !== 'forgot' && (
                 <div className="flex p-1 bg-stone-100 rounded-xl mb-7 border border-stone-200/60">
-                  <button
-                    type="button"
-                    onClick={() => switchMode('login')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'login'
-                      ? 'bg-white text-stone-900 shadow-2xs'
-                      : 'text-stone-500 hover:text-stone-800'
-                      }`}
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => switchMode('signup')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'signup'
-                      ? 'bg-white text-stone-900 shadow-2xs'
-                      : 'text-stone-500 hover:text-stone-800'
-                      }`}
-                  >
-                    Create Account
-                  </button>
+                  {!isPlatform ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => switchMode('otp')}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'otp'
+                          ? 'bg-white text-stone-900 shadow-2xs'
+                          : 'text-stone-500 hover:text-stone-800'
+                          }`}
+                      >
+                        Login with OTP
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => switchMode('login')}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'login'
+                          ? 'bg-white text-stone-900 shadow-2xs'
+                          : 'text-stone-500 hover:text-stone-800'
+                          }`}
+                      >
+                        Login with Password
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => switchMode('login')}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'login'
+                          ? 'bg-white text-stone-900 shadow-2xs'
+                          : 'text-stone-500 hover:text-stone-800'
+                          }`}
+                      >
+                        Sign In
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => switchMode('signup')}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'signup'
+                          ? 'bg-white text-stone-900 shadow-2xs'
+                          : 'text-stone-500 hover:text-stone-800'
+                          }`}
+                      >
+                        Create Account
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
 
               {/* Heading */}
               <div className="mb-6">
                 <h1 className="text-2xl font-extrabold text-stone-900 tracking-tight">
+                  {mode === 'otp' && (otpSent ? 'Enter OTP' : 'Sign in')}
                   {mode === 'login' && 'Sign in'}
                   {mode === 'signup' && 'Create your account'}
                   {mode === 'forgot' && 'Reset your password'}
                 </h1>
                 <p className="text-xs text-stone-500 mt-1.5 leading-normal">
+                  {mode === 'otp' && (otpSent ? `We sent a 6-digit code to your phone.` : 'Sign in securely without a password.')}
                   {mode === 'login' && (isPlatform ? 'Enter your credentials to manage your store and orders.' : 'Sign in to your account to view your orders and profile.')}
                   {mode === 'signup' && 'Get started in under 2 minutes. No credit card required.'}
                   {mode === 'forgot' && 'Enter your verified account email to receive a recovery link.'}
@@ -439,31 +491,93 @@ const AuthPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Email field */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-stone-600 mb-1.5 uppercase tracking-wider">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
-                      <input
-                        type="email"
-                        {...register('email')}
-                        placeholder="you@domain.com"
-                        disabled={isPending}
-                        autoComplete="email"
-                        className={inputClass(!!errors.email)}
-                      />
+                  {/* Phone field (OTP only) */}
+                  {mode === 'otp' && !otpSent && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-600 mb-1.5 uppercase tracking-wider">
+                        Phone Number
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 font-semibold text-sm pointer-events-none">
+                          +91
+                        </span>
+                        <input
+                          type="tel"
+                          {...register('phone')}
+                          placeholder="9876543210"
+                          disabled={isPending}
+                          autoComplete="tel"
+                          className={`${inputClass(!!errors.phone)} pl-11`}
+                        />
+                      </div>
+                      {errors.phone && (
+                        <p className="mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 shrink-0" />{errors.phone.message as string}
+                        </p>
+                      )}
                     </div>
-                    {errors.email && (
-                      <p className="mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3 shrink-0" />{errors.email.message as string}
-                      </p>
-                    )}
-                  </div>
+                  )}
+
+                  {/* OTP field (OTP verify only) */}
+                  {mode === 'otp' && otpSent && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-600 mb-1.5 uppercase tracking-wider">
+                        6-Digit OTP
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          maxLength={6}
+                          {...register('otp')}
+                          placeholder="123456"
+                          disabled={isPending}
+                          autoComplete="one-time-code"
+                          className={inputClass(!!errors.otp)}
+                        />
+                      </div>
+                      {errors.otp && (
+                        <p className="mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 shrink-0" />{errors.otp.message as string}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => { setOtpSent(false); reset(); }}
+                        className="text-xs text-stone-500 hover:text-stone-900 transition-colors font-medium cursor-pointer mt-2"
+                      >
+                        Change phone number
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Email field */}
+                  {mode !== 'otp' && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-600 mb-1.5 uppercase tracking-wider">
+                        Email Address
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+                        <input
+                          type="email"
+                          {...register('email')}
+                          placeholder="you@domain.com"
+                          disabled={isPending}
+                          autoComplete="email"
+                          className={inputClass(!!errors.email)}
+                        />
+                      </div>
+                      {errors.email && (
+                        <p className="mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 shrink-0" />{errors.email.message as string}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Password field */}
-                  {mode !== 'forgot' && (
+                  {(mode === 'login' || mode === 'signup') && (
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-[11px] font-bold text-stone-600 uppercase tracking-wider">

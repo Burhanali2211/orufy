@@ -76,7 +76,7 @@ export const StorageSettings: React.FC = () => {
       showSuccess('Storage settings saved successfully!');
       queryClient.invalidateQueries({ queryKey: ['admin-storage-settings'] });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError(err?.message || 'Failed to save storage settings');
     }
   });
@@ -91,7 +91,8 @@ export const StorageSettings: React.FC = () => {
       setTesting(true);
       setTestResult(null);
 
-      const res: any = await apiClient.post('/admin/settings/storage/test-r2', {
+      const res = await apiClient.post<{ success: boolean; url?: string; message?: string; error?: string }>('/admin/settings/storage/test-r2', {
+        provider: 'r2',
         r2_account_id: form.r2_account_id,
         r2_bucket_name: form.r2_bucket_name,
         r2_access_key_id: form.r2_access_key_id,
@@ -106,7 +107,7 @@ export const StorageSettings: React.FC = () => {
         setTestResult({ success: false, error: res?.error || 'Connection test failed.' });
         showError('R2 Connection Error', res?.error || 'Test failed');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setTestResult({ success: false, error: err?.message || 'Failed to connect to Cloudflare R2' });
       showError('Connection Error', err?.message || 'R2 connection test failed');
     } finally {

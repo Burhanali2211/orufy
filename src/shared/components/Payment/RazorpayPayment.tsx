@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  CreditCard, Smartphone, Building, Wallet, Banknote, 
-  Shield, CheckCircle, X, Lock, ArrowRight,
-  AlertCircle
+  CreditCard, Smartphone, Building, Wallet, 
+  Shield, CheckCircle, X, Lock, ArrowRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNotification } from '@/shared/contexts/NotificationContext';
@@ -83,7 +82,7 @@ export const RazorpayPayment: React.FC<RazorpayPaymentProps> = ({
 
       await loadRazorpayScript();
 
-      let razorpayOrderIdToUse = razorpayOrderId;
+      const razorpayOrderIdToUse = razorpayOrderId;
 
       if (!razorpayOrderIdToUse) {
         throw new Error('Razorpay Order ID is missing');

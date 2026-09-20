@@ -53,7 +53,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
     } else {
       res.locals.user = null;
     }
-  } catch (err) {
+  } catch {
     res.locals.user = null;
   }
 

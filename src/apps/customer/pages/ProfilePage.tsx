@@ -1,18 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  User,
   Camera,
   Save,
-  Mail,
-  Phone,
-  Calendar,
-  Shield,
   CheckCircle,
   Bell,
   RefreshCw,
-  Lock,
-  Sparkles,
-  Check
+  Lock
 } from 'lucide-react';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
 import { useAuth } from '@/shared/contexts/AuthContext';
@@ -103,7 +96,7 @@ export const ProfilePage: React.FC = () => {
         gender: profileData.gender || undefined
       });
       setOriginalData(profileData);
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError('Update failed', err?.message || 'Could not update profile');
     }
   };
@@ -124,7 +117,7 @@ export const ProfilePage: React.FC = () => {
 
     try {
       await uploadAvatar(file);
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError('Upload failed', err?.message || 'Could not upload avatar');
     } finally {
       if (event.target) event.target.value = '';
@@ -150,7 +143,7 @@ export const ProfilePage: React.FC = () => {
       });
       showSuccess('Password Changed', 'Your security credentials have been updated.');
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError('Change Failed', err?.message || 'Could not change password. Please verify current password.');
     } finally {
       setChangingPassword(false);

@@ -20,9 +20,9 @@ export function camelToSnake(str: string): string {
 /**
  * Recursively transform all keys in an object from snake_case to camelCase
  */
-export function transformKeysToCamel<T>(obj: any): T {
+export function transformKeysToCamel<T>(obj: unknown): T {
   if (obj === null || obj === undefined) {
-    return obj;
+    return obj as unknown as T;
   }
 
   if (Array.isArray(obj)) {
@@ -30,12 +30,13 @@ export function transformKeysToCamel<T>(obj: any): T {
   }
 
   if (typeof obj === 'object' && !(obj instanceof Date)) {
-    const transformed: Record<string, any> = {};
+    const transformed: Record<string, unknown> = {};
+    const record = obj as Record<string, unknown>;
     
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+    for (const key in record) {
+      if (Object.prototype.hasOwnProperty.call(record, key)) {
         const camelKey = snakeToCamel(key);
-        transformed[camelKey] = transformKeysToCamel(obj[key]);
+        transformed[camelKey] = transformKeysToCamel(record[key]);
       }
     }
     
@@ -48,9 +49,9 @@ export function transformKeysToCamel<T>(obj: any): T {
 /**
  * Recursively transform all keys in an object from camelCase to snake_case
  */
-export function transformKeysToSnake<T>(obj: any): T {
+export function transformKeysToSnake<T>(obj: unknown): T {
   if (obj === null || obj === undefined) {
-    return obj;
+    return obj as unknown as T;
   }
 
   if (Array.isArray(obj)) {
@@ -58,12 +59,13 @@ export function transformKeysToSnake<T>(obj: any): T {
   }
 
   if (typeof obj === 'object' && !(obj instanceof Date)) {
-    const transformed: Record<string, any> = {};
+    const transformed: Record<string, unknown> = {};
+    const record = obj as Record<string, unknown>;
     
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+    for (const key in record) {
+      if (Object.prototype.hasOwnProperty.call(record, key)) {
         const snakeKey = camelToSnake(key);
-        transformed[snakeKey] = transformKeysToSnake(obj[key]);
+        transformed[snakeKey] = transformKeysToSnake(record[key]);
       }
     }
     
@@ -77,10 +79,10 @@ export function transformKeysToSnake<T>(obj: any): T {
  * Transform a product from API response format to frontend format
  * Handles special cases like 'is_featured' -> 'featured'
  */
-export function transformProduct(product: any): any {
-  if (!product) return product;
+export function transformProduct(product: unknown): Record<string, unknown> | null | undefined {
+  if (!product) return product as null | undefined;
   
-  const transformed = transformKeysToCamel<any>(product);
+  const transformed = transformKeysToCamel<Record<string, unknown>>(product);
   
   // Handle special field mappings
   if ('isFeatured' in transformed) {
@@ -151,7 +153,7 @@ export function transformProduct(product: any): any {
 /**
  * Transform an array of products
  */
-export function transformProducts(products: any[]): any[] {
+export function transformProducts(products: unknown[]): (Record<string, unknown> | null | undefined)[] {
   if (!Array.isArray(products)) return [];
   return products.map(transformProduct);
 }
@@ -159,17 +161,18 @@ export function transformProducts(products: any[]): any[] {
 /**
  * Transform a category from API response format to frontend format
  */
-export function transformCategory(category: any): any {
-  if (!category) return category;
+export function transformCategory(category: unknown): Record<string, unknown> | null | undefined {
+  if (!category) return category as null | undefined;
   
-  const transformed = transformKeysToCamel<any>(category);
+  const transformed = transformKeysToCamel<Record<string, unknown>>(category);
+  const rawCat = category as Record<string, unknown>;
   
   // Handle imageUrl field - backend sends image_url which becomes imageUrl
   // But we also want to keep image_url for backward compatibility
   if (transformed.imageUrl) {
     // Already transformed correctly
-  } else if (category.image_url) {
-    transformed.imageUrl = category.image_url;
+  } else if (rawCat.image_url) {
+    transformed.imageUrl = rawCat.image_url;
   }
   
   // Ensure productCount is a number
@@ -183,7 +186,7 @@ export function transformCategory(category: any): any {
 /**
  * Transform an array of categories
  */
-export function transformCategories(categories: any[]): any[] {
+export function transformCategories(categories: unknown[]): (Record<string, unknown> | null | undefined)[] {
   if (!Array.isArray(categories)) return [];
   return categories.map(transformCategory);
 }
@@ -192,14 +195,15 @@ export function transformCategories(categories: any[]): any[] {
  * Transform a paginated API response
  */
 export function transformPaginatedResponse<T>(
-  response: any,
-  itemTransformer: (item: any) => T
-): { data: T[]; pagination: any } {
+  response: Record<string, unknown> | unknown,
+  itemTransformer: (item: unknown) => T
+): { data: T[]; pagination: Record<string, unknown> | unknown } {
+  const resp = response as Record<string, unknown>;
   return {
-    data: Array.isArray(response.data) 
-      ? response.data.map(itemTransformer) 
+    data: Array.isArray(resp?.data) 
+      ? resp.data.map(itemTransformer) 
       : [],
-    pagination: response.pagination || {
+    pagination: resp?.pagination || {
       page: 1,
       limit: 20,
       total: 0,

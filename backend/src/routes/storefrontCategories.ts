@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../db/db';
 import { requireStore } from '../middleware/storeResolver';
 import { withStoreContext } from '../db/utils';
 import { categories } from '../db/schema';

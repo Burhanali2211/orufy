@@ -1,16 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
-import { useSearchParams, useParams, Link, useNavigate } from 'react-router-dom';
-import {
-    Search, Grid3X3, LayoutList, Star, Heart, ShoppingCart, ShoppingBag,
-    ChevronDown, ChevronUp, X, SlidersHorizontal, ArrowUpDown,
-    Check, Flame, RotateCcw, ChevronLeft, ChevronRight, Wind, Info, ArrowRight, Tag
+import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
+import { Grid3X3, LayoutList, Star,
+    ChevronDown, X, SlidersHorizontal,
+    Check, ChevronLeft, ChevronRight, Wind
 } from 'lucide-react';
 import { useProducts } from '@/shared/contexts/ProductContext';
 import { useCart } from '@/shared/contexts/CartContext';
 import { ProductCard } from '@/shared/components/Product/ProductCard';
 import { MobileProductHeader } from '@/shared/components/Product/MobileProductHeader';
-import { motion, AnimatePresence } from 'framer-motion';
-import { SEO, CategorySEO } from '@/shared/components/SEO/SEO';
+import { SEO } from '@/shared/components/SEO/SEO';
 import { BreadcrumbStructuredData } from '@/shared/components/SEO/StructuredData';
 
 interface FilterState {
@@ -153,7 +151,7 @@ const ProductsPage: React.FC = () => {
         }
     }, [filteredProducts, filters.sortBy]);
 
-    const handleFilterChange = (key: keyof FilterState, value: any) => {
+    const handleFilterChange = (key: keyof FilterState, value: unknown) => {
         setFilters(prev => ({ ...prev, [key]: value }));
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };

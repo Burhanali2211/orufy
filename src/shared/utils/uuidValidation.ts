@@ -104,7 +104,7 @@ export const cleanupInvalidUUIDs = (): void => {
         
         // Check arrays of objects
         if (Array.isArray(parsed)) {
-          parsed.forEach((item: any) => {
+          parsed.forEach((item: { id?: string; user_id?: string; seller_id?: string; [key: string]: unknown }) => {
             if (item.id && !isValidUUID(item.id)) {
               item.id = convertLegacyUUID(item.id);
               needsUpdate = true;

@@ -48,7 +48,8 @@ domainsRouter.post('/', requireAuth, async (req: Request, res: Response) => {
     let normalizedHost: string;
     try {
       normalizedHost = normalizeHostname(hostname);
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       return res.status(400).json({ error: err.message });
     }
 
@@ -116,15 +117,16 @@ domainsRouter.post('/', requireAuth, async (req: Request, res: Response) => {
         createdAt: inserted.created_at,
       }
     });
-  } catch (error: any) {
-    if (error.message === 'SUBDOMAIN_RESERVED') {
+  } catch (error: unknown) {
+    const err = error as Error;
+    if (err.message === 'SUBDOMAIN_RESERVED') {
       return res.status(409).json({ error: 'This domain/subdomain is already reserved by the platform' });
     }
-    if (error.message === 'CUSTOM_DOMAIN_TAKEN') {
+    if (err.message === 'CUSTOM_DOMAIN_TAKEN') {
       return res.status(409).json({ error: 'This custom domain is already registered to a store' });
     }
-    console.error('Error adding custom domain:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    console.error('Error adding custom domain:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -212,9 +214,10 @@ domainsRouter.post('/:id/verify', requireAuth, async (req: Request, res: Respons
         message: 'DNS TXT verification record not found or does not match yet. DNS propagation may take a few minutes.'
       });
     }
-  } catch (error: any) {
-    console.error('Error verifying custom domain:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error verifying custom domain:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -289,8 +292,9 @@ domainsRouter.post('/:id/activate-ssl', requireAuth, async (req: Request, res: R
       domain: updated,
       message: 'SSL certificate successfully provisioned, Nginx configured, and domain marked ACTIVE.'
     });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -339,11 +343,12 @@ domainsRouter.post('/:id/set-primary', requireAuth, async (req: Request, res: Re
       success: true,
       domain: updated
     });
-  } catch (error: any) {
-    if (error.message === 'DOMAIN_NOT_FOUND') {
+  } catch (error: unknown) {
+    const err = error as Error;
+    if (err.message === 'DOMAIN_NOT_FOUND') {
       return res.status(404).json({ error: 'Domain not found' });
     }
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -393,8 +398,9 @@ domainsRouter.post('/renew-ssl', async (req: Request, res: Response) => {
       renewed,
       failed
     });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message || 'Renewal process error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    return res.status(500).json({ error: err.message || 'Renewal process error' });
   }
 });
 
@@ -419,9 +425,10 @@ domainsRouter.get('/', requireAuth, async (req: Request, res: Response) => {
       success: true,
       domains
     });
-  } catch (error: any) {
-    console.error('Error listing custom domains:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error listing custom domains:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -458,8 +465,9 @@ domainsRouter.delete('/:id', requireAuth, async (req: Request, res: Response) =>
       success: true,
       message: 'Custom domain removed successfully'
     });
-  } catch (error: any) {
-    console.error('Error deleting custom domain:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error deleting custom domain:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });

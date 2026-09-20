@@ -2,12 +2,13 @@ import { Router, Request, Response } from "express";
 import crypto from "crypto";
 import { lucia } from "../lib/auth";
 import { db } from "../db/db";
-import { profiles, store_members, stores, email_verification_tokens } from "../db/schema";
+import { profiles, store_members, stores, email_verification_tokens, otp_requests } from "../db/schema";
 import { eq, and, inArray, gt, desc } from "drizzle-orm";
 import { Argon2id } from "oslo/password";
 import { requireAuth } from "../middleware/auth";
 import { getUserPrimaryStore } from "../middleware/storeResolver";
 import { CommunicationService } from "../services/communicationService";
+import { SmsService } from "../services/smsService";
 
 export const authRouter = Router();
 
@@ -130,12 +131,13 @@ const handleSignup = async (req: Request, res: Response) => {
         
         return user;
       });
-    } catch (txError: any) {
-      if (txError?.code === '23505') {
+    } catch (txError: unknown) {
+      const err = txError as { code?: string; message?: string };
+      if (err?.code === '23505') {
         return res.status(409).json({ error: "An account with this email address already exists. Please log in instead." });
       }
-      console.error("Signup transaction error:", txError);
-      throw txError;
+      console.error("Signup transaction error:", err);
+      throw err;
     }
 
     if (!newUser) {
@@ -168,9 +170,10 @@ const handleSignup = async (req: Request, res: Response) => {
         email_verified: false,
       }
     });
-  } catch (error: any) {
-    console.error("Signup error:", error);
-    return res.status(500).json({ error: error?.message || "An error occurred during signup." });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Signup error:", err);
+    return res.status(500).json({ error: err.message || "An error occurred during signup." });
   }
 };
 
@@ -194,7 +197,7 @@ authRouter.post("/login", async (req, res) => {
     let validPassword = false;
     try {
       validPassword = await new Argon2id().verify(existingUser.password_hash, password);
-    } catch (e) {
+    } catch {
       validPassword = false; // Gracefully handle invalid hash formats
     }
     
@@ -313,7 +316,7 @@ authRouter.post("/login", async (req, res) => {
           store = storeRow || null;
         }
       }
-    } catch (_) {}
+    } catch { }
 
     res.setHeader("Set-Cookie", sessionCookie.serialize());
     return res.status(200).json({
@@ -383,8 +386,6 @@ authRouter.get("/me", async (req, res) => {
         role: profiles.role,
         avatar_url: profiles.avatar_url,
         phone: profiles.phone,
-        gender: profiles.gender,
-        date_of_birth: profiles.date_of_birth,
         email_verified: profiles.email_verified,
       })
       .from(profiles)
@@ -394,7 +395,7 @@ authRouter.get("/me", async (req, res) => {
     let store = null;
     try {
       store = await getUserPrimaryStore(user.id);
-    } catch (_) {
+    } catch {
       // non-fatal: dashboard works without store info
     }
 
@@ -413,17 +414,14 @@ authRouter.get("/me", async (req, res) => {
 authRouter.put("/profile", requireAuth, async (req, res) => {
   try {
     const userId = res.locals.user.id;
-    const { full_name, fullName, phone, avatar_url, avatar, gender, date_of_birth, dateOfBirth } = req.body;
+    const { full_name, fullName, phone, avatar_url, avatar } = req.body;
 
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
     if (full_name !== undefined) updates.full_name = full_name;
     if (fullName !== undefined) updates.full_name = fullName;
     if (phone !== undefined) updates.phone = phone;
     if (avatar_url !== undefined) updates.avatar_url = avatar_url;
     if (avatar !== undefined) updates.avatar_url = avatar;
-    if (gender !== undefined) updates.gender = gender;
-    if (date_of_birth !== undefined) updates.date_of_birth = date_of_birth;
-    if (dateOfBirth !== undefined) updates.date_of_birth = dateOfBirth;
 
     if (Object.keys(updates).length > 0) {
       await db.update(profiles).set(updates).where(eq(profiles.id, userId));
@@ -439,8 +437,6 @@ authRouter.put("/profile", requireAuth, async (req, res) => {
         role: updated.role,
         avatar_url: updated.avatar_url,
         phone: updated.phone,
-        gender: updated.gender,
-        date_of_birth: updated.date_of_birth,
         email_verified: updated.email_verified || false,
       }
     });
@@ -558,7 +554,7 @@ authRouter.post("/resend-verification", async (req: Request, res: Response) => {
       success: true,
       message: "Verification email has been sent. Please check your inbox.",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Resend verification error:", error);
     res.status(500).json({ error: "Failed to send verification email" });
   }
@@ -616,8 +612,128 @@ authRouter.get("/verify-email", async (req: Request, res: Response) => {
       success: true,
       message: "Your email address has been successfully verified!",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Verify email error:", error);
     res.status(500).json({ error: "Failed to verify email address" });
+  }
+});
+
+// -------------------------------------------------------------
+// Customer OTP Login Flows
+// -------------------------------------------------------------
+
+authRouter.post("/customer/otp/request", async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone || typeof phone !== "string") {
+      return res.status(400).json({ error: "Valid phone number is required" });
+    }
+
+    const cleanPhone = phone.trim();
+    const otp = SmsService.generateOtp();
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+
+    await db
+      .update(otp_requests)
+      .set({ verified: true })
+      .where(
+        and(
+          eq(otp_requests.phone, cleanPhone),
+          eq(otp_requests.verified, false)
+        )
+      );
+
+    await db.insert(otp_requests).values({
+      phone: cleanPhone,
+      otp_hash: otpHash,
+      expires_at: expiresAt,
+      verified: false,
+    });
+
+    const sendResult = await SmsService.sendOtp(cleanPhone, otp);
+
+    if (!sendResult.success) {
+      return res.status(500).json({ error: sendResult.error || "Failed to send OTP" });
+    }
+
+    return res.status(200).json({ message: "OTP sent successfully" });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("OTP request error:", err);
+    return res.status(500).json({ error: err.message || "Failed to request OTP" });
+  }
+});
+
+authRouter.post("/customer/otp/verify", async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+    if (!phone || typeof phone !== "string" || !otp || typeof otp !== "string") {
+      return res.status(400).json({ error: "Phone and OTP are required" });
+    }
+
+    const cleanPhone = phone.trim();
+    const otpHash = crypto.createHash('sha256').update(otp.trim()).digest('hex');
+    const now = new Date();
+
+    const [otpRecord] = await db
+      .select()
+      .from(otp_requests)
+      .where(
+        and(
+          eq(otp_requests.phone, cleanPhone),
+          eq(otp_requests.otp_hash, otpHash),
+          eq(otp_requests.verified, false)
+        )
+      )
+      .orderBy(desc(otp_requests.created_at))
+      .limit(1);
+
+    if (!otpRecord) {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+
+    if (now > otpRecord.expires_at) {
+      return res.status(400).json({ error: "OTP has expired" });
+    }
+
+    await db
+      .update(otp_requests)
+      .set({ verified: true })
+      .where(eq(otp_requests.id, otpRecord.id));
+
+    let [user] = await db.select().from(profiles).where(eq(profiles.phone, cleanPhone));
+
+    if (!user) {
+      const dummyEmail = `${cleanPhone}@customer.local`;
+      const [newUser] = await db.insert(profiles).values({
+        email: dummyEmail,
+        phone: cleanPhone,
+        full_name: "Customer",
+        role: "customer",
+        email_verified: true,
+      }).returning();
+      user = newUser;
+    }
+
+    const session = await lucia.createSession(user.id, {});
+    const sessionCookie = lucia.createSessionCookie(session.id);
+    
+    res.setHeader("Set-Cookie", sessionCookie.serialize());
+    return res.status(200).json({
+      message: "Login successful",
+      token: session.id,
+      user: {
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        full_name: user.full_name,
+        role: user.role,
+      }
+    });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("OTP verify error:", err);
+    return res.status(500).json({ error: err.message || "Failed to verify OTP" });
   }
 });

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useOnboarding } from '../OnboardingContext';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { CreditCard, CheckCircle2, ArrowRight, ArrowLeft, Banknote } from 'lucide-react';
+import { CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const PaymentStep: React.FC = () => {

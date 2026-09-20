@@ -74,7 +74,7 @@ export class RetryManager extends DataService {
   }
 
   // Check if an error is retryable based on configuration
-  private static isRetryable(error: any, config: RetryConfig): boolean {
+  private static isRetryable(error: unknown, config: RetryConfig): boolean {
     if (!config.retryableErrors) return true;
     
     const errorMessage = String(error.message || error).toLowerCase();
@@ -93,13 +93,13 @@ export class RetryManager extends DataService {
 // Decorator for automatic retry logic
 export function Retry(config: Partial<RetryConfig> = {}) {
   return function(
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
     
-    descriptor.value = function(...args: any[]) {
+    descriptor.value = function(...args: unknown[]) {
       return RetryManager.execute(() => originalMethod.apply(this, args), config);
     };
     

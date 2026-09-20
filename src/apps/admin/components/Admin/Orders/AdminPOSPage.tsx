@@ -55,7 +55,7 @@ export const AdminPOSPage: React.FC = () => {
       setLoading(true);
       const res = await apiClient.get('/admin/products');
       setProducts(Array.isArray(res) ? res : (res?.data || []));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
@@ -143,7 +143,7 @@ export const AdminPOSPage: React.FC = () => {
       setCart([]);
       setCustomer({ name: '', email: '', phone: '' });
       setDiscount(0);
-    } catch (error: any) {
+    } catch (error: unknown) {
       showError(error?.message || 'Failed to create order');
     } finally {
       setSubmitting(false);

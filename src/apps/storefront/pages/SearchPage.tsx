@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, X, Sparkles } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { ProductCard } from '@/shared/components/Product/ProductCard';
 import { ProductDetails } from '@/shared/components/Product/ProductDetails';
 import { useProducts } from '@/shared/contexts/ProductContext';

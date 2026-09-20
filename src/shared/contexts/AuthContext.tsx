@@ -61,8 +61,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           role: data.user.role || 'customer',
           avatar: data.user.avatar_url || data.user.avatar,
           phone: data.user.phone,
-          gender: data.user.gender,
-          dateOfBirth: data.user.date_of_birth || data.user.dateOfBirth,
           email_verified: data.user.email_verified || data.user.emailVerified || false,
           emailVerified: data.user.email_verified || data.user.emailVerified || false,
         });
@@ -129,8 +127,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         role: data.user.role || 'customer',
         avatar: data.user.avatar_url || data.user.avatar,
         phone: data.user.phone,
-        gender: data.user.gender,
-        dateOfBirth: data.user.date_of_birth || data.user.dateOfBirth,
         email_verified: data.user.email_verified || data.user.emailVerified || false,
         emailVerified: data.user.email_verified || data.user.emailVerified || false,
       });
@@ -146,24 +142,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     password: string,
     additionalData?: Record<string, unknown>
   ): Promise<void> => {
-    let fullName = additionalData?.fullName as string;
-    if (!fullName) {
-      const firstName = (additionalData?.firstName as string) || '';
-      const lastName = (additionalData?.lastName as string) || '';
-      fullName = `${firstName} ${lastName}`.trim() || 'User';
-    }
-
     const response = await fetch('/api/auth/signup', {
       method: 'POST',
-      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        password,
-        full_name: fullName,
-        phone: additionalData?.phone,
-        role: additionalData?.role
-      }),
+      body: JSON.stringify({ email, password, ...additionalData }),
     });
 
     if (!response.ok) {
@@ -171,34 +153,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error(data.error || 'Failed to sign up');
     }
 
-    const signupData = await response.json();
-    if (signupData.token) {
-      apiClient.setToken(signupData.token);
-    }
+    await refreshSession();
+  };
 
-    // Refresh user state after signup
-    const meResponse = await fetch('/api/auth/me', { credentials: 'include' });
-    if (meResponse.ok) {
-      const data = await meResponse.json();
+  const requestOtp = async (phone: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const response = await fetch('/api/auth/customer/otp/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to request OTP');
+      }
+      return { success: true, message: data.message };
+    } catch (err: unknown) {
+      const error = err as Error;
+      throw new Error(error.message || 'OTP request failed');
+    }
+  };
+
+  const verifyOtp = async (phone: string, otp: string): Promise<{ success: boolean; message?: string; user?: User; token?: string }> => {
+    try {
+      const response = await fetch('/api/auth/customer/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, otp }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to verify OTP');
+      }
+      
       if (data.token) {
         apiClient.setToken(data.token);
       }
-      setUser({
-        ...data.user,
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.full_name || 'User',
-        fullName: data.user.full_name || 'User',
-        role: data.user.role || 'customer',
-        avatar: data.user.avatar_url || data.user.avatar,
-        phone: data.user.phone,
-        email_verified: data.user.email_verified || data.user.emailVerified || false,
-        emailVerified: data.user.email_verified || data.user.emailVerified || false,
-      });
-      setStore(data.store || null);
-      if (data.store?.hostname) {
-        apiClient.setStoreHostname(data.store.hostname);
-      }
+      await refreshSession();
+      
+      return { success: true, message: data.message, user: data.user, token: data.token };
+    } catch (err: unknown) {
+      const error = err as Error;
+      throw new Error(error.message || 'OTP verification failed');
     }
   };
 
@@ -293,11 +289,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     store,
     loading,
+    login,
+    register: signUp,
     signIn,
     signUp,
+    requestOtp,
+    verifyOtp,
     signOut,
     logout: signOut,
-    login,
     resetPassword,
     resendVerification,
     refreshSession,

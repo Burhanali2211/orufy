@@ -63,7 +63,7 @@ export class ResellerClubProvider implements DomainRegistrarProvider {
   }
 
   public async purchaseDomain(params: DomainPurchaseParams): Promise<DomainPurchaseResult> {
-    const safeDomain = normalizeHostname(params.domain);
+
     const providerDomainId = `rc_dom_${Date.now()}`;
     const providerOrderId = `rc_ord_${Date.now()}`;
 
@@ -108,7 +108,7 @@ export class ResellerClubProvider implements DomainRegistrarProvider {
     };
   }
 
-  public async renewDomain(providerDomainId: string, years: number, domainName?: string): Promise<DomainRenewalResult> {
+  public async renewDomain(providerDomainId: string, years: number, _domainName?: string): Promise<DomainRenewalResult> {
     return {
       success: true,
       provider: 'RESELLERCLUB',

@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { addresses, payment_methods, notification_preferences, orders, reviews, profiles, stores } from '../db/schema';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import path from 'path';
-import { requireAuth, optionalAuth } from '../middleware/auth';
-import { optimizeImageBuffer, saveOptimizedImage } from '../services/imageOptimizer';
+import { requireAuth } from '../middleware/auth';
+import { saveOptimizedImage } from '../services/imageOptimizer';
 
 export const customerRouter = Router();
 
@@ -149,7 +149,7 @@ customerRouter.put('/addresses/:id', requireAuth, async (req: Request, res: Resp
       isDefault,
     } = req.body;
 
-    const updates: any = { updated_at: new Date() };
+    const updates: Record<string, unknown> = { updated_at: new Date() };
     if (type !== undefined) updates.type = type;
     if (full_name !== undefined || fullName !== undefined || name !== undefined) {
       updates.full_name = full_name || fullName || name;
@@ -174,7 +174,7 @@ customerRouter.put('/addresses/:id', requireAuth, async (req: Request, res: Resp
     const [updated] = await db
       .update(addresses)
       .set(updates)
-      .where(and(eq(addresses.id, id as any), eq(addresses.user_id, userId as any)))
+      .where(and(eq(addresses.id, id as string), eq(addresses.user_id, userId as string)))
       .returning();
 
     return res.status(200).json(updated);
@@ -189,7 +189,7 @@ customerRouter.delete('/addresses/:id', requireAuth, async (req: Request, res: R
     const userId = res.locals.user.id;
     const id = req.params.id;
 
-    await db.delete(addresses).where(and(eq(addresses.id, id as any), eq(addresses.user_id, userId as any)));
+    await db.delete(addresses).where(and(eq(addresses.id, id as string), eq(addresses.user_id, userId as string)));
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error('Delete address error:', error);
@@ -206,7 +206,7 @@ const handleGetPaymentMethods = async (req: Request, res: Response) => {
     const list = await db
       .select()
       .from(payment_methods)
-      .where(and(eq(payment_methods.user_id, userId as any), eq(payment_methods.is_active, true)))
+      .where(and(eq(payment_methods.user_id, userId as string), eq(payment_methods.is_active, true)))
       .orderBy(desc(payment_methods.is_default), desc(payment_methods.created_at));
 
     return res.status(200).json(list);
@@ -242,7 +242,7 @@ const handleCreatePaymentMethod = async (req: Request, res: Response) => {
 
     const resolvedDefault = is_default || isDefault;
     if (resolvedDefault) {
-      await db.update(payment_methods).set({ is_default: false }).where(eq(payment_methods.user_id, userId as any));
+      await db.update(payment_methods).set({ is_default: false }).where(eq(payment_methods.user_id, userId as string));
     }
 
     const [created] = await db.insert(payment_methods).values({
@@ -271,16 +271,16 @@ customerRouter.get('/payment_methods', requireAuth, handleGetPaymentMethods);
 customerRouter.post('/payment-methods', requireAuth, handleCreatePaymentMethod);
 customerRouter.post('/payment_methods', requireAuth, handleCreatePaymentMethod);
 
-customerRouter.put('/payment-methods/:id/set-default', requireAuth, async (req: Request, res: Response) => {
+const handleSetDefaultPaymentMethod = async (req: Request, res: Response) => {
   try {
     const userId = res.locals.user.id;
     const id = req.params.id;
 
-    await db.update(payment_methods).set({ is_default: false }).where(eq(payment_methods.user_id, userId as any));
+    await db.update(payment_methods).set({ is_default: false }).where(eq(payment_methods.user_id, userId as string));
     const [updated] = await db
       .update(payment_methods)
       .set({ is_default: true, updated_at: new Date() })
-      .where(and(eq(payment_methods.id, id as any), eq(payment_methods.user_id, userId as any)))
+      .where(and(eq(payment_methods.id, id as string), eq(payment_methods.user_id, userId as string)))
       .returning();
 
     return res.status(200).json(updated);
@@ -288,32 +288,16 @@ customerRouter.put('/payment-methods/:id/set-default', requireAuth, async (req: 
     console.error('Set default payment method error:', error);
     res.status(500).json({ error: 'Failed to set default payment method' });
   }
-});
-customerRouter.put('/payment_methods/:id/set-default', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const userId = res.locals.user.id;
-    const id = req.params.id;
-
-    await db.update(payment_methods).set({ is_default: false }).where(eq(payment_methods.user_id, userId as any));
-    const [updated] = await db
-      .update(payment_methods)
-      .set({ is_default: true, updated_at: new Date() })
-      .where(and(eq(payment_methods.id, id as any), eq(payment_methods.user_id, userId as any)))
-      .returning();
-
-    return res.status(200).json(updated);
-  } catch (error) {
-    console.error('Set default payment method error:', error);
-    res.status(500).json({ error: 'Failed to set default payment method' });
-  }
-});
+};
+customerRouter.put('/payment-methods/:id/set-default', requireAuth, handleSetDefaultPaymentMethod);
+customerRouter.put('/payment_methods/:id/set-default', requireAuth, handleSetDefaultPaymentMethod);
 
 const handleDeletePaymentMethod = async (req: Request, res: Response) => {
   try {
     const userId = res.locals.user.id;
     const id = req.params.id;
 
-    await db.delete(payment_methods).where(and(eq(payment_methods.id, id as any), eq(payment_methods.user_id, userId as any)));
+    await db.delete(payment_methods).where(and(eq(payment_methods.id, id as string), eq(payment_methods.user_id, userId as string)));
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error('Delete payment method error:', error);
@@ -369,8 +353,7 @@ const handleSaveNotifications = async (req: Request, res: Response) => {
       emailOrderUpdates,
       emailPromotions,
       emailNewsletter,
-      pushOrderUpdates,
-      pushPromotions,
+
     } = req.body;
 
     const values = {

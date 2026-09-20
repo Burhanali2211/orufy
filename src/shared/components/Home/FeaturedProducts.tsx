@@ -1,6 +1,5 @@
 import React, { useEffect, memo } from 'react';
 import { Star, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useProducts } from '@/shared/contexts/ProductContext';
 import { ProductCard } from '../Product/ProductCard';
 import { ProductGridSkeleton } from '../Common/ProductCardSkeleton';

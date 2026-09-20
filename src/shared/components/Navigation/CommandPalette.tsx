@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Command } from 'cmdk';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Search, Package, ShoppingBag, Heart, User, Sparkles, 
-  ArrowRight, Tag, Settings, Plus, ExternalLink, X 
+  Search, Package, ShoppingBag, Heart, Sparkles, 
+  ArrowRight, Tag, Settings, Plus, X 
 } from 'lucide-react';
 import { useProducts } from '@/shared/contexts/ProductContext';
 import { useAuth } from '@/shared/contexts/AuthContext';

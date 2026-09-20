@@ -18,7 +18,7 @@ const getApiBaseUrl = (): string => {
 
 const API_URL = getApiBaseUrl();
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   message?: string;
   error?: {
@@ -115,7 +115,7 @@ class ApiClient {
   /**
    * Make API request
    */
-  private async request<T = any>(
+  private async request<T = unknown>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
@@ -147,14 +147,14 @@ class ApiClient {
 
       // Check if response has content before parsing JSON
       const contentType = response.headers.get('content-type');
-      let data: any = {};
+      let data: Record<string, unknown> | unknown = {};
       
       if (contentType && contentType.includes('application/json')) {
         try {
           data = await response.json();
         } catch (parseError) {
           console.error('Failed to parse JSON response:', parseError);
-          throw new Error('Invalid JSON response from server');
+          throw new Error('Invalid JSON response from server', { cause: parseError });
         }
       } else {
         // If not JSON, get text
@@ -170,7 +170,7 @@ class ApiClient {
 
       if (!response.ok) {
         const errorMessage = data?.error?.message || data?.message || `API request failed with status ${response.status}`;
-        const error: any = new Error(errorMessage);
+        const error = new Error(errorMessage) as Error & { status?: number; response?: { status: number; data: unknown } };
         error.status = response.status;
         error.response = { status: response.status, data };
         
@@ -193,23 +193,24 @@ class ApiClient {
             configurable: true,
             writable: true
           });
-        } catch (_) {}
+        } catch { }
       }
 
       return data;
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error & { status?: number; response?: { status?: number; data?: { error?: string } } };
       // Check if it's a 401 error from the response
       const is401Error = error?.status === 401 || error?.response?.status === 401;
       
       // If 401 was already handled above, just rethrow
       if (is401Error && !this.getToken()) {
-        throw new Error('Session expired. Please log in again.');
+        throw new Error('Session expired. Please log in again.', { cause: err });
       }
 
       // Handle network errors or other fetch errors
       if (error instanceof TypeError && error.message.includes('fetch')) {
         console.error(`Network Error [${endpoint}]:`, error);
-        throw new Error('Network error. Please check your connection.');
+        throw new Error('Network error. Please check your connection.', { cause: err });
       }
 
       // Silently handle expected 401 errors for /auth/me when no token exists
@@ -235,17 +236,17 @@ class ApiClient {
   /**
    * GET request
    */
-  async get<T = any>(endpoint: string): Promise<T> {
+  async get<T = unknown>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, { method: 'GET' });
   }
 
   /**
    * POST request
    */
-  async post<T = any>(endpoint: string, body: any): Promise<T> {
+  async post<T = unknown>(endpoint: string, body: unknown): Promise<T> {
     // Log the body being sent for debugging
     if (process.env.NODE_ENV === 'development' || endpoint.includes('/auth')) {
-      console.log('API POST Request:', {
+      console.info('API POST Request:', {
         endpoint,
         bodyKeys: Object.keys(body || {}),
         hasEmail: !!body?.email,
@@ -266,7 +267,7 @@ class ApiClient {
   /**
    * Upload request (multipart/form-data)
    */
-  async upload<T = any>(endpoint: string, formData: FormData): Promise<T> {
+  async upload<T = unknown>(endpoint: string, formData: FormData): Promise<T> {
     const url = `${API_URL}${endpoint}`;
     const headers: HeadersInit = {};
 
@@ -301,7 +302,7 @@ class ApiClient {
   /**
    * PUT request
    */
-  async put<T = any>(endpoint: string, body: any): Promise<T> {
+  async put<T = unknown>(endpoint: string, body: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
       body: JSON.stringify(body),
@@ -311,7 +312,7 @@ class ApiClient {
   /**
    * DELETE request
    */
-  async delete<T = any>(endpoint: string): Promise<T> {
+  async delete<T = unknown>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
@@ -370,7 +371,7 @@ class ApiClient {
     return this.get('/auth/me');
   }
 
-  async updateProfile(data: any) {
+  async updateProfile(data: Record<string, unknown>) {
     return this.put('/auth/profile', data);
   }
 
@@ -388,7 +389,7 @@ class ApiClient {
     latest?: boolean;
     sellerId?: string;
     showOnHomepage?: boolean;
-  }): Promise<PaginatedResponse<any>> {
+  }): Promise<PaginatedResponse<unknown>> {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
     if (params?.limit) query.append('limit', params.limit.toString());
@@ -408,11 +409,11 @@ class ApiClient {
     return this.get(`/admin/products/${id}`);
   }
 
-  async createProduct(data: any) {
+  async createProduct(data: Record<string, unknown>) {
     return this.post('/admin/products', data);
   }
 
-  async updateProduct(id: string, data: any) {
+  async updateProduct(id: string, data: Record<string, unknown>) {
     return this.put(`/admin/products/${id}`, data);
   }
 
@@ -432,11 +433,11 @@ class ApiClient {
     return this.get(`/admin/categories/${id}`);
   }
 
-  async createCategory(data: any) {
+  async createCategory(data: Record<string, unknown>) {
     return this.post('/admin/categories', data);
   }
 
-  async updateCategory(id: string, data: any) {
+  async updateCategory(id: string, data: Record<string, unknown>) {
     return this.put(`/admin/categories/${id}`, data);
   }
 
@@ -496,11 +497,11 @@ class ApiClient {
     return this.get(`/addresses/${id}`);
   }
 
-  async createAddress(data: any) {
+  async createAddress(data: Record<string, unknown>) {
     return this.post('/addresses', data);
   }
 
-  async updateAddress(id: string, data: any) {
+  async updateAddress(id: string, data: Record<string, unknown>) {
     return this.put(`/addresses/${id}`, data);
   }
 
@@ -520,7 +521,7 @@ class ApiClient {
     return this.get(`/orders/${id}`);
   }
 
-  async createOrder(data: any) {
+  async createOrder(data: Record<string, unknown>) {
     return this.post('/orders', data);
   }
 
@@ -540,11 +541,11 @@ class ApiClient {
     return this.get(`/payment-methods/${id}`);
   }
 
-  async createPaymentMethod(data: any) {
+  async createPaymentMethod(data: Record<string, unknown>) {
     return this.post('/payment-methods', data);
   }
 
-  async updatePaymentMethod(id: string, data: any) {
+  async updatePaymentMethod(id: string, data: Record<string, unknown>) {
     return this.put(`/payment-methods/${id}`, data);
   }
 
@@ -564,16 +565,16 @@ class ApiClient {
     return this.get('/notification-preferences');
   }
 
-  async createNotificationPreferences(data: any) {
+  async createNotificationPreferences(data: Record<string, unknown>) {
     return this.post('/notification-preferences', data);
   }
 
-  async updateNotificationPreferences(data: any) {
+  async updateNotificationPreferences(data: Record<string, unknown>) {
     return this.put('/notification-preferences', data);
   }
 
   // Add patch method
-  async patch<T = any>(endpoint: string, body: any = {}): Promise<T> {
+  async patch<T = unknown>(endpoint: string, body: unknown = {}): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PATCH',
       body: JSON.stringify(body),

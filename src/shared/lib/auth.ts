@@ -52,9 +52,9 @@ export const registerUser = async (userData: RegistrationData): Promise<AuthResu
       role: userData.role || 'customer',
     });
     return { user: mapUser(result) };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Registration error:', error);
-    return { error: error?.message || 'Registration failed. Please try again.' };
+    return { error: (error as Error)?.message || 'Registration failed. Please try again.' };
   }
 };
 
@@ -71,7 +71,7 @@ export const loginUser = async (loginData: LoginData): Promise<AuthResult> => {
       password: loginData.password,
     });
     return { user: mapUser(result) };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Login error:', error);
     return { error: 'Invalid credentials' };
   }
@@ -97,7 +97,7 @@ export const signOut = async (): Promise<{ error?: string }> => {
   try {
     await apiClient.post('/auth/logout', {});
     return {};
-  } catch (error: any) {
+  } catch {
     return { error: 'Sign out failed' };
   }
 };
@@ -109,7 +109,7 @@ export const requestPasswordReset = async (email: string): Promise<{ error?: str
   try {
     await apiClient.post('/auth/forgot-password', { email });
     return {};
-  } catch (error: any) {
+  } catch {
     return { error: 'Failed to send reset email' };
   }
 };
@@ -121,7 +121,7 @@ export const updatePassword = async (newPassword: string): Promise<{ error?: str
   try {
     await apiClient.put('/auth/password', { password: newPassword });
     return {};
-  } catch (error: any) {
+  } catch {
     return { error: 'Failed to update password' };
   }
 };
@@ -134,7 +134,7 @@ export const hasRole = (user: User, requiredRole: 'admin' | 'customer'): boolean
   return user.isActive;
 };
 
-function mapUser(data: any): User {
+function mapUser(data: { id: string; email?: string; full_name?: string; fullName?: string; role?: 'admin' | 'customer'; is_active?: boolean; email_verified?: boolean; created_at?: string; updated_at?: string; [key: string]: unknown }): User {
   return {
     id: data.id,
     email: data.email || '',

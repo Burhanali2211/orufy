@@ -77,7 +77,7 @@ export const useCustomerNotifications = () => {
       queryClient.invalidateQueries({ queryKey: ['customer-notifications', user?.id] });
       showSuccess('Success', 'Notification preferences saved successfully');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error', err.message || 'Failed to save notification preferences');
     }
   });

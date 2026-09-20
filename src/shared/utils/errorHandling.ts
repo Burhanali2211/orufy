@@ -16,7 +16,7 @@ export class AppError extends Error {
   constructor(
     public code: ErrorCode,
     message: string,
-    public details?: any,
+    public details?: unknown,
     public originalError?: Error
   ) {
     super(message);
@@ -26,7 +26,7 @@ export class AppError extends Error {
 
 // Validation error class
 export class ValidationError extends AppError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: unknown) {
     super(ErrorCode.VALIDATION_ERROR, message, details);
     this.name = 'ValidationError';
   }
@@ -34,7 +34,7 @@ export class ValidationError extends AppError {
 
 // Database error class
 export class DatabaseError extends AppError {
-  constructor(message: string, details?: any, originalError?: Error) {
+  constructor(message: string, details?: unknown, originalError?: Error) {
     super(ErrorCode.DATABASE_ERROR, message, details, originalError);
     this.name = 'DatabaseError';
   }
@@ -42,7 +42,7 @@ export class DatabaseError extends AppError {
 
 // Network error class
 export class NetworkError extends AppError {
-  constructor(message: string, details?: any, originalError?: Error) {
+  constructor(message: string, details?: unknown, originalError?: Error) {
     super(ErrorCode.NETWORK_ERROR, message, details, originalError);
     this.name = 'NetworkError';
   }
@@ -50,7 +50,7 @@ export class NetworkError extends AppError {
 
 // Authentication error class
 export class AuthenticationError extends AppError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: unknown) {
     super(ErrorCode.AUTHENTICATION_ERROR, message, details);
     this.name = 'AuthenticationError';
   }
@@ -58,7 +58,7 @@ export class AuthenticationError extends AppError {
 
 // Authorization error class
 export class AuthorizationError extends AppError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: unknown) {
     super(ErrorCode.AUTHORIZATION_ERROR, message, details);
     this.name = 'AuthorizationError';
   }
@@ -66,7 +66,7 @@ export class AuthorizationError extends AppError {
 
 // Not found error class
 export class NotFoundError extends AppError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: unknown) {
     super(ErrorCode.NOT_FOUND_ERROR, message, details);
     this.name = 'NotFoundError';
   }
@@ -74,34 +74,36 @@ export class NotFoundError extends AppError {
 
 // Error handler utility
 export class ErrorHandler {
-  static handle(error: any): AppError {
+  static handle(error: unknown): AppError {
     // If it's already an AppError, return it
     if (error instanceof AppError) {
       return error;
     }
 
+    const err = error as Error & { details?: unknown; name?: string; message?: string };
+
     // Handle different types of errors
-    if (error.name === 'ValidationError') {
-      return new ValidationError(error.message, error.details);
+    if (err.name === 'ValidationError') {
+      return new ValidationError(err.message || 'Validation Error', err.details);
     }
 
-    if (error.name === 'DatabaseError' || error.name === 'PostgrestError') {
-      return new DatabaseError(error.message, error.details, error);
+    if (err.name === 'DatabaseError' || err.name === 'PostgrestError') {
+      return new DatabaseError(err.message || 'Database Error', err.details, error instanceof Error ? error : undefined);
     }
 
-    if (error.name === 'NetworkError' || error.name === 'FetchError') {
-      return new NetworkError(error.message, error.details, error);
+    if (err.name === 'NetworkError' || err.name === 'FetchError') {
+      return new NetworkError(err.message || 'Network Error', err.details, error instanceof Error ? error : undefined);
     }
 
-    if (error.name === 'AuthError') {
-      return new AuthenticationError(error.message, error.details);
+    if (err.name === 'AuthError') {
+      return new AuthenticationError(err.message || 'Authentication Error', err.details);
     }
 
     // Default to internal error
-    return new AppError(ErrorCode.INTERNAL_ERROR, error.message || 'An unexpected error occurred', undefined, error);
+    return new AppError(ErrorCode.INTERNAL_ERROR, err.message || 'An unexpected error occurred', undefined, error instanceof Error ? error : undefined);
   }
 
-  static formatError(error: AppError): { success: false; error: { code: string; message: string; details?: any } } {
+  static formatError(error: AppError): { success: false; error: { code: string; message: string; details?: unknown } } {
     return {
       success: false,
       error: {
@@ -116,7 +118,7 @@ export class ErrorHandler {
 // Validation utilities
 export class Validation {
   // Validate required fields
-  static required(data: any, fields: string[]): void {
+  static required(data: Record<string, unknown>, fields: string[]): void {
     const missing = fields.filter(field => {
       const value = this.getNestedValue(data, field);
       return value === undefined || value === null || value === '';
@@ -164,13 +166,13 @@ export class Validation {
   static url(url: string): void {
     try {
       new URL(url);
-    } catch (error) {
+    } catch {
       throw new ValidationError('Invalid URL format', { url });
     }
   }
 
   // Validate array minimum length
-  static arrayMinLength(array: any[], fieldName: string, minLength: number): void {
+  static arrayMinLength(array: unknown[], fieldName: string, minLength: number): void {
     if (!Array.isArray(array) || array.length < minLength) {
       throw new ValidationError(`${fieldName} must have at least ${minLength} items`, { fieldName, arrayLength: array?.length, minLength });
     }
@@ -184,8 +186,13 @@ export class Validation {
   }
 
   // Helper to get nested value from object
-  private static getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => current?.[key], obj);
+  private static getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+    return path.split('.').reduce((current: unknown, key: string) => {
+      if (current && typeof current === 'object') {
+        return (current as Record<string, unknown>)[key];
+      }
+      return undefined;
+    }, obj);
   }
 }
 

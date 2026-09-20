@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Grid3X3, LayoutList, SlidersHorizontal, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Search, Grid3X3, LayoutList, SlidersHorizontal, ArrowLeft } from 'lucide-react';
 
 interface Category {
     id: string;

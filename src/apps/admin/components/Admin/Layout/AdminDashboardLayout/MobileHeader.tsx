@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Store, ExternalLink } from 'lucide-react';
+import { Menu, Store } from 'lucide-react';
 import { useAuth } from '@/shared/contexts/AuthContext';
 
 interface MobileHeaderProps {

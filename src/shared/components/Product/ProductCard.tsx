@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, memo, useState, useRef } from 'react';
-import { Star, Heart, ShoppingCart, Check, Zap } from 'lucide-react';
+import { Star, Heart, Check, Zap } from 'lucide-react';
 import { Product } from '../../types';
 import { useCart } from '@/shared/contexts/CartContext';
 import { useWishlist } from '@/shared/contexts/WishlistContext';

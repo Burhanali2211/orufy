@@ -1,7 +1,8 @@
 import { db } from '../db/db';
-import { communications_log } from '../db/schema';
+import { communications_log, stores } from '../db/schema';
 import { ResendService } from './resendService';
 import { eq, and, desc } from 'drizzle-orm';
+import { getOrCreateDefaultStore } from '../middleware/storeResolver';
 
 export type CommunicationEventType =
   | 'ORDER_CONFIRMED'
@@ -31,7 +32,7 @@ export interface CommunicationEventPayload {
   shippingAmountPaise?: number;
   discountAmountPaise?: number;
   items?: Array<{ name: string; quantity: number; pricePaise: number; sku?: string }>;
-  shippingAddress?: any;
+  shippingAddress?: Record<string, unknown>;
   carrier?: string;
   trackingNumber?: string;
   trackingToken?: string;
@@ -39,7 +40,7 @@ export interface CommunicationEventPayload {
   resetUrl?: string;
   customSubject?: string;
   customHtml?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class CommunicationService {
@@ -200,7 +201,7 @@ export class CommunicationService {
 
       // Record in communications log
       let validStoreId = payload.storeId;
-      let entry: any;
+      let entry: Record<string, unknown> | undefined;
       try {
         if (validStoreId && validStoreId !== '00000000-0000-0000-0000-000000000000') {
           const [exists] = await db.select({ id: stores.id }).from(stores).where(eq(stores.id, validStoreId));
@@ -246,9 +247,10 @@ export class CommunicationService {
         logId: entry?.id,
         error: sendError,
       };
-    } catch (error: any) {
-      console.error('Error dispatching communication event:', error);
-      return { success: false, error: error.message || 'Communication error' };
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Error dispatching communication event:', err);
+      return { success: false, error: err.message || 'Communication error' };
     }
   }
 

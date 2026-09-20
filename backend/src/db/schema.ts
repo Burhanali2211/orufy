@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, uuid, integer, jsonb, numeric, primaryKey, time, date, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, uuid, integer, jsonb, numeric, primaryKey, time, unique } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 export const profiles = pgTable('profiles', {
@@ -8,8 +8,6 @@ export const profiles = pgTable('profiles', {
   full_name: text('full_name'),
   phone: text('phone'),
   avatar_url: text('avatar_url'),
-  gender: text('gender'),
-  date_of_birth: text('date_of_birth'),
   role: text('role').default('customer').notNull(), // customer, merchant, admin
   is_super_admin: boolean('is_super_admin').default(false).notNull(),
   email_verified: boolean('email_verified').default(false).notNull(),
@@ -54,6 +52,15 @@ export const sessions = pgTable('sessions', {
     .notNull()
     .references(() => profiles.id, { onDelete: 'cascade' }),
   expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+});
+
+export const otp_requests = pgTable('otp_requests', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  phone: text('phone').notNull(),
+  otp_hash: text('otp_hash').notNull(),
+  expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+  verified: boolean('verified').default(false).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
 export const categories = pgTable('categories', {

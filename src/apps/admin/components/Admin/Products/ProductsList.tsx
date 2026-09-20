@@ -1,7 +1,7 @@
 import { apiClient } from '@/shared/lib/apiClient';
 import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Package, CheckCircle2, AlertCircle, XCircle, ChevronLeft, ChevronRight, Download, Eye } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, CheckCircle2, AlertCircle, XCircle, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { ConfirmModal } from '@/shared/components/Common/Modal';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { getFirstValidImage } from '@/shared/utils/imageUrlUtils';
@@ -114,9 +114,20 @@ export const ProductsList: React.FC = () => {
       const productsData = Array.isArray(productsRes) ? productsRes : (productsRes?.data || []);
       const categoriesData = Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes?.data || []);
       const categoryMap: Record<string, string> = {};
-      categoriesData.forEach((c: any) => { categoryMap[c.id] = c.name; });
+      categoriesData.forEach((c: { id: string; name: string }) => { categoryMap[c.id] = c.name; });
       
-      return productsData.map((p: any) => ({
+      return productsData.map((p: {
+        id: string;
+        name: string;
+        price: string;
+        original_price: string;
+        stock: number;
+        status: string;
+        category_id: string;
+        images?: string[];
+        is_active?: boolean;
+        created_at?: string;
+      }) => ({
         id: p.id,
         name: p.name,
         price: String(p.price),
@@ -138,7 +149,7 @@ export const ProductsList: React.FC = () => {
       setShowDeleteModal(false);
       setSelectedProduct(null);
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError(err?.message || 'Failed to delete product');
     }
   });
@@ -150,7 +161,7 @@ export const ProductsList: React.FC = () => {
       showSuccess('Status updated');
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError(err?.message || 'Failed to update product status');
     }
   });

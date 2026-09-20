@@ -1,5 +1,5 @@
 // In-memory cache with TTL
-const memoryCache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+const memoryCache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
 
 // Cache configuration
 const CACHE_CONFIG = {
@@ -25,7 +25,7 @@ export class Cache {
   }
 
   // Set item in memory cache
-  static set(key: string, data: any, ttl: number = CACHE_CONFIG.MEMORY_TTL) {
+  static set(key: string, data: unknown, ttl: number = CACHE_CONFIG.MEMORY_TTL) {
     // Clean up expired items and enforce size limit
     this.cleanup();
     
@@ -94,7 +94,7 @@ export class SessionCache {
   }
 
   // Set item in session storage
-  static set(key: string, data: any, ttl: number = CACHE_CONFIG.SESSION_TTL) {
+  static set(key: string, data: unknown, ttl: number = CACHE_CONFIG.SESSION_TTL) {
     try {
       const expiry = Date.now() + ttl;
       const value = {
@@ -204,13 +204,13 @@ export class CacheInvalidation {
 // Decorator for caching function results
 export function Cacheable(ttl: number = CACHE_CONFIG.MEMORY_TTL) {
   return function(
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
     
-    descriptor.value = function(...args: any[]) {
+    descriptor.value = function(...args: unknown[]) {
       // Create cache key from method name and arguments
       const key = `${target.constructor.name}:${propertyKey}:${JSON.stringify(args)}`;
       

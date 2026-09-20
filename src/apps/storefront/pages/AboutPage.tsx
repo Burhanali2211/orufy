@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Award, Heart, BookOpen, ShieldCheck, CheckCircle2, Quote, Flame, ArrowRight, Store, Phone, Mail } from 'lucide-react';
+import { MapPin, ShieldCheck, Quote, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { Link } from 'react-router-dom';
@@ -8,12 +8,12 @@ import { BreadcrumbStructuredData } from '@/shared/components/SEO/StructuredData
 
 export const AboutPage: React.FC = () => {
   const { settings, getSiteSetting } = useSettings();
-  const contactInfo: any[] = (settings as any)?.contactInfo || [];
+  const contactInfo: Record<string, unknown>[] = ((settings as Record<string, unknown>)?.contactInfo as Record<string, unknown>[]) || [];
   const siteName = getSiteSetting('site_name') || 'Our Store';
 
-  const addressContact = contactInfo.find((c: any) => c.contact_type === 'address' && c.is_primary) ||
-                         contactInfo.find((c: any) => c.contact_type === 'address');
-  const address = addressContact?.value || (settings as any)?.contact_address || `${siteName} Flagship Boutique`;
+  const addressContact = contactInfo.find((c) => c.contact_type === 'address' && c.is_primary) ||
+                         contactInfo.find((c) => c.contact_type === 'address');
+  const address = addressContact?.value || (settings as Record<string, unknown>)?.contact_address || `${siteName} Flagship Boutique`;
 
   return (
     <div className="min-h-screen bg-[#FBF9F5] text-stone-900">

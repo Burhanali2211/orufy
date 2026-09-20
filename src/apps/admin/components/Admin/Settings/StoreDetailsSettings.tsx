@@ -11,9 +11,7 @@ import {
   RefreshCw,
   Share2,
   DollarSign,
-  ShieldCheck,
-  Building,
-  ArrowRight
+  Building
 } from 'lucide-react';
 
 interface StoreDetailsForm {
@@ -76,7 +74,7 @@ export const StoreDetailsSettings: React.FC = () => {
       showSuccess('Store contact & social details saved successfully!');
       queryClient.invalidateQueries({ queryKey: ['admin-store-details'] });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError(err?.message || 'Failed to save store details');
     },
   });

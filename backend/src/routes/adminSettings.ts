@@ -1,12 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
-import { db } from '../db/db';
 import {
   admin_dashboard_settings,
   site_settings,
   contact_information,
   social_media_accounts,
-  business_hours,
   footer_links,
   stores,
   store_members
@@ -26,7 +24,7 @@ const upload = multer({
 export const adminSettingsRouter = Router();
 
 const getStoreId = (req: Request, res: Response): string => {
-  return res.locals.storeId || res.locals.store?.id || (req as any).store?.id;
+  return res.locals.storeId || res.locals.store?.id || (req as Request & { store?: { id?: string } }).store?.id;
 };
 
 // Middleware: Verify caller is owner or admin of the resolved store
@@ -46,7 +44,7 @@ const requireStoreAdmin = async (req: Request, res: Response, next: NextFunction
         userStore = await getOrCreateDefaultStore();
         if (userStore) {
           await withUserContext(user.id, async (tx) => {
-            await tx.insert(store_members).values({ store_id: userStore.id, user_id: user.id, role: 'owner' }).onConflictDoNothing();
+            await tx.insert(store_members).values({ store_id: userStore!.id, user_id: user.id, role: 'owner' }).onConflictDoNothing();
           });
         }
       }
@@ -244,7 +242,7 @@ adminSettingsRouter.put('/contact/:id', requireAuth, requireStore, requireStoreA
     const id = req.params.id as string;
     const { type, label, value, display_order, is_primary, is_active } = req.body;
 
-    const updateData: any = { updated_at: new Date() };
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
     if (type !== undefined) updateData.contact_type = type;
     if (label !== undefined) updateData.label = label;
     if (value !== undefined) updateData.value = value;
@@ -253,7 +251,7 @@ adminSettingsRouter.put('/contact/:id', requireAuth, requireStore, requireStoreA
     if (is_active !== undefined) updateData.is_active = Boolean(is_active);
 
     await withStoreContext(storeId, async (tx) => 
-      tx.update(contact_information).set(updateData).where(and(eq(contact_information.id as any, id), eq(contact_information.store_id, storeId))),
+      tx.update(contact_information).set(updateData).where(and(eq(contact_information.id, id), eq(contact_information.store_id, storeId))),
       userId
     );
     res.json({ success: true });
@@ -269,7 +267,7 @@ adminSettingsRouter.delete('/contact/:id', requireAuth, requireStore, requireSto
     const userId = res.locals.user?.id;
     const id = req.params.id as string;
     await withStoreContext(storeId, async (tx) => 
-      tx.delete(contact_information).where(and(eq(contact_information.id as any, id), eq(contact_information.store_id, storeId))),
+      tx.delete(contact_information).where(and(eq(contact_information.id, id), eq(contact_information.store_id, storeId))),
       userId
     );
     res.json({ success: true });
@@ -332,7 +330,7 @@ adminSettingsRouter.put('/social/:id', requireAuth, requireStore, requireStoreAd
     const id = req.params.id as string;
     const { platform, platform_name, url, username, icon_name, is_active, display_order } = req.body;
 
-    const updateData: any = { updated_at: new Date() };
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
     if (platform !== undefined) updateData.platform = platform;
     if (platform_name !== undefined) updateData.platform_name = platform_name;
     if (url !== undefined) updateData.url = url;
@@ -342,7 +340,7 @@ adminSettingsRouter.put('/social/:id', requireAuth, requireStore, requireStoreAd
     if (display_order !== undefined) updateData.display_order = display_order;
 
     await withStoreContext(storeId, async (tx) => 
-      tx.update(social_media_accounts).set(updateData).where(and(eq(social_media_accounts.id as any, id), eq(social_media_accounts.store_id, storeId))),
+      tx.update(social_media_accounts).set(updateData).where(and(eq(social_media_accounts.id, id), eq(social_media_accounts.store_id, storeId))),
       userId
     );
     res.json({ success: true });
@@ -358,7 +356,7 @@ adminSettingsRouter.delete('/social/:id', requireAuth, requireStore, requireStor
     const userId = res.locals.user?.id;
     const id = req.params.id as string;
     await withStoreContext(storeId, async (tx) => 
-      tx.delete(social_media_accounts).where(and(eq(social_media_accounts.id as any, id), eq(social_media_accounts.store_id, storeId))),
+      tx.delete(social_media_accounts).where(and(eq(social_media_accounts.id, id), eq(social_media_accounts.store_id, storeId))),
       userId
     );
     res.json({ success: true });
@@ -437,7 +435,7 @@ adminSettingsRouter.put('/footer/:id', requireAuth, requireStore, requireStoreAd
     const id = req.params.id as string;
     const { section_name, link_text, link_url, display_order, is_active, opens_new_tab } = req.body;
 
-    const updateData: any = { updated_at: new Date() };
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
     if (section_name !== undefined) updateData.section_name = section_name;
     if (link_text !== undefined) updateData.link_text = link_text;
     if (link_url !== undefined) updateData.link_url = link_url;
@@ -446,7 +444,7 @@ adminSettingsRouter.put('/footer/:id', requireAuth, requireStore, requireStoreAd
     if (opens_new_tab !== undefined) updateData.opens_new_tab = Boolean(opens_new_tab);
 
     await withStoreContext(storeId, async (tx) => 
-      tx.update(footer_links).set(updateData).where(and(eq(footer_links.id as any, id), eq(footer_links.store_id, storeId))),
+      tx.update(footer_links).set(updateData).where(and(eq(footer_links.id, id), eq(footer_links.store_id, storeId))),
       userId
     );
     res.json({ success: true });
@@ -462,7 +460,7 @@ adminSettingsRouter.delete('/footer/:id', requireAuth, requireStore, requireStor
     const userId = res.locals.user?.id;
     const id = req.params.id as string;
     await withStoreContext(storeId, async (tx) => 
-      tx.delete(footer_links).where(and(eq(footer_links.id as any, id), eq(footer_links.store_id, storeId))),
+      tx.delete(footer_links).where(and(eq(footer_links.id, id), eq(footer_links.store_id, storeId))),
       userId
     );
     res.json({ success: true });
@@ -502,7 +500,7 @@ adminSettingsRouter.get('/hero', requireAuth, requireStore, requireStoreAdmin, a
     if (heroRow?.setting_value) {
       try {
         hero = JSON.parse(heroRow.setting_value);
-      } catch (_) {}
+      } catch { }
     }
     res.json(hero);
   } catch (error) {
@@ -556,13 +554,13 @@ adminSettingsRouter.get('/branding', requireAuth, requireStore, requireStoreAdmi
     }, userId);
 
     const settingsMap: Record<string, string> = {};
-    siteSettingsRows.forEach((r: any) => { settingsMap[r.setting_key] = r.setting_value || ''; });
+    siteSettingsRows.forEach((r: { setting_key: string; setting_value: string | null }) => { settingsMap[r.setting_key] = r.setting_value || ''; });
 
     let themeStudio = null;
     if (settingsMap['theme_studio_settings'] || settingsMap['theme_studio']) {
       try {
         themeStudio = JSON.parse(settingsMap['theme_studio_settings'] || settingsMap['theme_studio']);
-      } catch (_) {}
+      } catch { }
     }
 
     res.json({
@@ -625,9 +623,10 @@ adminSettingsRouter.post('/branding', requireAuth, requireStore, requireStoreAdm
     invalidateStoreCache();
 
     res.json({ success: true });
-  } catch (error: any) {
-    console.error('Error updating branding:', error);
-    res.status(500).json({ error: error?.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error updating branding:', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -653,9 +652,10 @@ adminSettingsRouter.delete('/logo', requireAuth, requireStore, requireStoreAdmin
     invalidateStoreCache();
 
     res.json({ success: true, message: 'Logo removed successfully' });
-  } catch (error: any) {
-    console.error('Error removing logo:', error);
-    res.status(500).json({ error: error?.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error removing logo:', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -680,9 +680,10 @@ adminSettingsRouter.delete('/favicon', requireAuth, requireStore, requireStoreAd
     invalidateStoreCache();
 
     res.json({ success: true, message: 'Favicon removed successfully' });
-  } catch (error: any) {
-    console.error('Error removing favicon:', error);
-    res.status(500).json({ error: error?.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error removing favicon:', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -698,20 +699,20 @@ adminSettingsRouter.get('/theme-studio', requireAuth, requireStore, requireStore
     }, userId);
 
     const settingsMap: Record<string, string> = {};
-    siteSettingsRows.forEach((r: any) => { settingsMap[r.setting_key] = r.setting_value || ''; });
+    siteSettingsRows.forEach((r: { setting_key: string; setting_value: string | null }) => { settingsMap[r.setting_key] = r.setting_value || ''; });
 
     let studioConfig = null;
     if (settingsMap['theme_studio_settings']) {
       try {
         studioConfig = JSON.parse(settingsMap['theme_studio_settings']);
-      } catch (_) {}
+      } catch { }
     }
 
     let heroConfig = null;
     if (settingsMap['hero_settings']) {
       try {
         heroConfig = JSON.parse(settingsMap['hero_settings']);
-      } catch (_) {}
+      } catch { }
     }
 
     res.json({
@@ -934,9 +935,10 @@ adminSettingsRouter.post('/storage/test-r2', requireAuth, requireStore, requireS
     } else {
       res.status(400).json({ success: false, error: testResult.error });
     }
-  } catch (error: any) {
-    console.error('Error testing Cloudflare R2 connection:', error);
-    res.status(500).json({ success: false, error: error?.message || 'Failed to test Cloudflare R2 connection' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error testing Cloudflare R2 connection:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to test Cloudflare R2 connection' });
   }
 });
 
@@ -966,9 +968,10 @@ const handleUpload = async (req: Request, res: Response) => {
       provider: result.provider,
       size: result.size
     });
-  } catch (error: any) {
-    console.error('Error uploading image file:', error);
-    res.status(500).json({ error: error?.message || 'Failed to upload image' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error uploading image file:', err);
+    res.status(500).json({ error: err.message || 'Failed to upload image' });
   }
 };
 

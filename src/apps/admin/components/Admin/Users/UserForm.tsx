@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface UserFormProps {
-  user: any | null;
+  user: Record<string, unknown> | null;
   onClose: () => void;
   onSuccess: () => void;
 }

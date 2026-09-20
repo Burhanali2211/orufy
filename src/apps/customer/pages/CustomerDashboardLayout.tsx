@@ -11,7 +11,6 @@ import {
   X,
   ChevronRight,
   ShoppingBag,
-  Sparkles,
   AlertCircle,
   Mail,
   RefreshCw
@@ -71,7 +70,7 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
       const res = await resendVerification(user.email);
       toast.success(res.message || 'Verification email has been resent!');
       setCooldown(60);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err.retryAfterSeconds) {
         setCooldown(err.retryAfterSeconds);
       }

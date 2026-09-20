@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { stores, store_members, products, categories, profiles, site_settings, custom_domains } from '../db/schema';
-import { eq, and, inArray, or, sql } from 'drizzle-orm';
+import { eq, or, sql } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth';
 import { RESERVED_SUBDOMAINS, invalidateStoreCache } from '../middleware/storeResolver';
 import crypto from 'crypto';
@@ -14,7 +14,7 @@ export const isValidSubdomain = (subdomain: string) => {
 };
 
 // In-memory draft store for onboarding sessions (keyed by user ID)
-const onboardingDrafts = new Map<string, any>();
+const onboardingDrafts = new Map<string, Record<string, unknown>>();
 
 // 1. Check Subdomain Availability with Pre-Flight Conflict Prevention
 platformRouter.get('/check-subdomain', async (req: Request, res: Response) => {
@@ -79,8 +79,9 @@ platformRouter.get('/check-subdomain', async (req: Request, res: Response) => {
       hostname,
       message: 'Store address is available and verified',
     });
-  } catch (error: any) {
-    console.error('Error checking subdomain availability:', error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error checking subdomain availability:', err);
     return res.status(500).json({ available: false, error: 'Failed to verify subdomain' });
   }
 });
@@ -104,8 +105,9 @@ platformRouter.post('/onboard-payments', requireAuth, async (req: Request, res: 
       settlementReady: true,
       message: 'Payment account linked and ready for payouts.',
     });
-  } catch (error: any) {
-    console.error('Error linking onboarding payments:', error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error linking onboarding payments:', err);
     return res.status(500).json({ error: 'Failed to connect payment account' });
   }
 });
@@ -125,7 +127,7 @@ platformRouter.post('/onboarding/draft', requireAuth, async (req: Request, res: 
     });
 
     return res.status(200).json({ success: true, message: 'Draft saved successfully.' });
-  } catch (error: any) {
+  } catch {
     return res.status(500).json({ error: 'Failed to save draft' });
   }
 });
@@ -139,7 +141,7 @@ platformRouter.get('/onboarding/draft', requireAuth, async (req: Request, res: R
 
     const draft = onboardingDrafts.get(userId) || null;
     return res.status(200).json({ success: true, draft });
-  } catch (error: any) {
+  } catch {
     return res.status(500).json({ error: 'Failed to fetch draft' });
   }
 });
@@ -316,15 +318,17 @@ platformRouter.post('/onboarding', requireAuth, async (req: Request, res: Respon
           sslStatus: 'ACTIVE',
         }
       });
-    } catch (dbError: any) {
-      console.error('DB Error in Onboarding:', dbError);
-      if (dbError.code === '23505') {
+    } catch (dbError: unknown) {
+      const err = dbError as { code?: string };
+      console.error('DB Error in Onboarding:', err);
+      if (err.code === '23505') {
         return res.status(409).json({ error: 'This subdomain or store address is already registered.' });
       }
       throw dbError;
     }
-  } catch (error: any) {
-    console.error('Onboarding launch gate error:', error);
-    return res.status(500).json({ error: error.message || 'Failed to provision store' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Onboarding launch gate error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to provision store' });
   }
 });

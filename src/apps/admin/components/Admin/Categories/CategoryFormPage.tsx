@@ -1,7 +1,7 @@
 import { apiClient } from '@/shared/lib/apiClient';
 import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Tag, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
 import { useForm, Controller } from 'react-hook-form';
@@ -56,7 +56,7 @@ export const CategoryFormPage: React.FC = () => {
     queryFn: async () => {
       const res = await apiClient.get('/admin/categories');
       const list = Array.isArray(res) ? res : (res?.data || []);
-      return list.filter((cat: any) => cat.is_active !== false && cat.id !== id);
+      return list.filter((cat: { id: string; is_active?: boolean }) => cat.is_active !== false && cat.id !== id);
     }
   });
 
@@ -85,7 +85,7 @@ export const CategoryFormPage: React.FC = () => {
                   setValue('sort_order', category.sort_order ?? 0);
                   setValue('is_active', category.is_active !== undefined ? category.is_active : true);
               }
-          } catch (error: any) {
+          } catch (error: unknown) {
               showError('Error', error?.message || 'Failed to load category');
               navigate('/admin/categories');
           }
@@ -129,7 +129,7 @@ export const CategoryFormPage: React.FC = () => {
     mutation.mutate(data);
   };
 
-  const onError = (formErrors: any) => {
+  const onError = (formErrors: Record<string, unknown>) => {
     const keys = Object.keys(formErrors);
     if (keys.length > 0) {
       const firstKey = keys[0];
@@ -279,7 +279,7 @@ export const CategoryFormPage: React.FC = () => {
                         className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 focus:bg-white transition-colors appearance-none"
                       >
                         <option value="">None — Top Level</option>
-                        {categories.map((cat: any) => (
+                        {categories.map((cat: { id: string; name: string }) => (
                           <option key={cat.id} value={cat.id}>{cat.name}</option>
                         ))}
                       </select>

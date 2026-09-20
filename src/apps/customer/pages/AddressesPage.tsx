@@ -4,14 +4,9 @@ import {
   Plus,
   Edit3,
   Trash2,
-  CheckCircle,
-  Home,
-  Building,
-  Phone,
   X,
   Navigation,
-  Loader2,
-  Sparkles
+  Loader2
 } from 'lucide-react';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
 import { useAuth } from '@/shared/contexts/AuthContext';
@@ -164,7 +159,7 @@ export const AddressesPage: React.FC = () => {
         },
         { timeout: 10000, enableHighAccuracy: true }
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLocating(false);
       showError('Error', err.message || 'Failed to detect location');
     }
@@ -203,7 +198,7 @@ export const AddressesPage: React.FC = () => {
         {/* ── Address Cards Grid ── */}
         {addresses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {addresses.map((address: any) => (
+            {addresses.map((address: Record<string, unknown>) => (
               <div
                 key={address.id}
                 className={`bg-white border rounded-2xl p-5 shadow-xs transition-all relative flex flex-col justify-between ${

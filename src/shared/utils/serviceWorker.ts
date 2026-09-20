@@ -41,7 +41,7 @@ export async function unregisterServiceWorkers(): Promise<void> {
             return reg.unregister();
           }
         });
-      } catch (error) {
+      } catch {
         // Ignore errors if no registration exists
       }
     }

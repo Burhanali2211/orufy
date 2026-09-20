@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { Order, CartItem, Address, OrderContextType, OrderItem } from '../types';
-import { apiClient } from '../lib/apiClient';
+import { Order, CartItem, Address, OrderContextType } from '../types';
 import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 

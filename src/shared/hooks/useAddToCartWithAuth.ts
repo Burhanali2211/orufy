@@ -1,6 +1,4 @@
-import { useAuth } from '@/shared/contexts/AuthContext';
 import { useCart } from '@/shared/contexts/CartContext';
-import { useAuthModal } from '@/shared/contexts/AuthModalContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { Product } from '../types';
 
@@ -9,9 +7,7 @@ interface UseAddToCartWithAuthReturn {
 }
 
 export const useAddToCartWithAuth = (): UseAddToCartWithAuthReturn => {
-  const { user } = useAuth();
   const { addItem: addToCart, items } = useCart();
-  const { showAuthModal } = useAuthModal();
   const { showNotification } = useNotification();
 
   const handleAddToCart = (product: Product, quantity: number = 1) => {

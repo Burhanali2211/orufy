@@ -72,9 +72,10 @@ paymentRouter.post('/onboard', requireAuth, async (req: Request, res: Response) 
       linked_account_id: mockLinkedAccountId,
       status: 'ACCOUNT_CREATED'
     });
-  } catch (error: any) {
-    console.error('Error in payment onboarding:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error in payment onboarding:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -136,8 +137,9 @@ paymentRouter.post('/checkout/orders', async (req: Request, res: Response) => {
           .from(products)
           .where(and(eq(products.id, item.productId), eq(products.store_id, store.id)));
 
-        const rows = typeof (query as any)?.for === 'function' ? await (query as any).for('update') : await query;
-        const dbProduct = rows?.[0];
+        const q = query as Record<string, unknown>;
+        const rows = typeof q.for === 'function' ? await (q.for as (arg: string) => Promise<unknown[]>)('update') : await query;
+        const dbProduct = (rows as { id: string, stock: number, reserved_stock: number | null, price: number, name: string, sku: string | null, images: string[] | null }[])?.[0];
           
         if (!dbProduct) {
           throw new Error(`Product ${item.productId} not found or unavailable in this store`);
@@ -271,7 +273,19 @@ paymentRouter.post('/checkout/orders', async (req: Request, res: Response) => {
           if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
             const rzp = getRazorpayInstance();
             
-            const rzpOrderOptions: any = {
+            const rzpOrderOptions: {
+              amount: number;
+              currency: string;
+              receipt: string;
+              partial_payment: boolean;
+              transfers?: {
+                account: string;
+                amount: number;
+                currency: string;
+                notes: { branch: string; name: string };
+                linked_account_notes: string[];
+              }[];
+            } = {
               amount: totalAmount, // already in paise
               currency: 'INR',
               receipt: order.order_number,
@@ -297,7 +311,7 @@ paymentRouter.post('/checkout/orders', async (req: Request, res: Response) => {
               ];
             }
 
-            const rzpOrder = await rzp.orders.create(rzpOrderOptions);
+            const rzpOrder = await (rzp.orders.create as unknown as (params: unknown) => Promise<{ id: string }>)(rzpOrderOptions);
             razorpayOrderId = rzpOrder.id;
           } else {
             razorpayOrderId = `order_test_${crypto.randomBytes(8).toString('hex')}`;
@@ -310,8 +324,9 @@ paymentRouter.post('/checkout/orders', async (req: Request, res: Response) => {
               .set({ razorpay_order_id: razorpayOrderId })
               .where(eq(orders.id, order.id));
           }
-        } catch (rzpErr: any) {
-          console.warn('Razorpay order creation notice:', rzpErr?.message || rzpErr);
+        } catch (rzpErr: unknown) {
+          const err = rzpErr as Error;
+          console.warn('Razorpay order creation notice:', err?.message || err);
           razorpayOrderId = `order_test_${crypto.randomBytes(8).toString('hex')}`;
         }
       }
@@ -343,11 +358,11 @@ paymentRouter.post('/checkout/orders', async (req: Request, res: Response) => {
         storeHostname: store.hostname,
         orderId: order.id,
         orderNumber: order.order_number,
-        recipientEmail: guestEmail || shippingAddress?.email,
-        recipientPhone: guestPhone || shippingAddress?.phone,
-        recipientName: shippingAddress?.full_name || shippingAddress?.name,
+        recipientEmail: guestEmail || (shippingAddress as { email?: string })?.email || undefined,
+        recipientPhone: guestPhone || (shippingAddress as { phone?: string })?.phone || undefined,
+        recipientName: (shippingAddress as { full_name?: string })?.full_name || (shippingAddress as { name?: string })?.name || undefined,
         totalAmountPaise: totalAmount,
-        trackingToken: order.tracking_token,
+        trackingToken: order.tracking_token || undefined,
       }).catch(err => console.warn('Communication dispatch error:', err));
 
       // 6. Save Idempotency Record if key was provided
@@ -370,9 +385,10 @@ paymentRouter.post('/checkout/orders', async (req: Request, res: Response) => {
 
     return res.status(201).json(checkoutResult);
 
-  } catch (error: any) {
-    console.error('Error in checkout/orders:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error in checkout/orders:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -380,7 +396,7 @@ paymentRouter.post('/checkout/orders', async (req: Request, res: Response) => {
 paymentRouter.post('/webhook', async (req: Request, res: Response) => {
   const signature = req.headers['x-razorpay-signature'] as string;
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || 'test_secret';
-  const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+  const rawBody = (req as Request & { rawBody?: string }).rawBody || JSON.stringify(req.body);
 
   if (!signature || !webhookSecret) {
     return res.status(400).json({ error: 'Missing signature or secret' });
@@ -401,7 +417,7 @@ paymentRouter.post('/webhook', async (req: Request, res: Response) => {
     const eventId = event.event_id || event.id || event.payload?.payment?.entity?.id || `evt_${Date.now()}`;
     const eventType = event.event;
 
-    console.log(`Razorpay Webhook Event: ${eventType}`);
+    console.info(`Razorpay Webhook Event: ${eventType}`);
 
     // Idempotency check in payment_webhook_events
     const [existingEvent] = await db
@@ -443,8 +459,9 @@ paymentRouter.post('/webhook', async (req: Request, res: Response) => {
       });
 
       return res.status(200).json({ success: true });
-    } catch (bizErr: any) {
-      if (bizErr.message === 'Transfer recipient mismatch') {
+    } catch (bizErr: unknown) {
+      const err = bizErr as Error;
+      if (err.message === 'Transfer recipient mismatch') {
         return res.status(400).json({ error: 'Transfer recipient mismatch' });
       }
 
@@ -460,14 +477,15 @@ paymentRouter.post('/webhook', async (req: Request, res: Response) => {
           last_attempt_at: sql`now()`,
           next_retry_at: nextRetryAt,
           updated_at: sql`now()`,
-          error_message: bizErr?.message || 'Processing transaction failed',
+          error_message: err?.message || 'Processing transaction failed',
         })
         .where(eq(payment_webhook_events.razorpay_event_id, eventId));
 
       return res.status(500).json({ error: 'Internal server error' });
     }
-  } catch (error: any) {
-    console.error('Webhook critical error:', error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Webhook critical error:', err);
     return res.status(500).json({ error: 'Internal webhook error' });
   }
 });
@@ -476,7 +494,7 @@ paymentRouter.post('/webhook', async (req: Request, res: Response) => {
  * Core business transaction processor for Razorpay Webhook events.
  * Extracted so it can be called idempotently from the live webhook, background retry worker, or manual admin replay.
  */
-export async function processWebhookBusinessEvent(event: any, tx: any): Promise<void> {
+export async function processWebhookBusinessEvent(event: { event: string, payload: Record<string, unknown> }, tx: Parameters<Parameters<typeof db.transaction>[0]>[0]): Promise<void> {
   const eventType = event.event;
 
   switch (eventType) {
@@ -738,7 +756,7 @@ export async function processWebhookBusinessEvent(event: any, tx: any): Promise<
     }
 
     default:
-      console.log(`Unhandled webhook event type: ${eventType}`);
+      console.warn(`Unhandled webhook event type: ${eventType}`);
   }
 }
 
@@ -767,7 +785,7 @@ paymentRouter.post('/webhooks/:id/replay', requireAuth, async (req: Request, res
 
     // Replay transaction
     await db.transaction(async (tx) => {
-      await processWebhookBusinessEvent(evt.payload as any, tx);
+      await processWebhookBusinessEvent(evt.payload as { event: string, payload: Record<string, unknown> }, tx);
 
       await tx
         .update(payment_webhook_events)
@@ -781,8 +799,9 @@ paymentRouter.post('/webhooks/:id/replay', requireAuth, async (req: Request, res
     });
 
     return res.status(200).json({ success: true, message: 'Event replayed successfully' });
-  } catch (error: any) {
-    console.error('Webhook replay error:', error);
-    return res.status(400).json({ error: error.message || 'Failed to replay webhook event' });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Webhook replay error:', err);
+    return res.status(400).json({ error: err.message || 'Failed to replay webhook event' });
   }
 });

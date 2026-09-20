@@ -5,7 +5,7 @@ import HomePage from '@/apps/storefront/pages/HomePage';
 import { Layout } from '@/shared/components/Layout/Layout';
 
 // Mock Provider to intercept getSiteSetting
-const MockSettingsProvider: React.FC<{ children: React.ReactNode; mockData: any }> = ({ children, mockData }) => {
+const MockSettingsProvider: React.FC<{ children: React.ReactNode; mockData: Record<string, unknown> }> = ({ children, mockData }) => {
   const mockSettings: PublicSettings = {
     siteSettings: [
       { setting_key: 'site_name', setting_value: mockData.business.name, setting_type: 'string', category: 'general', description: '' },

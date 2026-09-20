@@ -59,7 +59,7 @@ export const DomainPurchaseModal: React.FC<DomainPurchaseModalProps> = ({ isOpen
 
       setResults(data.results);
       setStep('results');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'An error occurred while searching.');
       setStep('search');
     }
@@ -98,7 +98,7 @@ export const DomainPurchaseModal: React.FC<DomainPurchaseModalProps> = ({ isOpen
         description: `1 Year Registration for ${result.domain}`,
         order_id: orderData.razorpayOrderId.startsWith('order_dom_') ? undefined : orderData.razorpayOrderId, 
         // Note: Mock orders don't need real razorpay order id in frontend for tests
-        handler: async (response: any) => {
+        handler: async (response: Record<string, unknown>) => {
           try {
             setLoadingMsg('Configuring DNS & Provisioning SSL...');
             
@@ -125,7 +125,7 @@ export const DomainPurchaseModal: React.FC<DomainPurchaseModalProps> = ({ isOpen
               onSuccess(result.domain);
             }, 2000);
 
-          } catch (err: any) {
+          } catch (err: unknown) {
             setError(err.message);
             setStep('results');
           }
@@ -140,7 +140,7 @@ export const DomainPurchaseModal: React.FC<DomainPurchaseModalProps> = ({ isOpen
 
       razorpay.open();
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message);
       setStep('results');
     }

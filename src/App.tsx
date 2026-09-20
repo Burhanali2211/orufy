@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, lazy, memo } from 'react';
+import React, { Suspense, useEffect, memo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { CombinedProvider } from '@/shared/contexts/CombinedProvider';
 import { Layout } from '@/shared/components/Layout/Layout';

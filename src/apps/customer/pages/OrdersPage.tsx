@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Package, Truck, CheckCircle2, Clock, XCircle,
+  Package, Truck, Clock,
   Search, ShoppingBag, AlertCircle, RefreshCw,
-  ExternalLink, ChevronRight, X, Printer, MapPin,
-  Phone, Mail, Copy, Check, Sparkles
+  ExternalLink, ChevronRight, X, Printer, Mail, Copy, Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
@@ -44,7 +43,7 @@ export const OrdersPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  const handleResendReceipt = async (order: any) => {
+  const handleResendReceipt = async (order: Record<string, unknown>) => {
     if (!order || isResendingReceipt || resendCooldown > 0) return;
     try {
       setIsResendingReceipt(true);
@@ -64,29 +63,29 @@ export const OrdersPage: React.FC = () => {
 
       toast.success(data.message || 'Order confirmation email has been resent!');
       setResendCooldown(60);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(err.message || 'Failed to resend confirmation email');
     } finally {
       setIsResendingReceipt(false);
     }
   };
 
-  const orderList: any[] = orders || [];
+  const orderList: Record<string, unknown>[] = (orders as Record<string, unknown>[]) || [];
 
-  const filteredOrders = orderList.filter((o: any) => {
+  const filteredOrders = orderList.filter((o: Record<string, unknown>) => {
     const status = (o.status || '').toLowerCase();
     const matchStatus = activeFilter === 'all' || status === activeFilter;
     const orderNum = (o.order_number || o.orderNumber || o.id || '').toLowerCase();
     const matchSearch =
       searchQuery === '' ||
       orderNum.includes(searchQuery.toLowerCase()) ||
-      (o.items && o.items.some((item: any) => (item.product?.name || item.name || '').toLowerCase().includes(searchQuery.toLowerCase())));
+      (o.items && (o.items as Record<string, unknown>[]).some((item: Record<string, unknown>) => ((item.product as Record<string, string>)?.name || (item.name as string) || '').toLowerCase().includes(searchQuery.toLowerCase())));
     return matchStatus && matchSearch;
   });
 
   const filterCount = (id: string) => {
     if (id === 'all') return orderList.length;
-    return orderList.filter((o: any) => (o.status || '').toLowerCase() === id).length;
+    return orderList.filter((o: Record<string, unknown>) => ((o.status as string) || '').toLowerCase() === id).length;
   };
 
   const getStatusBadge = (status: string) => {
@@ -111,7 +110,7 @@ export const OrdersPage: React.FC = () => {
     setTimeout(() => setCopiedTracking(false), 2000);
   };
 
-  const getLifecycleSteps = (order: any) => {
+  const getLifecycleSteps = (order: Record<string, unknown>) => {
     const status = (order.status || '').toLowerCase();
     const fulfillment = (order.fulfillment_status || order.fulfillmentStatus || '').toLowerCase();
     const isCod = (order.payment_method || '').toLowerCase().includes('cod');
@@ -227,7 +226,7 @@ export const OrdersPage: React.FC = () => {
         {/* ── Orders List ── */}
         {filteredOrders.length > 0 ? (
           <div className="space-y-4">
-            {filteredOrders.map((order: any) => {
+            {filteredOrders.map((order: Record<string, unknown>) => {
               const orderDate = new Date(order.created_at || order.createdAt).toLocaleDateString('en-IN', {
                 dateStyle: 'medium',
               });
@@ -275,7 +274,7 @@ export const OrdersPage: React.FC = () => {
                   {/* Items List */}
                   <div className="p-4 sm:p-5 space-y-3">
                     <div className="divide-y divide-stone-100">
-                      {items.map((item: any, idx: number) => {
+                      {items.map((item: Record<string, unknown>, idx: number) => {
                         const rawImg = item.product?.images?.[0] || item.product?.image || item.image_url || item.image;
                         const imgUrl = normalizeImageUrl(rawImg);
                         return (
@@ -448,7 +447,7 @@ export const OrdersPage: React.FC = () => {
               <div className="space-y-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900">Ordered Products</h3>
                 <div className="divide-y divide-stone-100 border border-stone-200 rounded-xl overflow-hidden">
-                  {(selectedOrder.items || []).map((item: any, idx: number) => {
+                  {((selectedOrder.items as Record<string, unknown>[]) || []).map((item: Record<string, unknown>, idx: number) => {
                     const rawImg = item.product?.images?.[0] || item.product?.image || item.image_url || item.image;
                     const imgUrl = normalizeImageUrl(rawImg);
                     return (
@@ -529,7 +528,7 @@ export const OrdersPage: React.FC = () => {
                       customerEmail: selectedOrder.shipping_address?.email,
                       customerPhone: selectedOrder.shipping_address?.phone,
                       shippingAddress: selectedOrder.shipping_address,
-                      items: (selectedOrder.items || []).map((i: any) => ({
+                      items: ((selectedOrder.items as Record<string, unknown>[]) || []).map((i: Record<string, unknown>) => ({
                         name: i.product?.name || i.name || 'Item',
                         quantity: i.quantity || 1,
                         unitPrice: i.price || i.unit_price || 0,

@@ -86,8 +86,9 @@ export async function validateNginxConfig(): Promise<NginxValidationResult> {
     const output = (stdout + stderr).toLowerCase();
     const isValid = output.includes('syntax is ok') && output.includes('test is successful');
     return { isValid, output };
-  } catch (error: any) {
-    return { isValid: false, output: error.stdout || '', error: error.message || error.stderr };
+  } catch (error: unknown) {
+    const err = error as { stdout?: string, message?: string, stderr?: string };
+    return { isValid: false, output: err.stdout || '', error: err.message || err.stderr };
   }
 }
 
@@ -102,8 +103,9 @@ export async function reloadNginx(): Promise<{ success: boolean; error?: string 
   try {
     await execAsync('nginx -s reload');
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 }
 
@@ -178,10 +180,11 @@ export async function provisionSslCertificate(
       expiresAt,
       nginxConfigPath: nginxConfigFile
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     return {
       success: false,
-      error: error.message || 'SSL_PROVISIONING_FAILED'
+      error: err.message || 'SSL_PROVISIONING_FAILED'
     };
   }
 }

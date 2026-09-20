@@ -1,8 +1,7 @@
 import { apiClient } from '@/shared/lib/apiClient';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Plus, Search, Edit, Trash2, Power, Users as UsersIcon, X, ChevronLeft, ChevronRight,
-  ShieldCheck, ShoppingBag, UserCheck, Mail, RefreshCw, CheckCircle2
+  Plus, Search, Edit, Trash2, Users as UsersIcon, ChevronLeft, ChevronRight, Mail, RefreshCw, CheckCircle2
 } from 'lucide-react';
 import { ConfirmModal } from '@/shared/components/Common/Modal';
 import { useNotification } from '@/shared/contexts/NotificationContext';
@@ -99,7 +98,7 @@ export const UsersList: React.FC = () => {
       if (currentPage === 1 && !searchTerm && !roleFilter && !statusFilter) {
         _usersCache = { users: paginatedRows, totalItems: ti, totalPages: tp };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (!background) showError(error?.message || 'Failed to load users');
     } finally {
       if (!background) setLoading(false);
@@ -116,7 +115,7 @@ export const UsersList: React.FC = () => {
       setShowDeleteModal(false);
       setSelectedUser(null);
       fetchUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       showError(error?.message || 'Failed to deactivate user');
     } finally {
       setDeleteLoading(false);
@@ -128,7 +127,7 @@ export const UsersList: React.FC = () => {
       await apiClient.put(`/profiles/${user.id}`, { is_active: !user.is_active });
       showSuccess('Updated', `User ${user.is_active ? 'deactivated' : 'activated'}`);
       fetchUsers(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       showError('Error', error?.message || 'Failed to update user status');
     }
   };
@@ -140,7 +139,7 @@ export const UsersList: React.FC = () => {
       setSendingVerificationId(targetUser.id);
       const res = await apiClient.post<any>(`/merchant/orders/customers/${targetUser.id}/resend-verification`, {});
       showSuccess('Verification Dispatched', res.message || `Verification email sent to ${targetUser.email}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError('Failed to Send', err.message || 'Failed to dispatch verification email');
     } finally {
       setSendingVerificationId(null);

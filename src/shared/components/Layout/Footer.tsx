@@ -4,12 +4,7 @@ import {
   Mail,
   Phone,
   MapPin,
-  Send,
-  ArrowUpRight,
-  ShieldCheck,
-  Package,
-  RotateCcw,
-  Sparkles
+  Send
 } from 'lucide-react';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 

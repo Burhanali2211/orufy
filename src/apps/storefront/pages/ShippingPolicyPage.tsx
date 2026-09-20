@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Truck, MapPin, Clock, IndianRupee, Globe, Package } from 'lucide-react';
+import { Truck, MapPin, Clock, Package } from 'lucide-react';
 import { ContactInfoSection } from '@/shared/components/Legal/ContactInfoSection';
 
 const ShippingPolicyPage: React.FC = () => {

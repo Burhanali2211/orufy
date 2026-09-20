@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, X, ChevronDown, ChevronUp, Star, DollarSign, Package, Tag, Shield } from 'lucide-react';
 import { Category } from '../../types';

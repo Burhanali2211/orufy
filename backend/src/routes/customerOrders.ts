@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { orders, order_items, stores, products, profiles } from '../db/schema';
-import { eq, and, sql, or, inArray } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import { optionalAuth } from '../middleware/auth';
-import { requireStore } from '../middleware/storeResolver';
 import { withStoreContext } from '../db/utils';
 import { CommunicationService } from '../services/communicationService';
 
@@ -61,7 +60,7 @@ customerOrdersRouter.get('/', optionalAuth, async (req: Request, res: Response) 
       .from(order_items)
       .where(inArray(order_items.order_id, orderIds));
 
-    const itemsByOrder = new Map<string, any[]>();
+    const itemsByOrder = new Map<string, Record<string, unknown>[]>();
     for (const itm of allItems) {
       if (!itemsByOrder.has(itm.order_id)) {
         itemsByOrder.set(itm.order_id, []);
@@ -124,24 +123,25 @@ customerOrdersRouter.get('/:id', optionalAuth, async (req: Request, res: Respons
         .where(eq(order_items.order_id, ord.id));
 
       const productIds = items
-        .map((i: any) => i.product_id)
-        .filter((id: any): id is string => Boolean(id));
+        .map((i: { product_id: string | null }) => i.product_id)
+        .filter((id: string | null): id is string => Boolean(id));
 
-      const productMap = new Map<string, any>();
+      const productMap = new Map<string, { name: string; images: string[] | null }>();
       if (productIds.length > 0) {
         const prodList = await tx
           .select()
           .from(products)
           .where(inArray(products.id, productIds));
         for (const p of prodList) {
-          productMap.set(p.id, p);
+          productMap.set(p.id, { name: p.name, images: Array.isArray(p.images) ? p.images : null });
         }
       }
 
-      const populatedItems = items.map((item: any) => {
-        const p = item.product_id ? productMap.get(item.product_id) : null;
-        const productName = (item.product_snapshot as any)?.name || p?.name || 'Product';
-        const productImage = (item.product_snapshot as any)?.images?.[0] || (Array.isArray(p?.images) ? p.images[0] : '');
+      const populatedItems = items.map((item: typeof items[0]) => {
+        const p = typeof item.product_id === 'string' ? productMap.get(item.product_id) : null;
+        const snap = item.product_snapshot as { name?: string; images?: string[] } | null;
+        const productName = snap?.name || p?.name || 'Product';
+        const productImage = snap?.images?.[0] || p?.images?.[0] || '';
         return {
           id: item.id,
           product_id: item.product_id,
@@ -193,12 +193,12 @@ customerOrdersRouter.get('/:id', optionalAuth, async (req: Request, res: Respons
       return res.status(404).json({ error: 'Order not found in this store' });
     }
 
-    if ((orderDetail as any).isForbidden) {
+    if (orderDetail && typeof orderDetail === 'object' && 'isForbidden' in orderDetail && orderDetail.isForbidden) {
       return res.status(403).json({ error: 'Access denied: Valid session or tracking token required' });
     }
 
     return res.status(200).json(orderDetail);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching customer order:', error);
     return res.status(500).json({ error: 'Failed to retrieve order' });
   }
@@ -250,7 +250,8 @@ customerOrdersRouter.post('/:id/resend-confirmation', optionalAuth, async (req: 
     }
 
     // Target email recipient
-    const recipientEmail = customEmail || ord.guest_email || (ord.shipping_address as any)?.email;
+    const shipAddr = ord.shipping_address as { email?: string; phone?: string; full_name?: string; name?: string } | null;
+    const recipientEmail = customEmail || ord.guest_email || shipAddr?.email;
     if (!recipientEmail) {
       return res.status(400).json({ error: 'No recipient email found for this order. Please specify an email.' });
     }
@@ -265,14 +266,15 @@ customerOrdersRouter.post('/:id/resend-confirmation', optionalAuth, async (req: 
       .where(eq(order_items.order_id, ord.id));
 
     const populatedItems = await Promise.all(
-      items.map(async (item: any) => {
+      items.map(async (item: typeof items[0]) => {
         let productName = 'Product';
         if (item.product_id) {
           const [p] = await db.select().from(products).where(eq(products.id, item.product_id));
           if (p) productName = p.name;
         }
+        const snap = item.product_snapshot as { name?: string } | null;
         return {
-          name: (item.product_snapshot as any)?.name || productName,
+          name: snap?.name || productName,
           quantity: item.quantity,
           pricePaise: item.unit_price,
           sku: item.variant_id || undefined,
@@ -288,8 +290,8 @@ customerOrdersRouter.post('/:id/resend-confirmation', optionalAuth, async (req: 
       orderId: ord.id,
       orderNumber: ord.order_number,
       recipientEmail,
-      recipientPhone: ord.guest_phone || (ord.shipping_address as any)?.phone,
-      recipientName: (ord.shipping_address as any)?.full_name || (ord.shipping_address as any)?.name || 'Valued Customer',
+      recipientPhone: ord.guest_phone || shipAddr?.phone,
+      recipientName: shipAddr?.full_name || shipAddr?.name || 'Valued Customer',
       totalAmountPaise: ord.total_amount,
       subtotalPaise: ord.subtotal,
       taxAmountPaise: ord.tax_amount,
@@ -308,7 +310,7 @@ customerOrdersRouter.post('/:id/resend-confirmation', optionalAuth, async (req: 
       success: true,
       message: `Order confirmation receipt has been sent to ${recipientEmail}`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error resending order confirmation email:', error);
     return res.status(500).json({ error: 'Failed to resend confirmation email' });
   }
@@ -349,8 +351,9 @@ customerOrdersRouter.post('/lookup', async (req: Request, res: Response) => {
 
       const guestEmail = (ord.guest_email || '').toLowerCase();
       const guestPhone = (ord.guest_phone || '').toLowerCase();
-      const shippingPhone = (ord.shipping_address as any)?.phone || (ord.shipping_address as any)?.phoneNumber || '';
-      const shippingEmail = (ord.shipping_address as any)?.email || '';
+      const shipAddr = ord.shipping_address as { phone?: string; phoneNumber?: string; email?: string } | null;
+      const shippingPhone = shipAddr?.phone || shipAddr?.phoneNumber || '';
+      const shippingEmail = shipAddr?.email || '';
 
       const isMatch =
         guestEmail === emailOrPhone ||
@@ -383,7 +386,7 @@ customerOrdersRouter.post('/lookup', async (req: Request, res: Response) => {
       carrier: result.carrier,
       trackingNumber: result.tracking_number,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error looking up customer order:', error);
     return res.status(500).json({ error: 'Failed to lookup order' });
   }

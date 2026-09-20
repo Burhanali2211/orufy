@@ -50,7 +50,7 @@ export interface OrderEmailProps {
   shippingAmountPaise?: number;
   discountAmountPaise?: number;
   items: OrderItemProps[];
-  shippingAddress?: any;
+  shippingAddress?: Record<string, unknown>;
   paymentMethod?: string;
   trackingUrl?: string;
 }
@@ -119,16 +119,16 @@ export class ResendService {
           }),
         });
 
-        const data: any = await response.json();
+        const data: Record<string, unknown> = await response.json();
         if (!response.ok) {
           console.error('❌ Resend API error response:', data);
           return {
             success: false,
-            error: data.message || data.error?.message || 'Failed to send email via Resend',
+            error: String(data.message || data.error?.message || 'Failed to send email via Resend'),
           };
         }
 
-        console.log(`✉️ Email dispatched via Resend [ID: ${data.id}] to ${recipient.join(', ')}`);
+        console.info(`✉️ Email dispatched via Resend [ID: ${data.id}] to ${recipient.join(', ')}`);
         return {
           success: true,
           messageId: data.id,
@@ -138,24 +138,25 @@ export class ResendService {
 
       // Dev Simulator Fallback
       const simId = `sim_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('✉️  [RESEND DEV SIMULATOR] Email Dispatched');
-      console.log(`  To:      ${recipient.join(', ')}`);
-      console.log(`  From:    ${fromAddress}`);
-      console.log(`  Subject: ${options.subject}`);
-      console.log(`  Message: ${simId}`);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.info('✉️  [RESEND DEV SIMULATOR] Email Dispatched');
+      console.info(`  To:      ${recipient.join(', ')}`);
+      console.info(`  From:    ${fromAddress}`);
+      console.info(`  Subject: ${options.subject}`);
+      console.info(`  Message: ${simId}`);
+      console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       return {
         success: true,
         messageId: simId,
         simulated: true,
       };
-    } catch (error: any) {
-      console.error('❌ Resend send error:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('❌ Resend send error:', err);
       return {
         success: false,
-        error: error.message || 'Unknown error occurred while sending email',
+        error: err.message || 'Unknown error occurred while sending email',
       };
     }
   }

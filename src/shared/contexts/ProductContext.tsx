@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from 'react';
 import { Product, ProductContextType, Category, Review } from '../types';
-import { useNotification } from './NotificationContext';
 import { apiClient } from '@/shared/lib/apiClient';
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);

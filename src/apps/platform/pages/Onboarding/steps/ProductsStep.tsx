@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useOnboarding } from '../OnboardingContext';
-import { Plus, Trash2, ArrowRight, ArrowLeft, Sparkles, Check } from 'lucide-react';
+import { Plus, Trash2, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 
 const CATEGORY_SUGGESTIONS: Record<string, { name: string; price: string; description: string }> = {
   'Clothing & Apparel': { name: 'Classic Tailored Oxford Shirt', price: '1499', description: '100% organic cotton luxury weave.' },

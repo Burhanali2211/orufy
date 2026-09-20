@@ -55,8 +55,6 @@ export const validateEmail = (email: string): ValidationResult => {
     }
   }
 
-  // Common typo detection
-  const commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
   const typoSuggestions: { [key: string]: string } = {
     'gmial.com': 'gmail.com',
     'gmai.com': 'gmail.com',
@@ -91,7 +89,7 @@ export const validateName = (name: string): ValidationResult => {
   }
 
   // Check for valid characters (letters, spaces, hyphens, apostrophes)
-  const nameRegex = /^[a-zA-Z\s\-'\.]+$/;
+  const nameRegex = /^[a-zA-Z\s\-'.]+$/;
   if (!nameRegex.test(name)) {
     errors.push('Name can only contain letters, spaces, hyphens, and apostrophes');
   }
@@ -129,7 +127,7 @@ export const validatePhone = (phone: string): ValidationResult => {
   }
 
   // Check for valid phone format (international or local)
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+  const phoneRegex = /^\+?[1-9]\d{0,15}$/;
   if (!phoneRegex.test(digitsOnly)) {
     errors.push('Please enter a valid phone number');
   }
@@ -246,7 +244,7 @@ export const validatePasswordStrength = (password: string): ValidationResult => 
   const hasLowercase = /[a-z]/.test(password);
   const hasUppercase = /[A-Z]/.test(password);
   const hasNumbers = /\d/.test(password);
-  const hasSpecialChars = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  const hasSpecialChars = new RegExp('[!@#$%^&*()_+\\-=\\[\\]{};\':"\\\\|,.<>/?]').test(password);
 
   if (!hasLowercase) {
     warnings.push('Password should include lowercase letters');

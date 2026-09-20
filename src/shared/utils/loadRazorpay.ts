@@ -17,7 +17,7 @@ interface RazorpayOptions {
     email?: string;
     contact?: string;
   };
-  handler?: (response: any) => void;
+  handler?: (response: Record<string, unknown>) => void;
   modal?: {
     ondismiss?: () => void;
   };
@@ -28,7 +28,7 @@ interface RazorpayOptions {
 
 interface RazorpayInstance {
   open: () => void;
-  on: (event: string, handler: (response: any) => void) => void;
+  on: (event: string, handler: (response: Record<string, unknown>) => void) => void;
 }
 
 declare global {

@@ -6,8 +6,6 @@ export interface User {
   role: 'admin' | 'seller' | 'customer' | 'merchant';
   avatar?: string; // Maps to avatar_url in DB
   phone?: string;
-  dateOfBirth?: string; // Maps to date_of_birth in DB
-  gender?: string; // Maps to gender in DB
   isActive?: boolean; // Maps to is_active in DB
   emailVerified?: boolean; // Maps to email_verified in DB
   email_verified?: boolean;
@@ -63,7 +61,7 @@ export interface Store {
     isActive?: boolean; // Maps to is_active in DB
     metaTitle?: string; // Maps to meta_title in DB
     metaDescription?: string; // Maps to meta_description in DB
-    attributes?: Record<string, any>; // Generalized JSONB attributes
+    attributes?: Record<string, unknown>; // Generalized JSONB attributes
     createdAt: Date; // Maps to created_at in DB
     updatedAt?: Date; // Maps to updated_at in DB
   }
@@ -324,6 +322,8 @@ export interface AuthContextType {
   register: (userData: Partial<User>) => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, additionalData?: Record<string, unknown>) => Promise<void>;
+  requestOtp: (phone: string) => Promise<{ success: boolean; message?: string }>;
+  verifyOtp: (phone: string, otp: string) => Promise<{ success: boolean; message?: string; user?: User; token?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword?: (newPassword: string) => Promise<void>;
@@ -365,17 +365,17 @@ export interface ProductContextType {
   deleteProduct: (productId: string) => Promise<void>;
   fetchReviewsForProduct: (productId: string) => Promise<Review[]>;
   submitReview: (review: Omit<Review, 'id' | 'createdAt' | 'profiles'>) => Promise<void>;
-  fetchProducts: (page?: number, limit?: number, filters?: any) => Promise<void>;
+  fetchProducts: (page?: number, limit?: number, filters?: Record<string, unknown>) => Promise<void>;
   fetchCategories: () => Promise<void>;
   fetchFeaturedProducts: (limit?: number) => Promise<void>;
   fetchBestSellers: (limit?: number) => Promise<void>;
   fetchLatestProducts: (limit?: number) => Promise<void>;
-  getProductById: (id: string) => Promise<any>;
+  getProductById: (id: string) => Promise<Product | null>;
   searchProducts: (query: string) => Promise<void>;
   filterByCategory: (categoryId: string) => Promise<void>;
-  createProduct: (data: Partial<Product>) => Promise<any>;
-  createCategory: (data: Partial<Category>) => Promise<any>;
-  updateCategory: (id: string, data: Partial<Category>) => Promise<any>;
+  createProduct: (data: Partial<Product>) => Promise<Product | null>;
+  createCategory: (data: Partial<Category>) => Promise<Category | null>;
+  updateCategory: (id: string, data: Partial<Category>) => Promise<Category | null>;
   deleteCategory: (id: string) => Promise<void>;
   nextPage: () => void;
   previousPage: () => void;

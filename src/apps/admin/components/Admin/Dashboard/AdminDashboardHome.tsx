@@ -5,7 +5,7 @@ import {
   ArrowRight, Plus, ExternalLink, RefreshCw, 
   Copy, CheckCircle2,
   Twitter, Facebook, MessageCircle, Package, Inbox,
-  TrendingUp, ShoppingCart, Users, Eye, AlertTriangle, ArrowUpRight
+  TrendingUp, ShoppingCart, AlertTriangle
 } from 'lucide-react';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
 import { useAuth } from '@/shared/contexts/AuthContext';
@@ -95,6 +95,10 @@ export const AdminDashboardHome: React.FC = () => {
   const { data, isLoading, refetch, isFetching } = useQuery<DashboardData>({
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
+      type DashboardCustomer = { created_at: string };
+      type DashboardProduct = { id: string; name: string; stock: number; min_stock_level?: number; images?: string[]; is_active: boolean; total_sold?: string };
+      type DashboardOrder = { id: string; order_number?: string; total_amount: string; status: string; created_at: string | Date; customer_name?: string; guest_email?: string; shipping_address?: { full_name?: string }; items?: { product_id: string; quantity: number }[] };
+
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
       const todayIso = todayStart.toISOString();
@@ -105,30 +109,36 @@ export const AdminDashboardHome: React.FC = () => {
         apiClient.get('/merchant/orders/customers/list'),
       ]);
 
-      const storeOrders = (ordersRes?.orders || ordersRes?.data?.orders || ordersRes?.data || (Array.isArray(ordersRes) ? ordersRes : [])) || [];
-      const productsList = Array.isArray(productsRes) ? productsRes : (productsRes?.data || []);
-      const customersList = Array.isArray(customersRes) ? customersRes : (customersRes?.data || []);
+      const storeOrders: DashboardOrder[] = (ordersRes?.orders || ordersRes?.data?.orders || ordersRes?.data || (Array.isArray(ordersRes) ? ordersRes : [])) || [];
+      const productsList: DashboardProduct[] = Array.isArray(productsRes) ? productsRes : (productsRes?.data || []);
+      const customersList: DashboardCustomer[] = Array.isArray(customersRes) ? customersRes : (customersRes?.data || []);
 
       const totalUsers = customersList.length;
-      const newUsersToday = customersList.filter((c: any) => c.created_at >= todayIso).length;
+      const newUsersToday = customersList.filter((c: DashboardCustomer) => c.created_at >= todayIso).length;
 
       const totalProducts = productsList.length;
-      const lowStockProductsList = productsList.filter((p: any) => 
+      const lowStockProductsList = productsList.filter(p => 
         (p.min_stock_level != null ? p.stock <= p.min_stock_level : p.stock <= 20) && p.is_active
       );
       const lowStockCount = lowStockProductsList.length;
 
       const totalOrders = storeOrders.length;
-      const pendingOrders = storeOrders.filter((o: any) => o.status === 'pending' || o.status === 'processing').length;
-      const ordersToday = storeOrders.filter((o: any) => o.created_at >= todayIso).length;
+      const pendingOrders = storeOrders.filter(o => o.status === 'pending' || o.status === 'processing').length;
+      const ordersToday = storeOrders.filter(o => {
+        const d = new Date(o.created_at);
+        return d >= today;
+      }).length;
       
       const revenueToday = storeOrders
-        .filter((o: any) => o.created_at >= todayIso && o.status !== 'cancelled')
-        .reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || '0'), 0);
+        .filter(o => {
+          const d = new Date(o.created_at);
+          return d >= today && o.status !== 'cancelled';
+        })
+        .reduce((sum: number, o) => sum + parseFloat(o.total_amount || '0'), 0);
         
       const totalRevenue = storeOrders
-        .filter((o: any) => o.status !== 'cancelled')
-        .reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || '0'), 0);
+        .filter(o => o.status !== 'cancelled')
+        .reduce((sum: number, o) => sum + parseFloat(o.total_amount || '0'), 0);
 
       const visitorsToday = ordersToday * 12 + newUsersToday * 5 + 28;
       const visitorsActive = Math.max(1, Math.floor(visitorsToday / 14));
@@ -141,16 +151,16 @@ export const AdminDashboardHome: React.FC = () => {
         visitorsToday, visitorsActive
       };
 
-      const recentOrders = storeOrders.slice(0, 5).map((o: any) => ({
+      const recentOrders = storeOrders.slice(0, 5).map(o => ({
         id: o.id,
         order_number: o.order_number || `#${o.id.slice(0, 8)}`,
         total_amount: o.total_amount,
         status: o.status,
-        created_at: o.created_at, 
+        created_at: o.created_at as string, 
         customer_name: o.customer_name || o.guest_email || o.shipping_address?.full_name || 'Customer',
       }));
 
-      const lowStockProducts = lowStockProductsList.slice(0, 5).map((p: any) => ({
+      const lowStockProducts = lowStockProductsList.slice(0, 5).map(p => ({
         id: p.id,
         name: p.name,
         stock: p.stock,
@@ -159,9 +169,9 @@ export const AdminDashboardHome: React.FC = () => {
       }));
 
       const soldMap: Record<string, number> = {};
-      storeOrders.forEach((ord: any) => {
+      storeOrders.forEach(ord => {
         if (ord.status !== 'cancelled' && ord.items) {
-          ord.items.forEach((oi: any) => {
+          ord.items.forEach(oi => {
             soldMap[oi.product_id] = (soldMap[oi.product_id] || 0) + (oi.quantity || 0);
           });
         }
@@ -169,11 +179,11 @@ export const AdminDashboardHome: React.FC = () => {
       
       let topProducts: TopProduct[];
       if (Object.keys(soldMap).length > 0) {
-        topProducts = productsList.map((p: any) => ({ ...p, total_sold: String(soldMap[p.id] || 0) }))
-          .sort((a: { total_sold: string }, b: { total_sold: string }) => parseInt(b.total_sold) - parseInt(a.total_sold))
-          .slice(0, 5);
+        topProducts = productsList.map(p => ({ ...p, total_sold: String(soldMap[p.id] || 0) }))
+          .sort((a, b) => parseInt(b.total_sold) - parseInt(a.total_sold))
+          .slice(0, 5) as unknown as TopProduct[];
       } else {
-        topProducts = productsList.slice(0, 5).map((p: any) => ({ ...p, total_sold: '0' }));
+        topProducts = productsList.slice(0, 5).map(p => ({ ...p, total_sold: '0' })) as unknown as TopProduct[];
       }
 
       const chartData: ChartData[] = [];
@@ -185,10 +195,10 @@ export const AdminDashboardHome: React.FC = () => {
         dayEnd.setHours(23, 59, 59, 999);
         
         const dayRev = storeOrders
-            .filter((o: any) => o.status !== 'cancelled' && new Date(o.created_at) >= d && new Date(o.created_at) <= dayEnd)
-            .reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || '0'), 0);
+            .filter(o => o.status !== 'cancelled' && new Date(o.created_at) >= d && new Date(o.created_at) <= dayEnd)
+            .reduce((sum: number, o) => sum + parseFloat(o.total_amount || '0'), 0);
         
-        const dayOrd = storeOrders.filter((o: any) => new Date(o.created_at) >= d && new Date(o.created_at) <= dayEnd).length;
+        const dayOrd = storeOrders.filter(o => new Date(o.created_at) >= d && new Date(o.created_at) <= dayEnd).length;
         const dateStr = d.toLocaleDateString('en-US', { weekday: 'short' });
         
         chartData.push({ date: dateStr, revenue: dayRev, orders: dayOrd });

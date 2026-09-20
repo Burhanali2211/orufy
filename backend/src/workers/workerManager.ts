@@ -16,14 +16,14 @@ export class WorkerManager {
 
     // Register process termination handlers for graceful teardown
     const shutdownHandler = (signal: string) => {
-      console.log(`[WorkerManager] Received ${signal}. Shutting down all background workers...`);
+      console.info(`[WorkerManager] Received ${signal}. Shutting down all background workers...`);
       WorkerManager.stopAll();
     };
 
     process.on('SIGTERM', () => shutdownHandler('SIGTERM'));
     process.on('SIGINT', () => shutdownHandler('SIGINT'));
 
-    console.log('[WorkerManager] All background workers initialized and resilient.');
+    console.info('[WorkerManager] All background workers initialized and resilient.');
   }
 
   /**

@@ -208,7 +208,7 @@ export const CheckoutPage: React.FC = () => {
         setRazorpayOrderId(createdOrder.razorpayOrderId);
         setShowPaymentModal(true);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       showNotification({ type: 'error', title: 'Checkout Notice', message: error.message || 'Unable to place order. Please try again.' });
     } finally {
       setIsProcessing(false);

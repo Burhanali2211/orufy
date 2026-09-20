@@ -29,7 +29,8 @@ export const useCustomerPayments = () => {
 
       
 
-      return (data || []).map((row: any) => ({
+      type PaymentMethodDB = { id: string; type: 'card' | 'upi'; last_four?: string; card_brand?: string; expiry_month?: string; expiry_year?: string; cardholder_name?: string; upi_id?: string; is_default: boolean; };
+      return ((data as PaymentMethodDB[]) || []).map(row => ({
         id: row.id,
         type: row.type,
         lastFour: row.last_four,
@@ -45,7 +46,7 @@ export const useCustomerPayments = () => {
   });
 
   const addPaymentMethodMutation = useMutation({
-    mutationFn: async (formData: any) => {
+    mutationFn: async (formData: Record<string, unknown>) => {
       if (!user) throw new Error('Not authenticated');
 
       // Backend handles unsetting previous defaults atomically
@@ -58,7 +59,7 @@ export const useCustomerPayments = () => {
       queryClient.invalidateQueries({ queryKey: ['customer-payments', user?.id] });
       showSuccess('Success', 'Payment method added');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error', err.message || 'Failed to add payment method');
     }
   });
@@ -73,7 +74,7 @@ export const useCustomerPayments = () => {
       queryClient.invalidateQueries({ queryKey: ['customer-payments', user?.id] });
       showSuccess('Success', 'Payment method removed');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error', err.message || 'Failed to remove payment method');
     }
   });
@@ -89,7 +90,7 @@ export const useCustomerPayments = () => {
       queryClient.invalidateQueries({ queryKey: ['customer-payments', user?.id] });
       showSuccess('Success', 'Default payment method updated');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error', err.message || 'Failed to update default payment method');
     }
   });

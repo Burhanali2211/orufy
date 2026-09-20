@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingCart, ShieldCheck, Truck } from 'lucide-react';
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShieldCheck, Truck } from 'lucide-react';
 import { useCart } from '@/shared/contexts/CartContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { Link, useNavigate } from 'react-router-dom';

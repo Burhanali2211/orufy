@@ -4,9 +4,7 @@ import {
   Heart,
   ShoppingCart,
   Trash2,
-  Package,
-  ShoppingBag,
-  ArrowRight
+  ShoppingBag
 } from 'lucide-react';
 import { CustomerDashboardLayout } from './CustomerDashboardLayout';
 import { useWishlist } from '@/shared/contexts/WishlistContext';
@@ -25,15 +23,15 @@ export const CustomerWishlistPage: React.FC = () => {
   const { addItem } = useCart();
   const { showSuccess } = useNotification();
 
-  const handleMoveToCart = (product: any) => {
+  const handleMoveToCart = (product: Record<string, unknown>) => {
     addItem(product, 1);
     removeItem(product.id);
     showSuccess('Moved to cart', `${product.name} has been added to your shopping cart.`);
   };
 
-  const getProductImage = (product: any): string => {
+  const getProductImage = (product: Record<string, unknown>): string => {
     if (!product) return '';
-    let raw: any = null;
+    let raw: unknown = null;
     if (Array.isArray(product.images) && product.images.length > 0) {
       raw = product.images[0];
     } else if (typeof product.images === 'string') {
@@ -69,7 +67,7 @@ export const CustomerWishlistPage: React.FC = () => {
 
         {items.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {items.map((item: any, idx: number) => {
+            {items.map((item: Record<string, unknown>, idx: number) => {
               // Handle both { product: Product } wrapper and direct Product objects
               const product = item?.product || item;
               if (!product || !product.id) return null;

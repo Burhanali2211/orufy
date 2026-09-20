@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, X, TrendingUp, ArrowRight, Leaf } from 'lucide-react';
+import { Search, X, TrendingUp, ArrowRight } from 'lucide-react';
 import { useProducts } from '@/shared/contexts/ProductContext';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import ProductImage from '../Common/ProductImage';

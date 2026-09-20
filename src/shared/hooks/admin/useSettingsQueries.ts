@@ -17,7 +17,7 @@ export const useSiteSettingsQuery = () => {
 export const useUpdateSiteSettingMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (setting: any) => {
+    mutationFn: async (setting: Record<string, unknown>) => {
       await apiClient.post('/admin/settings/site', setting);
       
     },
@@ -42,7 +42,7 @@ export const useSocialAccountsQuery = () => {
 export const useUpdateSocialAccountMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
       await apiClient.put(`/admin/settings/social/${id}`, data);
       
     },
@@ -55,7 +55,7 @@ export const useUpdateSocialAccountMutation = () => {
 export const useUpsertSocialAccountMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (account: any) => {
+    mutationFn: async (account: Record<string, unknown>) => {
       const { id, ...data } = account;
       if (id) {
         await apiClient.put(`/admin/settings/social/${id}`, data);

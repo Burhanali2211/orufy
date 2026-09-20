@@ -1,6 +1,5 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
-import { designTokens } from '@/shared/lib/design-tokens';
 
 interface ButtonProps {
   children: React.ReactNode;

@@ -7,7 +7,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
   // Assign or preserve correlation ID
   const requestId = (req.headers['x-request-id'] as string) || `req_${crypto.randomBytes(12).toString('hex')}`;
   res.setHeader('X-Request-Id', requestId);
-  (req as any).requestId = requestId;
+  (req as Request & { requestId?: string }).requestId = requestId;
 
   // Log on response finish
   res.on('finish', () => {
@@ -38,7 +38,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
     } else if (res.statusCode >= 400) {
       console.warn(`[HTTP] ${JSON.stringify(logData)}`);
     } else {
-      console.log(`[HTTP] ${JSON.stringify(logData)}`);
+      console.info(`[HTTP] ${JSON.stringify(logData)}`);
     }
   });
 

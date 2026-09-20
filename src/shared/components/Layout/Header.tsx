@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, User, Heart, LogOut, Leaf, ArrowRight, X } from 'lucide-react';
+import { Search, ShoppingCart, User, Heart, LogOut, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useCart } from '@/shared/contexts/CartContext';

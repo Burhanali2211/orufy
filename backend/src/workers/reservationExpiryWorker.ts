@@ -9,19 +9,21 @@ export const RESERVATION_EXPIRY_LOCK_ID = 847291;
  * Atomically releases reserved_stock and marks orders as PAYMENT_EXPIRED.
  * Uses PostgreSQL advisory locking to ensure singleton execution.
  */
-export async function expirePendingReservationsOnce(customDb: any = db): Promise<number> {
+export async function expirePendingReservationsOnce(customDb: typeof db | Record<string, unknown> = db): Promise<number> {
   let expiredCount = 0;
 
   try {
     // 1. Try to acquire PostgreSQL advisory lock if execute is available
     let lockAcquired = true;
     if (typeof customDb.execute === 'function') {
-      const lockRes: any = await customDb.execute(
+      const lockRes: unknown = await (customDb as typeof db).execute(
         sql`SELECT pg_try_advisory_lock(${RESERVATION_EXPIRY_LOCK_ID}) as acquired;`
       );
-      if (lockRes && Array.isArray(lockRes) && lockRes[0]?.acquired === false) {
+      const resArr = lockRes as Array<{ acquired: boolean }>;
+      const resObj = lockRes as { rows?: Array<{ acquired: boolean }> };
+      if (Array.isArray(resArr) && resArr[0]?.acquired === false) {
         lockAcquired = false;
-      } else if (lockRes?.rows && Array.isArray(lockRes.rows) && lockRes.rows[0]?.acquired === false) {
+      } else if (resObj?.rows && Array.isArray(resObj.rows) && resObj.rows[0]?.acquired === false) {
         lockAcquired = false;
       }
     }
@@ -50,7 +52,7 @@ export async function expirePendingReservationsOnce(customDb: any = db): Promise
 
       for (const resItem of expiredList) {
         try {
-          await customDb.transaction(async (tx: any) => {
+          await (customDb as typeof db).transaction(async (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => {
             // 1. Lock and update product reserved stock
             const prodRows = await tx
               .select()
@@ -101,7 +103,7 @@ export async function expirePendingReservationsOnce(customDb: any = db): Promise
       }
     } finally {
       // 3. Release advisory lock
-      await customDb.execute(sql`SELECT pg_advisory_unlock(${RESERVATION_EXPIRY_LOCK_ID});`);
+      await (customDb as typeof db).execute(sql`SELECT pg_advisory_unlock(${RESERVATION_EXPIRY_LOCK_ID});`);
     }
   } catch (lockErr) {
     console.error('[Worker] Advisory lock error during sweep:', lockErr);
@@ -120,14 +122,14 @@ export function startReservationExpiryWorker(intervalMs: number = 30000): NodeJS
   if (activeInterval) return activeInterval;
   isShuttingDown = false;
 
-  console.log(`[Worker] Reservation expiry worker started with advisory lock (sweep interval: ${intervalMs}ms)`);
+  console.info(`[Worker] Reservation expiry worker started with advisory lock (sweep interval: ${intervalMs}ms)`);
   
   activeInterval = setInterval(async () => {
     if (isShuttingDown) return;
     try {
       const expiredCount = await expirePendingReservationsOnce();
       if (expiredCount > 0) {
-        console.log(`[Worker] Expired ${expiredCount} stale inventory reservations.`);
+        console.info(`[Worker] Expired ${expiredCount} stale inventory reservations.`);
       }
     } catch (err) {
       console.error('[Worker] Error during reservation expiry sweep:', err);
@@ -146,5 +148,5 @@ export function stopReservationExpiryWorker(): void {
     clearInterval(activeInterval);
     activeInterval = null;
   }
-  console.log('[Worker] Reservation expiry worker stopped gracefully.');
+  console.info('[Worker] Reservation expiry worker stopped gracefully.');
 }

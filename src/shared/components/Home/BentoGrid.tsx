@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
 import { Category } from '../../types';
 import { getSafeImageUrl } from '../../utils/imageUrlUtils';

@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import { useNotification } from '@/shared/contexts/NotificationContext';
 import { apiClient } from '@/shared/lib/apiClient';
-import { normalizeImageUrl, isValidImageUrl } from '../../utils/imageUrlUtils';
+import { normalizeImageUrl } from '../../utils/imageUrlUtils';
 
 type ImageUploadValue = string | string[];
 type ImageUploadOnChange = (url: ImageUploadValue | ((prev: ImageUploadValue) => ImageUploadValue)) => void;
