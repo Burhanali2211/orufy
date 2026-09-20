@@ -204,7 +204,7 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onClose }) 
 
   const fmt = (amount: number | string) => {
     const n = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return `₹${n?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) || '0'}`;
+    return `₹${((n || 0) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
   };
 
   const renderStatusBadge = (status: string, isPayment = false) => {

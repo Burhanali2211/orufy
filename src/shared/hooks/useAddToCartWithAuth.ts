@@ -31,14 +31,8 @@ export const useAddToCartWithAuth = (): UseAddToCartWithAuthReturn => {
       return;
     }
 
-    // Check if user is authenticated
-    if (user) {
-      // User is logged in, add item to cart directly
-      addToCart(product, quantity);
-    } else {
-      // User is not logged in, show authentication modal
-      showAuthModal(product, 'cart');
-    }
+    // Add item to cart directly for all users (guests and logged in)
+    addToCart(product, quantity);
   };
 
   return {

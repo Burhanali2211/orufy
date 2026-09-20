@@ -192,7 +192,7 @@ export const AdminInventoryPage: React.FC = () => {
                             />
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                              <p className="text-xs text-gray-500">₹{Number(item.price).toLocaleString('en-IN')}</p>
+                              <p className="text-xs text-gray-500">₹{(Number(item.price) / 100).toLocaleString('en-IN')}</p>
                             </div>
                           </div>
                         </td>

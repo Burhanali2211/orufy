@@ -16,6 +16,7 @@ import {
 import { useCart } from '@/shared/contexts/CartContext';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useNotification } from '@/shared/contexts/NotificationContext';
+import { useAuthModal } from '@/shared/contexts/AuthModalContext';
 import { RazorpayPayment } from '@/shared/components/Payment/RazorpayPayment';
 import { apiClient } from '@/shared/lib/apiClient';
 
@@ -54,6 +55,7 @@ export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCart();
   const { user } = useAuth();
+  const { showAuthModal } = useAuthModal();
   const { showNotification } = useNotification();
 
   const [step, setStep] = useState(1);
@@ -131,7 +133,7 @@ export const CheckoutPage: React.FC = () => {
     if (!validateStep(step)) return;
 
     if (!user) {
-      showNotification({ type: 'error', title: 'Authentication Required', message: 'Please log in or sign up to place an order.' });
+      showAuthModal(null, 'login');
       return;
     }
 

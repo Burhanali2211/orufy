@@ -40,7 +40,6 @@ export const ProductCard: React.FC<ProductCardProps> = memo(({
   const handleAddToCart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) { showAuthModal(product, 'cart'); return; }
     if (product.stock > 0) {
       addToCart(product, 1);
     }

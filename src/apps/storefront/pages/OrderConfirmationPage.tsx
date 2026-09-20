@@ -53,7 +53,7 @@ interface StoreInfo {
 }
 
 const fmt = (n: number) => {
-  const val = typeof n === 'number' ? (n > 1000 ? n / 100 : n) : 0;
+  const val = typeof n === 'number' ? (n / 100) : 0;
   return `₹${val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 

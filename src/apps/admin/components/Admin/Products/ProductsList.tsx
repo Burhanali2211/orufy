@@ -326,11 +326,11 @@ export const ProductsList: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-5">
                       <div className="font-bold text-stone-900">
-                        ₹{Number(product.price).toLocaleString('en-IN')}
+                        ₹{(Number(product.price) / 100).toLocaleString('en-IN')}
                       </div>
                       {product.original_price && Number(product.original_price) > Number(product.price) && (
                         <div className="text-xs text-stone-400 line-through">
-                          ₹{Number(product.original_price).toLocaleString('en-IN')}
+                          ₹{(Number(product.original_price) / 100).toLocaleString('en-IN')}
                         </div>
                       )}
                     </td>
