@@ -6,15 +6,13 @@ import {
   Palette,
   Sliders,
   Building,
-  ArrowRight,
-  Cloud
+  ArrowRight
 } from 'lucide-react';
 import { AdminDashboardLayout } from '../Layout/AdminDashboardLayout';
 import { ThemeStudio } from './ThemeStudio';
 import { BrandingSettings } from './BrandingSettings';
 import { StoreDetailsSettings } from './StoreDetailsSettings';
 import { PolicyPagesManager } from './PolicyPagesManager';
-import { StorageSettings } from './StorageSettings';
 
 const settingsNav = [
   {
@@ -29,13 +27,6 @@ const settingsNav = [
     path: '/admin/settings/branding',
     icon: Palette,
     description: 'Store brand name, logo image upload, favicon upload with live browser tab preview, and brand storytelling.',
-  },
-  {
-    name: 'Cloudflare R2 & Media Storage',
-    path: '/admin/settings/storage',
-    icon: Cloud,
-    badge: 'New',
-    description: 'Configure Cloudflare R2 bucket credentials, zero-egress CDN settings, and test connection live.',
   },
   {
     name: 'Store Details & Socials',
@@ -101,13 +92,12 @@ export const AdminSettingsPage: React.FC = () => {
   return (
     <AdminDashboardLayout
       title="Settings"
-      subtitle={isOverview ? 'Configure your store visual theme, blocks, Cloudflare R2 storage, and branding' : undefined}
+      subtitle={isOverview ? 'Configure your store visual theme, blocks, and branding' : undefined}
     >
       <Routes>
         <Route index element={<SettingsOverview />} />
         <Route path="theme-studio" element={<ThemeStudio />} />
         <Route path="branding" element={<BrandingSettings />} />
-        <Route path="storage" element={<StorageSettings />} />
         <Route path="store" element={<StoreDetailsSettings />} />
         <Route path="contact" element={<StoreDetailsSettings />} />
         <Route path="social-media" element={<StoreDetailsSettings />} />
