@@ -567,20 +567,20 @@ const AuthPage: React.FC = () => {
                   {/* OTP field (OTP verify only) */}
                   {mode === 'otp' && otpSent && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                      <div className="bg-emerald-50/50 border border-emerald-100/80 rounded-2xl p-4 flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
-                        <div className="text-xs space-y-1 flex-1">
-                          <p className="text-emerald-900 font-medium leading-relaxed">
-                            OTP successfully dispatched to <strong className="font-bold">+91 {watch('phone')}</strong>.
+                      <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100/80 rounded-xl px-4 py-3">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <p className="text-xs text-emerald-900 font-medium truncate">
+                            Sent to <strong className="font-bold">+91 {watch('phone')}</strong>
                           </p>
-                          <button
-                            type="button"
-                            onClick={() => { setOtpSent(false); reset(); }}
-                            className="text-emerald-700 hover:text-emerald-900 font-semibold underline decoration-emerald-300 underline-offset-2 transition-colors cursor-pointer"
-                          >
-                            Incorrect number? Change here.
-                          </button>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => { setOtpSent(false); reset(); }}
+                          className="text-xs text-emerald-700 hover:text-emerald-900 font-bold transition-colors cursor-pointer shrink-0 ml-3"
+                        >
+                          Change
+                        </button>
                       </div>
 
                       <div className="space-y-2.5">
