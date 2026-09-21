@@ -32,6 +32,8 @@ const AboutPage = React.lazy(() => import('@/apps/storefront/pages/AboutPage'));
 const ContactPage = React.lazy(() => import('@/apps/storefront/pages/ContactPage')); // Added Contact page
 const OnboardingPage = React.lazy(() => import('@/apps/platform/pages/Onboarding/OnboardingPage'));
 const PlatformLandingPage = React.lazy(() => import('@/apps/platform/pages/PlatformLandingPage'));
+const BlogListPage = React.lazy(() => import('@/apps/platform/pages/Blog/BlogListPage'));
+const BlogPostPage = React.lazy(() => import('@/apps/platform/pages/Blog/BlogPostPage'));
 
 // Legal pages
 const PrivacyPolicyPage = React.lazy(() => import('@/apps/storefront/pages/PrivacyPolicyPage'));
@@ -177,6 +179,10 @@ function App() {
                 path="/affiliate" 
                 element={<Navigate to="/onboarding" replace />} 
               />
+
+              {/* Platform Blog */}
+              <Route path="/blog" element={<BlogListPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
 
               {/* Platform Landing Page vs Storefront Home on Root */}
               <Route 

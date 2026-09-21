@@ -147,9 +147,9 @@ export const PlatformLandingPage: React.FC = () => {
     >
       {/* Rich SEO & Structured Data */}
       <SEO
-        title="Launch Your Luxury Storefront in 60 Seconds"
-        description="Oru gives modern merchants instant custom stores, built-in POS, automated Resend email workflows, verified domains, and 0% platform take rates."
-        keywords="ecommerce platform, launch online store, free ecommerce website, best ecommerce platform india, multi-tenant ecommerce, online boutique creator"
+        title="Oru - Start Your Online Store in Kashmir Easily"
+        description="Start your online e-commerce website in Kashmir with Oru. Easy to use, multi-tenant platform to sell products online and get payments directly in your bank account."
+        keywords="ecommerce platform, launch online store, sell online in Kashmir, e-commerce website in Kashmir, start business Kashmir, multi-tenant ecommerce"
         url="https://get-oru.com"
       />
       <StoreStructuredData />
@@ -198,6 +198,9 @@ export const PlatformLandingPage: React.FC = () => {
             <a href="#calculator" className="hover:text-[#09090B] transition-colors">
               Earnings Calculator
             </a>
+            <Link to="/blog" className="hover:text-[#09090B] transition-colors font-semibold text-[#0071E3]">
+              Blog
+            </Link>
           </nav>
 
           {/* Right Actions */}
@@ -307,8 +310,8 @@ export const PlatformLandingPage: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
             className="text-[44px] sm:text-[72px] md:text-[88px] leading-[1.02] font-semibold tracking-[-0.04em] text-[#09090B] max-w-5xl mx-auto mb-6"
           >
-            Sell with pure distinction. <br />
-            <span className="text-[#86868B]">Get paid straight to your bank.</span>
+            Start your online store in Kashmir. <br />
+            <span className="text-[#86868B]">Get payments directly in your bank.</span>
           </motion.h1>
 
           {/* Subtitle */}
@@ -318,7 +321,7 @@ export const PlatformLandingPage: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             className="text-[17px] sm:text-[21px] text-[#86868B] font-normal leading-[1.45] max-w-2xl mx-auto mb-9 tracking-tight"
           >
-            Deploy an ultra-fast luxury storefront in 60 seconds. Share your store link on WhatsApp or Instagram, and let customers buy in 3 taps with UPI or Cash on Delivery.
+            Make a beautiful e-commerce website in 1 minute. Share your shop link on WhatsApp or Instagram, and let customers in Kashmir and everywhere else buy easily with UPI or Cash on Delivery.
           </motion.p>
 
           {/* Primary Action Buttons */}
@@ -386,6 +389,63 @@ export const PlatformLandingPage: React.FC = () => {
               </div>
             </motion.div>
           </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        {/* ── WHY ORU FOR KASHMIR ────────────────────────────────────────────── */}
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        <section className="max-w-[1160px] mx-auto px-5 sm:px-8 py-12 text-center bg-white rounded-[32px] border border-black/[0.08] shadow-sm mb-12">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-full inline-block mb-3">
+            Made for Local Business
+          </span>
+          <h2 className="text-[28px] sm:text-[40px] font-semibold tracking-[-0.03em] text-[#09090B] mb-6">
+            Why choose Oru for your business in Kashmir?
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left mt-10">
+            <div className="p-6 bg-[#F5F5F7] rounded-2xl">
+              <h3 className="font-semibold text-[18px] text-[#09090B] mb-2">Easy for Customers</h3>
+              <p className="text-[#86868B] text-[14px]">No complex accounts needed. Customers can buy your products in just one tap. Very simple to understand.</p>
+            </div>
+            <div className="p-6 bg-[#F5F5F7] rounded-2xl">
+              <h3 className="font-semibold text-[18px] text-[#09090B] mb-2">Direct Payments</h3>
+              <p className="text-[#86868B] text-[14px]">Get your money directly in your own bank account with UPI or offer easy Cash on Delivery (COD).</p>
+            </div>
+            <div className="p-6 bg-[#F5F5F7] rounded-2xl">
+              <h3 className="font-semibold text-[18px] text-[#09090B] mb-2">Works Everywhere</h3>
+              <p className="text-[#86868B] text-[14px]">Share your Oru shop link on Instagram, Facebook, and WhatsApp. It opens instantly on any mobile phone.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        {/* ── TESTIMONIALS ───────────────────────────────────────────────────── */}
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        <section className="max-w-[1160px] mx-auto px-5 sm:px-8 py-12 text-center mb-12">
+           <h2 className="text-[28px] sm:text-[38px] font-semibold tracking-[-0.03em] text-[#09090B] mb-10">
+            Trusted by Sellers in Kashmir
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-8 bg-white border border-black/[0.08] rounded-2xl shadow-sm text-left">
+              <p className="text-[16px] text-[#1D1D1F] italic mb-6">"Oru made it so easy to take my dry fruits business online. Now customers from all over India can buy directly from my website, and the payment comes straight to my account."</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">A</div>
+                <div>
+                  <p className="font-semibold text-[14px] text-[#09090B]">Ahmad Wani</p>
+                  <p className="text-[12px] text-[#86868B]">Kashmiri Dry Fruits, Srinagar</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-8 bg-white border border-black/[0.08] rounded-2xl shadow-sm text-left">
+              <p className="text-[16px] text-[#1D1D1F] italic mb-6">"I sell traditional Kashmiri handicrafts on Instagram. With Oru, my customers can now browse all my items clearly and order easily without messaging me for prices every time."</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold">S</div>
+                <div>
+                  <p className="font-semibold text-[14px] text-[#09090B]">Sajad Handicrafts</p>
+                  <p className="text-[12px] text-[#86868B]">Handicrafts Seller, Anantnag</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* ══════════════════════════════════════════════════════════════════════ */}
