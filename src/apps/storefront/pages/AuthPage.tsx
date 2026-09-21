@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, AlertCircle, ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSettings } from '@/shared/contexts/SettingsContext';
@@ -49,6 +49,8 @@ const AuthPage: React.FC = () => {
   const [isResending, setIsResending] = useState(false);
 
   const [otpSent, setOtpSent] = useState(false);
+  const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(''));
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const { signIn, signUp, resetPassword, resendVerification, requestOtp, verifyOtp, user, store } = useAuth();
   const { getSiteSetting } = useSettings();
@@ -98,11 +100,54 @@ const AuthPage: React.FC = () => {
     handleSubmit,
     reset,
     formState: { errors },
-    setValue
+    setValue,
+    watch
   } = useForm<any>({
     resolver: zodResolver(currentSchema),
     mode: 'onTouched',
   });
+
+  // Watch for OTP value changes and keep digits in sync (useful on reset)
+  const currentOtpValue = watch('otp');
+  useEffect(() => {
+    if (!currentOtpValue) {
+      setOtpDigits(Array(6).fill(''));
+    }
+  }, [currentOtpValue]);
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newDigits = [...otpDigits];
+    newDigits[index] = value;
+    setOtpDigits(newDigits);
+    setValue('otp', newDigits.join(''), { shouldValidate: true, shouldDirty: true });
+
+    // Auto-advance
+    if (value && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+  
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').slice(0, 6).replace(/\D/g, '');
+    if (pastedData) {
+      const newDigits = [...otpDigits];
+      for (let i = 0; i < pastedData.length; i++) {
+        if (i < 6) newDigits[i] = pastedData[i];
+      }
+      setOtpDigits(newDigits);
+      setValue('otp', newDigits.join(''), { shouldValidate: true, shouldDirty: true });
+      const focusIndex = Math.min(pastedData.length, 5);
+      otpInputRefs.current[focusIndex]?.focus();
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -493,26 +538,27 @@ const AuthPage: React.FC = () => {
 
                   {/* Phone field (OTP only) */}
                   {mode === 'otp' && !otpSent && (
-                    <div>
-                      <label className="block text-[11px] font-bold text-stone-600 mb-1.5 uppercase tracking-wider">
+                    <div className="space-y-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <label className="block text-[11px] font-bold text-stone-600 uppercase tracking-wider">
                         Phone Number
                       </label>
-                      <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 font-semibold text-sm pointer-events-none">
-                          +91
-                        </span>
+                      <div className={`relative flex items-center bg-stone-50/80 border ${errors.phone ? 'border-red-400 bg-red-50/20 ring-4 ring-red-100/50' : 'border-stone-200 focus-within:border-stone-900 focus-within:ring-4 focus-within:ring-stone-900/10 focus-within:bg-white'} rounded-xl transition-all duration-200 overflow-hidden`}>
+                        <div className="flex items-center justify-center pl-4 pr-3 py-3.5 border-r border-stone-200/80 bg-stone-100/50">
+                          <span className="text-xl mr-2 leading-none">🇮🇳</span>
+                          <span className="text-stone-600 font-semibold text-sm">+91</span>
+                        </div>
                         <input
                           type="tel"
                           {...register('phone')}
-                          placeholder="9876543210"
+                          placeholder="9876 543 210"
                           disabled={isPending}
                           autoComplete="tel"
-                          className={`${inputClass(!!errors.phone)} pl-11`}
+                          className="flex-1 w-full bg-transparent text-stone-950 font-semibold text-base px-4 py-3.5 outline-none placeholder:text-stone-300 placeholder:font-medium tracking-wide"
                         />
                       </div>
                       {errors.phone && (
-                        <p className="mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />{errors.phone.message as string}
+                        <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />{errors.phone.message as string}
                         </p>
                       )}
                     </div>
@@ -520,34 +566,59 @@ const AuthPage: React.FC = () => {
 
                   {/* OTP field (OTP verify only) */}
                   {mode === 'otp' && otpSent && (
-                    <div>
-                      <label className="block text-[11px] font-bold text-stone-600 mb-1.5 uppercase tracking-wider">
-                        6-Digit OTP
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
-                        <input
-                          type="text"
-                          maxLength={6}
-                          {...register('otp')}
-                          placeholder="123456"
-                          disabled={isPending}
-                          autoComplete="one-time-code"
-                          className={inputClass(!!errors.otp)}
-                        />
+                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                      <div className="bg-emerald-50/50 border border-emerald-100/80 rounded-2xl p-4 flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
+                        <div className="text-xs space-y-1 flex-1">
+                          <p className="text-emerald-900 font-medium leading-relaxed">
+                            OTP successfully dispatched to <strong className="font-bold">+91 {watch('phone')}</strong>.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => { setOtpSent(false); reset(); }}
+                            className="text-emerald-700 hover:text-emerald-900 font-semibold underline decoration-emerald-300 underline-offset-2 transition-colors cursor-pointer"
+                          >
+                            Incorrect number? Change here.
+                          </button>
+                        </div>
                       </div>
-                      {errors.otp && (
-                        <p className="mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />{errors.otp.message as string}
-                        </p>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => { setOtpSent(false); reset(); }}
-                        className="text-xs text-stone-500 hover:text-stone-900 transition-colors font-medium cursor-pointer mt-2"
-                      >
-                        Change phone number
-                      </button>
+
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-[11px] font-bold text-stone-600 uppercase tracking-wider">
+                            Secure Verification Code
+                          </label>
+                          <span className="text-[10px] font-bold text-stone-400 px-2 py-0.5 rounded-full bg-stone-100 border border-stone-200">
+                            Expires in 5:00
+                          </span>
+                        </div>
+                        
+                        <div className="flex gap-2 justify-between" onPaste={handleOtpPaste}>
+                          {Array.from({ length: 6 }).map((_, index) => (
+                            <input
+                              key={index}
+                              ref={(el) => (otpInputRefs.current[index] = el)}
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={1}
+                              value={otpDigits[index]}
+                              onChange={(e) => handleOtpChange(index, e.target.value)}
+                              onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                              disabled={isPending}
+                              className={`w-[14%] aspect-square text-center text-xl font-bold rounded-xl outline-none transition-all duration-200 bg-stone-50/80 border shadow-xs focus:bg-white focus:-translate-y-0.5 ${errors.otp ? 'border-red-400 bg-red-50/20 text-red-700 focus:ring-4 focus:ring-red-100/60' : 'border-stone-200 text-stone-900 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/10'}`}
+                            />
+                          ))}
+                        </div>
+                        
+                        {/* Hidden input to hook into react-hook-form properly */}
+                        <input type="hidden" {...register('otp')} />
+                        
+                        {errors.otp && (
+                          <p className="mt-2 text-xs text-red-600 font-medium flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />{errors.otp.message as string}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
 

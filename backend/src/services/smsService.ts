@@ -24,21 +24,23 @@ export class SmsService {
     }
 
     try {
-      const url = new URL('https://www.fast2sms.com/dev/bulkV2');
-      url.searchParams.append('authorization', apiKey);
-      url.searchParams.append('route', 'q');
-      url.searchParams.append('message', `Your OTP is ${otp}. It is valid for 5 minutes.`);
-      url.searchParams.append('language', 'english');
-      url.searchParams.append('flash', '0');
-      url.searchParams.append('numbers', phone);
-
-      const response = await fetch(url.toString(), {
-        method: 'GET',
+      const url = 'https://www.fast2sms.com/dev/otp/send';
+      
+      const options = {
+        method: 'POST',
         headers: {
-          'cache-control': 'no-cache'
-        }
-      });
+          'accept': 'application/json',
+          'authorization': apiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          variables_values: otp,
+          route: 'otp',
+          numbers: phone
+        })
+      };
 
+      const response = await fetch(url, options);
       const data: Record<string, unknown> = await (response.json() as Promise<Record<string, unknown>>);
 
       if (!response.ok || (data.return === false)) {
