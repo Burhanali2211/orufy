@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/shared/components/SEO/SEO';
-import { BLOG_POSTS } from '../data/blogs';
+import { BLOG_POSTS } from '../../data/blogs';
 import { Store, ChevronRight } from 'lucide-react';
 
 export const BlogListPage: React.FC = () => {
