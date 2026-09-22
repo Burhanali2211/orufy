@@ -46,6 +46,7 @@ const AuthPage: React.FC = () => {
   const [forgotSent, setForgotSent] = useState(false);
   const [signupConfirmEmail, setSignupConfirmEmail] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [otpCountdown, setOtpCountdown] = useState(300);
   const [isResending, setIsResending] = useState(false);
 
   const [otpSent, setOtpSent] = useState(false);
@@ -175,6 +176,24 @@ const AuthPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  useEffect(() => {
+    if (!otpSent) {
+      setOtpCountdown(300);
+      return;
+    }
+    if (otpCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setOtpCountdown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [otpSent, otpCountdown]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   const handleResendSignupConfirmation = async () => {
     if (!signupConfirmEmail || resendCooldown > 0) return;
     try {
@@ -276,11 +295,6 @@ const AuthPage: React.FC = () => {
         </div>
 
         <div className="relative z-10 w-full max-w-sm my-auto py-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-stone-800/90 text-stone-300 border border-stone-700/60 mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            Unified Commerce & Payments
-          </div>
-
           <h2 className="text-3xl xl:text-4xl font-extrabold text-white tracking-tight leading-[1.15] mb-4">
             {isPlatform
               ? 'Welcome back to your store cockpit.'
@@ -368,7 +382,7 @@ const AuthPage: React.FC = () => {
                           : 'text-stone-500 hover:text-stone-800'
                           }`}
                       >
-                        Login with OTP
+                        OTP
                       </button>
                       <button
                         type="button"
@@ -378,7 +392,17 @@ const AuthPage: React.FC = () => {
                           : 'text-stone-500 hover:text-stone-800'
                           }`}
                       >
-                        Login with Password
+                        Email Sign In
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => switchMode('signup')}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'signup'
+                          ? 'bg-white text-stone-900 shadow-2xs'
+                          : 'text-stone-500 hover:text-stone-800'
+                          }`}
+                      >
+                        Email Sign Up
                       </button>
                     </>
                   ) : (
@@ -589,7 +613,7 @@ const AuthPage: React.FC = () => {
                             Secure Verification Code
                           </label>
                           <span className="text-[10px] font-bold text-stone-400 px-2 py-0.5 rounded-full bg-stone-100 border border-stone-200">
-                            Expires in 5:00
+                            Expires in {formatTime(otpCountdown)}
                           </span>
                         </div>
                         
@@ -734,9 +758,9 @@ const AuthPage: React.FC = () => {
                       className="w-full bg-stone-900 hover:bg-stone-800 active:scale-[0.99] text-white text-sm font-bold rounded-xl py-3.5 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                     >
                       {isPending ? (
-                        <span>{mode === 'login' ? 'Signing in…' : mode === 'signup' ? 'Creating account…' : 'Sending recovery email…'}</span>
+                        <span>{mode === 'otp' ? (otpSent ? 'Verifying...' : 'Sending OTP...') : mode === 'login' ? 'Signing in…' : mode === 'signup' ? 'Creating account…' : 'Sending recovery email…'}</span>
                       ) : (
-                        <span>{mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Recovery Link'}</span>
+                        <span>{mode === 'otp' ? (otpSent ? 'Verify OTP' : 'Send OTP') : mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Recovery Link'}</span>
                       )}
                     </button>
                   </div>
