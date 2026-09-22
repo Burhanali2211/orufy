@@ -66,6 +66,28 @@ const PageTracker = () => {
   return null;
 };
 
+const StoreNotFoundPage = React.lazy(() => import('@/apps/storefront/pages/StoreNotFoundPage'));
+
+// Component to protect tenant routes if the store doesn't exist
+import { useSettings } from '@/shared/contexts/SettingsContext';
+const TenantGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { storeNotFound } = useSettings();
+  
+  const host = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+  const baseDomain = import.meta.env.VITE_SITE_URL ? new URL(import.meta.env.VITE_SITE_URL).hostname.toLowerCase() : 'get-oru.com';
+  const isPlatformHost = host === baseDomain || host === `www.${baseDomain}` || host === 'localhost' || host === '127.0.0.1';
+
+  if (storeNotFound && !isPlatformHost) {
+    return (
+      <Suspense fallback={<PageLoadingFallback />}>
+        <StoreNotFoundPage />
+      </Suspense>
+    );
+  }
+
+  return <>{children}</>;
+};
+
 function App() {
   // Unregister any Service Workers on mount to prevent caching issues
   useEffect(() => {
@@ -151,18 +173,19 @@ function App() {
             <GlobalMediaErrorHandler />
             <ScrollToTop />
             <Suspense fallback={<PageLoadingFallback />}>
-              <Routes>
-              {/* Admin routes - Protected, requires admin/merchant role, NO Layout wrapper (has its own AdminLayout) */}
-              <Route 
-                path="/admin/*" 
-                element={
-                  <ProtectedRoute allowedRoles={['admin', 'merchant', 'seller']}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } 
-              />
+              <TenantGuard>
+                <Routes>
+                {/* Admin routes - Protected, requires admin/merchant role, NO Layout wrapper (has its own AdminLayout) */}
+                <Route 
+                  path="/admin/*" 
+                  element={
+                    <ProtectedRoute allowedRoles={['admin', 'merchant', 'seller']}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* Onboarding - Platform Level, requires authentication but NOT admin role */}
+                {/* Onboarding - Platform Level, requires authentication but NOT admin role */}
               <Route 
                 path="/onboarding" 
                 element={<OnboardingPage />} 
@@ -291,6 +314,7 @@ function App() {
                 </Layout>
               } />
             </Routes>
+            </TenantGuard>
           </Suspense>
         </NuqsAdapter>
       </Router>

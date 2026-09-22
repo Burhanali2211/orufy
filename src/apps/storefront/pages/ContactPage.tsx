@@ -209,15 +209,15 @@ export const ContactPage: React.FC = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h2>
 
                 {submitStatus === 'success' && (
-                  <div className="mb-6 p-4 bg-stone-50 border border-stone-200 rounded-xl flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-stone-600 flex-shrink-0 mt-0.5" />
-                     <p className="text-sm text-stone-800">{submitMessage}</p>
+                  <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-100/80 rounded-xl shadow-xs overflow-hidden">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                    <p className="text-xs text-emerald-900 font-medium truncate">{submitMessage}</p>
                   </div>
                 )}
                 {submitStatus === 'error' && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-800">{submitMessage}</p>
+                  <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-100/80 rounded-xl shadow-xs overflow-hidden">
+                    <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                    <p className="text-xs text-red-900 font-medium truncate">{submitMessage}</p>
                   </div>
                 )}
 

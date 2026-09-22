@@ -324,26 +324,20 @@ export const CustomerDashboardLayout: React.FC<CustomerDashboardLayoutProps> = (
           <main className="lg:col-span-9 space-y-6">
             {/* Unverified Email Alert Banner */}
             {user && !user.email_verified && !user.emailVerified && (
-              <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
-                <div className="flex items-start gap-3.5 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <AlertCircle className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wide">Please verify your email address</h4>
-                    <p className="text-xs text-amber-800 mt-0.5 leading-relaxed truncate sm:whitespace-normal">
-                      A confirmation link was sent to <strong className="font-semibold text-amber-950">{user.email}</strong>. Verify to secure your account.
-                    </p>
-                  </div>
+              <div className="flex items-center justify-between bg-amber-50 border border-amber-100/80 rounded-xl px-4 py-3 shadow-xs">
+                <div className="flex items-center gap-2 overflow-hidden flex-1">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="text-xs text-amber-900 font-medium truncate">
+                    Verify your email: <strong className="font-bold">{user.email}</strong>
+                  </span>
                 </div>
                 <button
                   type="button"
                   onClick={handleResendVerification}
                   disabled={isResending || cooldown > 0}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex-shrink-0 self-start sm:self-auto"
+                  className="text-xs text-amber-700 hover:text-amber-900 font-bold transition-colors cursor-pointer shrink-0 ml-3 disabled:opacity-50 disabled:cursor-not-allowed underline decoration-amber-300 underline-offset-2"
                 >
-                  {isResending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                  <span>{cooldown > 0 ? `Resend (${cooldown}s)` : isResending ? 'Sending...' : 'Resend Confirmation'}</span>
+                  {isResending ? 'Sending...' : (cooldown > 0 ? `Wait ${cooldown}s` : 'Resend link')}
                 </button>
               </div>
             )}
