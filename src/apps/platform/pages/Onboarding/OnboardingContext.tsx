@@ -41,7 +41,7 @@ export interface OnboardingData {
 
 export interface Milestone {
   id: number;
-  key: 'name' | 'category' | 'story' | 'theme' | 'payments' | 'domain' | 'launch';
+  key: 'name' | 'category' | 'story' | 'payments' | 'domain' | 'launch';
   title: string;
   description: string;
   isComplete: boolean;
@@ -71,7 +71,7 @@ const defaultData: OnboardingData = {
     description: '',
     subdomain: '',
     contactEmail: '',
-    tagline: 'Handcrafted with Passion & Authenticity',
+    tagline: '',
   },
   brand: {
     primaryColor: '#1d1d1f', // Apple obsidian
@@ -253,16 +253,14 @@ export const OnboardingProvider: React.FC<{ children: ReactNode }> = ({ children
       case 4:
         return Boolean(data.business.tagline || data.business.description);
       case 5:
-        return Boolean(data.brand.primaryColor);
-      case 6:
         return true; // Payments configuration selected
-      case 7:
+      case 6:
         return Boolean(
           (data.domain.type === 'subdomain' && (data.domain.subdomain || data.business.subdomain)) ||
           (data.domain.type === 'custom' && data.domain.customHostname)
         );
-      case 8:
-        return isMilestoneComplete(2) && isMilestoneComplete(3) && isMilestoneComplete(5);
+      case 7:
+        return isMilestoneComplete(2) && isMilestoneComplete(3);
       default:
         return false;
     }
@@ -272,10 +270,9 @@ export const OnboardingProvider: React.FC<{ children: ReactNode }> = ({ children
     { id: 2, key: 'name', title: 'Store Name', description: 'Name your store', isComplete: isMilestoneComplete(2) },
     { id: 3, key: 'category', title: 'Category', description: 'What you sell', isComplete: isMilestoneComplete(3) },
     { id: 4, key: 'story', title: 'Brand Story', description: 'Tagline and bio', isComplete: isMilestoneComplete(4) },
-    { id: 5, key: 'theme', title: 'Aesthetic', description: 'Theme and styling', isComplete: isMilestoneComplete(5) },
-    { id: 6, key: 'payments', title: 'Payments', description: 'Payout options', isComplete: isMilestoneComplete(6) },
-    { id: 7, key: 'domain', title: 'Web Address', description: 'Store URL and SSL', isComplete: isMilestoneComplete(7) },
-    { id: 8, key: 'launch', title: 'Launch', description: 'Publish storefront', isComplete: false },
+    { id: 5, key: 'payments', title: 'Payments', description: 'Payout options', isComplete: isMilestoneComplete(5) },
+    { id: 6, key: 'domain', title: 'Web Address', description: 'Store URL and SSL', isComplete: isMilestoneComplete(6) },
+    { id: 7, key: 'launch', title: 'Launch', description: 'Publish storefront', isComplete: false },
   ];
 
   const progressPercentage = Math.min(
@@ -284,12 +281,11 @@ export const OnboardingProvider: React.FC<{ children: ReactNode }> = ({ children
     (isMilestoneComplete(2) ? 15 : 0) +
     (isMilestoneComplete(3) ? 15 : 0) +
     (isMilestoneComplete(4) ? 15 : 0) +
-    (isMilestoneComplete(5) ? 15 : 0) +
-    (isMilestoneComplete(6) ? 15 : 0) +
-    (isMilestoneComplete(7) ? 10 : 0)
+    (isMilestoneComplete(5) ? 20 : 0) +
+    (isMilestoneComplete(6) ? 20 : 0)
   );
 
-  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 8));
+  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 7));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
   return (

@@ -4,7 +4,6 @@ import { WelcomeStep } from './steps/WelcomeStep';
 import { StoreNameStep } from './steps/StoreNameStep';
 import { CategoryStep } from './steps/CategoryStep';
 import { BrandStoryStep } from './steps/BrandStoryStep';
-import { BrandThemeStep } from './steps/BrandThemeStep';
 import { PaymentStep } from './steps/PaymentStep';
 import { DomainStep } from './steps/DomainStep';
 import { LaunchStep } from './steps/LaunchStep';
@@ -17,7 +16,6 @@ const STEP_LABELS = [
   'Store Name',
   'Category',
   'Brand Story',
-  'Aesthetic',
   'Payments',
   'Web Address',
   'Launch',
@@ -72,12 +70,10 @@ const StepRenderer: React.FC = () => {
     case 4:
       return <BrandStoryStep />;
     case 5:
-      return <BrandThemeStep />;
-    case 6:
       return <PaymentStep />;
-    case 7:
+    case 6:
       return <DomainStep />;
-    case 8:
+    case 7:
       return <LaunchStep />;
     default:
       return <WelcomeStep />;
